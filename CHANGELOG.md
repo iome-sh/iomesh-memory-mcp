@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **s1468 / Option A M4 public-flip readiness** (residual-honest offline SSOT):
+  - [docs/PUBLIC_FLIP_READINESS.md](docs/PUBLIC_FLIP_READINESS.md) — flip order (kernel first, then this host) · pre-flight · post-flip residual steps
+  - `scripts/public_flip_readiness_gate.sh` + `make public-flip-readiness-gate` — offline file greps only (no visibility flip / docker / gcloud)
+  - OPEN_SOURCE_AUDIT + README continuum stamp **s1468**; EDGE_DOGFOOD M4 pointer
+  - **Does not** flip visibility · invent GHCR publish green · Memory GA · dual_write ON · full platform sidecar parity · live dogfood green
 - **s1462 / Option A M3 edge dogfood** (residual-honest offline SSOT):
   - [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) — operator checklist (build · stdio · HTTP healthz/`/mcp` · local compose · tool honesty)
   - `scripts/edge_dogfood_gate.sh` + `make edge-dogfood-gate` — offline file greps only (no docker daemon / server / gcloud)
@@ -17,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Honesty
 
-- dual_write **OFF** · not product Memory GA · still private · residual PASS ≠ live dogfood / public flip · no aion import · naming **iomesh-memory-mcp** · M4 public flip deliberate later
+- dual_write **OFF** · not product Memory GA · still private · residual PASS ≠ live dogfood / public flip · no aion import · naming **iomesh-memory-mcp** · kernel public first · M4 flip deliberate later (readiness only on s1468)
 
 ## [0.1.0-s1457] — 2026-08-08
 
