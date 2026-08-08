@@ -1,0 +1,33 @@
+name: Bug report
+description: Report a defect in the lean edge Memory MCP host
+title: "[bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug. Redact palace contents, API keys, and private paths.
+        This host is **not product Memory GA** and **dual_write is OFF** by default.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Expected vs actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: Steps, flags/env, stdio vs HTTP
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit
+      placeholder: v0.1.0-s1457 or git SHA
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs (redacted)

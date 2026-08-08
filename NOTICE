@@ -1,0 +1,31 @@
+iomesh-memory-mcp (lean edge Memory MCP host)
+Copyright 2026 IOMesh Technology Ltd.
+
+This product is licensed under the MIT License — see LICENSE.
+Website: https://iome.sh
+
+This repository is the **local-primary edge MCP host** for the Palace memory
+kernel (`github.com/iome-sh/memory`). Binary / image name honesty:
+
+  iomesh-memory-mcp
+  ghcr.io/iome-sh/iomesh-memory-mcp
+
+It is **not** product Memory GA, not the private aion broker / control plane,
+and **dual_write is OFF** by default (audit dual_write is a later optional path).
+
+Third-party acknowledgements
+---------------------------
+
+- Open-source Go dependencies are declared in go.mod / go.sum and retain their
+  respective licenses (run `go list -m all` and consult module LICENSE files).
+
+- Direct dependencies (see go.mod):
+
+  - github.com/iome-sh/memory — Palace hierarchical memory kernel (MIT).
+  - github.com/modelcontextprotocol/go-sdk — MCP protocol Go SDK.
+
+- Transitive kernel stacks (via memory) may include optional Qdrant clients and
+  ONNX / hugot embedding backends. The default edge path does **not** require
+  Qdrant or ONNX.
+
+- Contributor Covenant (Code of Conduct) text adapted under CC BY 4.0.

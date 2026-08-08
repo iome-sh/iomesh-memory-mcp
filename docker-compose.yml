@@ -1,0 +1,27 @@
+# Local edge Memory MCP (HTTP) for dogfood.
+# dual_write OFF · not Memory GA · binary name iomesh-memory-mcp
+services:
+  iomesh-memory-mcp:
+    build:
+      context: .
+      args:
+        # Supply when building against private github.com/iome-sh/memory:
+        # GH_TOKEN: ${GH_TOKEN:-}
+        GH_TOKEN: ${GH_TOKEN:-}
+    image: iomesh-memory-mcp:local
+    container_name: iomesh-memory-mcp
+    ports:
+      - "8080:8080"
+    environment:
+      PALACE_ROOT: /data/memory-palaces
+      MEMORY_TENANT: ${MEMORY_TENANT:-default}
+      MEMORY_MCP_HTTP_ADDR: ":8080"
+      MEMORY_MCP_HTTP_PATH: /mcp
+    volumes:
+      - palace-data:/data/memory-palaces
+    # distroless has no curl/wget — probe from host:
+    #   curl -fsS http://127.0.0.1:8080/healthz
+    restart: unless-stopped
+
+volumes:
+  palace-data:
