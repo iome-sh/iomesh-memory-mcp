@@ -3,7 +3,7 @@ module github.com/iome-sh/iomesh-memory-mcp
 go 1.26.5
 
 require (
-	github.com/iome-sh/memory v1.5.8-0.20260808061335-aa1bd97f3e8a
+	github.com/iome-sh/memory v1.5.8-0.20260808222018-5c965d1c66b8
 	github.com/modelcontextprotocol/go-sdk v1.6.1
 )
 
@@ -24,7 +24,7 @@ require (
 	github.com/knights-analytics/ortgenai v0.3.1 // indirect
 	github.com/nrednav/cuid2 v1.1.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/qdrant/go-client v1.12.0 // indirect
+	github.com/qdrant/go-client v1.19.0 // indirect
 	github.com/segmentio/asm v1.1.3 // indirect
 	github.com/segmentio/encoding v0.5.4 // indirect
 	github.com/viant/afs v1.30.0 // indirect
@@ -34,13 +34,13 @@ require (
 	golang.org/x/crypto v0.52.0 // indirect
 	golang.org/x/exp v0.0.0-20260508232706-74f9aab9d74a // indirect
 	golang.org/x/image v0.43.0 // indirect
-	golang.org/x/net v0.54.0 // indirect
+	golang.org/x/net v0.55.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sync v0.21.0 // indirect
 	golang.org/x/sys v0.45.0 // indirect
 	golang.org/x/term v0.43.0 // indirect
 	golang.org/x/text v0.39.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260414002931-afd174a4e478 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260427160629-7cedc36a6bc4 // indirect
 	google.golang.org/grpc v1.82.1 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect

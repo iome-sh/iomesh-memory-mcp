@@ -37,21 +37,35 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
           cache: true
 
-      # While kernel private: IOMESH_CI_PAT required. After kernel public: PAT optional.
+      # While kernel private: repo secret IOMESH_CI_PAT (or GH_PAT / GO_MODULE_TOKEN) required.
+      # Dependabot PRs do not receive Actions secrets by default — land action bumps via maintainer PR
+      # or add the same PAT under Settings → Secrets → Dependabot. After kernel public: PAT optional.
       - name: Configure private Go modules (iome-sh/*)
         env:
-          # IOMESH_CI_PAT / GH_PAT / GO_MODULE_TOKEN: repo or org secret with read on iome-sh/memory
-          TOKEN: ${{ secrets.IOMESH_CI_PAT || secrets.GH_PAT || secrets.GO_MODULE_TOKEN || github.token }}
+          IOMESH_CI_PAT: ${{ secrets.IOMESH_CI_PAT }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+          GO_MODULE_TOKEN: ${{ secrets.GO_MODULE_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          TOKEN="${IOMESH_CI_PAT:-${GH_PAT:-${GO_MODULE_TOKEN:-${GITHUB_TOKEN:-}}}}"
+          if [ -z "$TOKEN" ]; then
+            echo "::error::No token available to fetch private github.com/iome-sh/memory (set IOMESH_CI_PAT)"
+            exit 1
+          fi
+          git config --global url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"
+          if ! go list -m github.com/iome-sh/memory; then
+            echo "::error::Cannot resolve github.com/iome-sh/memory — token lacks repo read, or Dependabot lacks secrets (use maintainer PR or Dependabot secret)"
+            exit 1
+          fi
           git config --global url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"
           # Prove private module resolves (fails fast if token cannot read iome-sh/memory)
           go list -m github.com/iome-sh/memory
@@ -79,20 +93,35 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
           cache: true
 
-      # While kernel private: IOMESH_CI_PAT required. After kernel public: PAT optional.
+      # While kernel private: repo secret IOMESH_CI_PAT (or GH_PAT / GO_MODULE_TOKEN) required.
+      # Dependabot PRs do not receive Actions secrets by default — land action bumps via maintainer PR
+      # or add the same PAT under Settings → Secrets → Dependabot. After kernel public: PAT optional.
       - name: Configure private Go modules (iome-sh/*)
         env:
-          TOKEN: ${{ secrets.IOMESH_CI_PAT || secrets.GH_PAT || secrets.GO_MODULE_TOKEN || github.token }}
+          IOMESH_CI_PAT: ${{ secrets.IOMESH_CI_PAT }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+          GO_MODULE_TOKEN: ${{ secrets.GO_MODULE_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          TOKEN="${IOMESH_CI_PAT:-${GH_PAT:-${GO_MODULE_TOKEN:-${GITHUB_TOKEN:-}}}}"
+          if [ -z "$TOKEN" ]; then
+            echo "::error::No token available to fetch private github.com/iome-sh/memory (set IOMESH_CI_PAT)"
+            exit 1
+          fi
+          git config --global url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"
+          if ! go list -m github.com/iome-sh/memory; then
+            echo "::error::Cannot resolve github.com/iome-sh/memory — token lacks repo read, or Dependabot lacks secrets (use maintainer PR or Dependabot secret)"
+            exit 1
+          fi
           git config --global url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"
           go list -m github.com/iome-sh/memory
 
@@ -105,20 +134,35 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
           cache: true
 
-      # While kernel private: IOMESH_CI_PAT required. After kernel public: PAT optional.
+      # While kernel private: repo secret IOMESH_CI_PAT (or GH_PAT / GO_MODULE_TOKEN) required.
+      # Dependabot PRs do not receive Actions secrets by default — land action bumps via maintainer PR
+      # or add the same PAT under Settings → Secrets → Dependabot. After kernel public: PAT optional.
       - name: Configure private Go modules (iome-sh/*)
         env:
-          TOKEN: ${{ secrets.IOMESH_CI_PAT || secrets.GH_PAT || secrets.GO_MODULE_TOKEN || github.token }}
+          IOMESH_CI_PAT: ${{ secrets.IOMESH_CI_PAT }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+          GO_MODULE_TOKEN: ${{ secrets.GO_MODULE_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          TOKEN="${IOMESH_CI_PAT:-${GH_PAT:-${GO_MODULE_TOKEN:-${GITHUB_TOKEN:-}}}}"
+          if [ -z "$TOKEN" ]; then
+            echo "::error::No token available to fetch private github.com/iome-sh/memory (set IOMESH_CI_PAT)"
+            exit 1
+          fi
+          git config --global url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"
+          if ! go list -m github.com/iome-sh/memory; then
+            echo "::error::Cannot resolve github.com/iome-sh/memory — token lacks repo read, or Dependabot lacks secrets (use maintainer PR or Dependabot secret)"
+            exit 1
+          fi
           git config --global url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"
           go list -m github.com/iome-sh/memory
 
@@ -133,20 +177,35 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
           cache: true
 
-      # While kernel private: IOMESH_CI_PAT required. After kernel public: PAT optional.
+      # While kernel private: repo secret IOMESH_CI_PAT (or GH_PAT / GO_MODULE_TOKEN) required.
+      # Dependabot PRs do not receive Actions secrets by default — land action bumps via maintainer PR
+      # or add the same PAT under Settings → Secrets → Dependabot. After kernel public: PAT optional.
       - name: Configure private Go modules (iome-sh/*)
         env:
-          TOKEN: ${{ secrets.IOMESH_CI_PAT || secrets.GH_PAT || secrets.GO_MODULE_TOKEN || github.token }}
+          IOMESH_CI_PAT: ${{ secrets.IOMESH_CI_PAT }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+          GO_MODULE_TOKEN: ${{ secrets.GO_MODULE_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          TOKEN="${IOMESH_CI_PAT:-${GH_PAT:-${GO_MODULE_TOKEN:-${GITHUB_TOKEN:-}}}}"
+          if [ -z "$TOKEN" ]; then
+            echo "::error::No token available to fetch private github.com/iome-sh/memory (set IOMESH_CI_PAT)"
+            exit 1
+          fi
+          git config --global url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"
+          if ! go list -m github.com/iome-sh/memory; then
+            echo "::error::Cannot resolve github.com/iome-sh/memory — token lacks repo read, or Dependabot lacks secrets (use maintainer PR or Dependabot secret)"
+            exit 1
+          fi
           git config --global url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"
           go list -m github.com/iome-sh/memory
 
