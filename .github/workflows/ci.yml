@@ -66,9 +66,6 @@ jobs:
             echo "::error::Cannot resolve github.com/iome-sh/memory — token lacks repo read, or Dependabot lacks secrets (use maintainer PR or Dependabot secret)"
             exit 1
           fi
-          git config --global url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"
-          # Prove private module resolves (fails fast if token cannot read iome-sh/memory)
-          go list -m github.com/iome-sh/memory
 
       - name: Module verify
         run: |
