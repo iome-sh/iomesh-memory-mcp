@@ -9,7 +9,7 @@
 |------|--|
 | [LICENSE](LICENSE) (MIT) · [NOTICE](NOTICE) | [SECURITY](SECURITY.md) · [CONTRIBUTING](CONTRIBUTING.md) |
 | [SUPPORT](SUPPORT.md) · [CODE_OF_CONDUCT](CODE_OF_CONDUCT.md) | [RELEASING](RELEASING.md) · [CHANGELOG](CHANGELOG.md) |
-| [Open-source audit](docs/OPEN_SOURCE_AUDIT.md) | |
+| [Open-source audit](docs/OPEN_SOURCE_AUDIT.md) | [**M3 edge dogfood**](docs/EDGE_DOGFOOD.md) |
 
 ### Honesty locks (read first)
 
@@ -21,8 +21,8 @@
 - **No aion import** — builds MCP directly on the Palace kernel.
 - **aion broker / control plane stays private**.
 - **Qdrant / ONNX not required** for the default hybrid path (kernel hash/simple embeddings).
-- **Visibility:** this repository is **still private** until a deliberate public flip ([audit](docs/OPEN_SOURCE_AUDIT.md)). s1457 is Option A **M2** lean scaffold + TUI-grade OSS *process* bar only.
-- Program continuum: free eng concurrent **s1457+** after free-floor **s1455** · lag **s1456** · peers TUI s1458 · aion residual s1459 (mention only).
+- **Visibility:** this repository is **still private** until a deliberate public flip ([audit](docs/OPEN_SOURCE_AUDIT.md)). M2 lean scaffold (**s1457**) + **M3** edge dogfood surfaces (**s1462**) — residual PASS ≠ public flip / live dogfood green / full platform sidecar parity.
+- Program continuum: free eng concurrent **s1462+** after free-floor **s1460** · lag **s1461** · peers TUI s1463 · aion residual s1464 (mention only) · free-floor peer s1465 · free eng after s1467+ · **M4** public flip later.
 
 ```text
 iomesh-tui (or other MCP client)
@@ -90,7 +90,23 @@ url = "http://127.0.0.1:8080/mcp"
 # While kernel is private, pass a GitHub token with read access to iome-sh/memory:
 export GH_TOKEN=ghp_...
 docker compose up --build
+# image: iomesh-memory-mcp:local  — compose PASS ≠ public registry · build PASS ≠ invent GA
 curl -fsS http://127.0.0.1:8080/healthz
+```
+
+## M3 edge dogfood
+
+Residual-honest offline SSOT for operator dogfood (stdio · HTTP healthz/`/mcp` · local compose · tool honesty). **Not** live dogfood invent · **not** public flip · **not** Memory GA · dual_write **OFF**.
+
+| | |
+|--|--|
+| Checklist | [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) |
+| Offline gate | `make edge-dogfood-gate` → `scripts/edge_dogfood_gate.sh` (file greps only; **no docker daemon**) |
+| Serial | **s1462** · peers TUI s1463 · aion residual s1464 (mention only) · **M4** deliberate later |
+
+```bash
+make edge-dogfood-gate   # residual PASS ≠ live dogfood green
+make help                # lists targets including edge-dogfood-gate
 ```
 
 ## CLI / env
@@ -138,11 +154,13 @@ Multi-tenant isolation is **path-based** in one process (residual-honest: not cl
 ## Develop / CI
 
 ```bash
-make check   # fmt-check · vet · test
-make ci      # + govulncheck · build
+make check              # fmt-check · vet · test
+make ci                 # + govulncheck · build
+make edge-dogfood-gate  # offline M3 residual greps (optional; not required by ci)
 ```
 
-Required GitHub Actions gate: **ci-success** (lint · test · build · govulncheck).
+Required GitHub Actions gate: **ci-success** (lint · test · build · govulncheck).  
+`edge-dogfood-gate` is an offline residual; it does **not** need a docker daemon and is not invent live dogfood.
 
 While `memory` is private, CI needs org access or `GO_MODULE_TOKEN` with `repo` read on `iome-sh/memory`.
 
@@ -150,8 +168,8 @@ While `memory` is private, CI needs org access or `GO_MODULE_TOKEN` with `repo` 
 
 1. **M1** — private kernel TUI-grade bar (`memory` s1452)  
 2. **M2** — this repo lean scaffold/extract (**s1457**)  
-3. **M3** — TUI/aion dogfood + deprecations (peers)  
-4. **M4** — public flip (kernel first, then this host)  
+3. **M3** — edge dogfood checklist + offline gate (**s1462**; peers TUI s1463 · aion residual s1464)  
+4. **M4** — public flip (kernel first, then this host) — **later · deliberate**  
 5. **M5** — signing / matrix / extensions  
 
 ## License

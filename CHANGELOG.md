@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **s1462 / Option A M3 edge dogfood** (residual-honest offline SSOT):
+  - [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) — operator checklist (build · stdio · HTTP healthz/`/mcp` · local compose · tool honesty)
+  - `scripts/edge_dogfood_gate.sh` + `make edge-dogfood-gate` — offline file greps only (no docker daemon / server / gcloud)
+  - README M3 section + continuum stamp **s1462**; `make help`; compose comments for local image honesty
+  - **Does not** invent live dogfood green · public flip · GHCR publish · Memory GA · dual_write ON · full platform sidecar parity
+
+### Honesty
+
+- dual_write **OFF** · not product Memory GA · still private · residual PASS ≠ live dogfood / public flip · no aion import · naming **iomesh-memory-mcp** · M4 public flip deliberate later
+
+## [0.1.0-s1457] — 2026-08-08
+
+### Added
+
 - Lean edge MCP host scaffold (**s1457** / Option A M2):
   - Binary **`iomesh-memory-mcp`** (not product-name `aion-memory-mcp`)
   - stdio + streamable HTTP (`MEMORY_MCP_HTTP_ADDR`) with `GET /healthz`
@@ -19,13 +33,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - TUI-grade OSS process bar: LICENSE, NOTICE, SECURITY, community docs,
     RELEASING, CHANGELOG, OPEN_SOURCE_AUDIT, Makefile, CI, Dependabot, Dockerfile, compose
   - **Repository remains private** until a deliberate visibility flip
-
-### Honesty
-
-- dual_write **OFF** · not product Memory GA · aion broker stays private · no default Qdrant/ONNX requirement
-
-## [0.1.0-s1457] — 2026-08-08
-
-### Added
-
-- Initial lean scaffold as above (first ship serial s1457).
+  - dual_write **OFF** · not product Memory GA · aion broker stays private · no default Qdrant/ONNX requirement
