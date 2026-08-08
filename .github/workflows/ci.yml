@@ -40,13 +40,15 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Auth private Go modules (same-org memory kernel)
+      - name: Configure private Go modules (iome-sh/*)
         env:
-          # Prefer org/repo secret with read access to github.com/iome-sh/memory;
-          # fall back to GITHUB_TOKEN (works when org grants multi-repo Actions access).
-          TOKEN: ${{ secrets.GO_MODULE_TOKEN || secrets.GITHUB_TOKEN }}
+          # IOMESH_CI_PAT / GH_PAT / GO_MODULE_TOKEN: repo or org secret with read on iome-sh/memory
+          TOKEN: ${{ secrets.IOMESH_CI_PAT || secrets.GH_PAT || secrets.GO_MODULE_TOKEN || github.token }}
         run: |
+          set -euo pipefail
           git config --global url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"
+          # Prove private module resolves (fails fast if token cannot read iome-sh/memory)
+          go list -m github.com/iome-sh/memory
 
       - name: Module verify
         run: |
@@ -79,11 +81,13 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Auth private Go modules
+      - name: Configure private Go modules (iome-sh/*)
         env:
-          TOKEN: ${{ secrets.GO_MODULE_TOKEN || secrets.GITHUB_TOKEN }}
+          TOKEN: ${{ secrets.IOMESH_CI_PAT || secrets.GH_PAT || secrets.GO_MODULE_TOKEN || github.token }}
         run: |
+          set -euo pipefail
           git config --global url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"
+          go list -m github.com/iome-sh/memory
 
       - name: go test
         run: go test ./... -count=1 -timeout=10m
@@ -102,11 +106,13 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Auth private Go modules
+      - name: Configure private Go modules (iome-sh/*)
         env:
-          TOKEN: ${{ secrets.GO_MODULE_TOKEN || secrets.GITHUB_TOKEN }}
+          TOKEN: ${{ secrets.IOMESH_CI_PAT || secrets.GH_PAT || secrets.GO_MODULE_TOKEN || github.token }}
         run: |
+          set -euo pipefail
           git config --global url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"
+          go list -m github.com/iome-sh/memory
 
       - name: go build binary
         run: |
@@ -127,11 +133,13 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Auth private Go modules
+      - name: Configure private Go modules (iome-sh/*)
         env:
-          TOKEN: ${{ secrets.GO_MODULE_TOKEN || secrets.GITHUB_TOKEN }}
+          TOKEN: ${{ secrets.IOMESH_CI_PAT || secrets.GH_PAT || secrets.GO_MODULE_TOKEN || github.token }}
         run: |
+          set -euo pipefail
           git config --global url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"
+          go list -m github.com/iome-sh/memory
 
       - name: Install govulncheck
         run: go install golang.org/x/vuln/cmd/govulncheck@latest
