@@ -26,5 +26,5 @@
 
 1. Run `make check` or note CI failures  
 2. Redact API keys, palace contents, and private paths from logs  
-3. Include binary version (`iomesh-memory-mcp` / `v0.1.0-s1457`) or commit SHA and OS  
+3. Include binary version (`iomesh-memory-mcp` / `v0.1.0` or `git describe`) or commit SHA and OS  
 4. Confirm the report is about the **edge MCP host** — not a request to invent hosted Memory GA  

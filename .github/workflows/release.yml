@@ -1,0 +1,95 @@
+# Publish multi-platform binaries via GoReleaser when a version tag is pushed.
+# Local dry-run: make release-snapshot
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      snapshot:
+        description: "Run goreleaser snapshot (no GitHub release publish)"
+        type: boolean
+        default: true
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  # Keyless cosign (Fulcio) via GitHub OIDC — no long-lived COSIGN_* secrets.
+  id-token: write
+
+env:
+  GOTOOLCHAIN: auto
+  # While github.com/iome-sh/memory is private, release builds need the same
+  # private-module residual as ci.yml. After kernel is public, GOPRIVATE/PAT optional.
+  GOPRIVATE: github.com/iome-sh/*
+  GONOSUMDB: github.com/iome-sh/*
+
+jobs:
+  goreleaser:
+    name: goreleaser
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # Private kernel residual: IOMESH_CI_PAT required while memory is private.
+      # After kernel public, module fetch is public and this rewrite is optional.
+      - name: Configure private Go modules (iome-sh/*)
+        env:
+          TOKEN: ${{ secrets.IOMESH_CI_PAT || secrets.GH_PAT || secrets.GO_MODULE_TOKEN || github.token }}
+        run: |
+          set -euo pipefail
+          git config --global url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"
+          go list -m github.com/iome-sh/memory
+
+      # Syft generates SPDX SBOMs declared in .goreleaser.yaml (sboms:).
+      - name: Install Syft
+        uses: anchore/sbom-action/download-syft@v0
+
+      # Cosign keyless sign-blob for checksums (signs: in .goreleaser.yaml).
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: GoReleaser (snapshot)
+        if: github.event_name == 'workflow_dispatch' && inputs.snapshot
+        uses: goreleaser/goreleaser-action@v7
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          # Snapshot skips signing (no OIDC identity for ad-hoc runs is fine).
+          args: release --snapshot --clean --skip=sign
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: GoReleaser (tag release)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: goreleaser/goreleaser-action@v7
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload dist (snapshot / debug)
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: goreleaser-dist
+          path: dist/
+          retention-days: 7
+          if-no-files-found: ignore

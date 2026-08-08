@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **s1474 / final private→public flip audit closeout (TUI binary parity)** (still private · residual PASS ≠ public flip):
+  - CONTRIBUTING expanded to TUI parity: development setup (GOPRIVATE residual), coding standards, tests, security-sensitive changes, Issues, **Public repository policy**, PR + CI table + branch protection `ci-success`, MIT contribution clause
+  - [`.goreleaser.yaml`](.goreleaser.yaml) + [`.github/workflows/release.yml`](.github/workflows/release.yml) (multi-arch · SBOM · keyless cosign) · `make release-snapshot`
+  - RELEASING expanded (GoReleaser · cosign verify · kernel public prerequisite · honesty locks)
+  - OPEN_SOURCE_AUDIT + PUBLIC_FLIP_READINESS final s1474 checklist/verdict
+  - ISSUE_TEMPLATE docs contact_link · CI comments (IOMESH_CI_PAT while kernel private; optional after)
+  - `ServerVersion` → linkable `var` default `v0.1.0` (ldflags from GoReleaser / make build)
+  - **Does not** flip visibility · invent GHCR publish green · Memory GA · dual_write ON · full platform sidecar parity · live dogfood green
 - **s1468 / Option A M4 public-flip readiness** (residual-honest offline SSOT):
   - [docs/PUBLIC_FLIP_READINESS.md](docs/PUBLIC_FLIP_READINESS.md) — flip order (kernel first, then this host) · pre-flight · post-flip residual steps
   - `scripts/public_flip_readiness_gate.sh` + `make public-flip-readiness-gate` — offline file greps only (no visibility flip / docker / gcloud)
@@ -22,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Honesty
 
-- dual_write **OFF** · not product Memory GA · still private · residual PASS ≠ live dogfood / public flip · no aion import · naming **iomesh-memory-mcp** · kernel public first · M4 flip deliberate later (readiness only on s1468)
+- dual_write **OFF** · not product Memory GA · still private · residual PASS ≠ live dogfood / public flip · readiness ≠ invent flip · no aion import · naming **iomesh-memory-mcp** · kernel public first · M4 flip deliberate later (s1474 final audit closeout only)
 
 ## [0.1.0-s1457] — 2026-08-08
 

@@ -1,0 +1,102 @@
+# GoReleaser config for multi-platform iomesh-memory-mcp binaries.
+# Docs: https://goreleaser.com
+# Triggered by .github/workflows/release.yml on tags v*.
+version: 2
+
+project_name: iomesh-memory-mcp
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: iomesh-memory-mcp
+    main: ./cmd/iomesh-memory-mcp
+    binary: iomesh-memory-mcp
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w -X github.com/iome-sh/iomesh-memory-mcp/internal/mcphost.ServerVersion=v{{.Version}}
+    flags:
+      - -trimpath
+
+archives:
+  - id: default
+    formats:
+      - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}
+    files:
+      - LICENSE
+      - README.md
+      - CHANGELOG.md
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+# SPDX SBOM per archive (syft via goreleaser).
+sboms:
+  - id: archive
+    artifacts: archive
+    documents:
+      - "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}.sbom.spdx.json"
+
+# Keyless cosign signatures on checksums.txt (GitHub OIDC / Fulcio — no long-lived keys).
+# Requires workflow permissions: id-token: write
+signs:
+  - cmd: cosign
+    certificate: "${artifact}.pem"
+    args:
+      - sign-blob
+      - "--yes"
+      - "--output-certificate=${certificate}"
+      - "--output-signature=${signature}"
+      - "${artifact}"
+    artifacts: checksum
+
+changelog:
+  # Prefer curated CHANGELOG.md / gh release notes over auto-generated.
+  disable: true
+
+release:
+  draft: false
+  prerelease: auto
+  name_template: "v{{.Version}}"
+  footer: |
+    ## Install
+
+    ```bash
+    # Go module (any platform with Go toolchain)
+    # After github.com/iome-sh/memory is public, no GOPRIVATE needed for the kernel dep.
+    go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v{{.Version}}
+
+    # Or download the archive for your OS/arch from the Assets list below.
+    # Each archive has a matching *.sbom.spdx.json supply-chain bill of materials.
+    # checksums.txt is keyless-signed (cosign); verify with:
+    #   cosign verify-blob --certificate checksums.txt.pem --signature checksums.txt.sig \
+    #     --certificate-identity-regexp 'https://github.com/iome-sh/iomesh-memory-mcp/.*' \
+    #     --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+    #     checksums.txt
+    ```
+
+    Honesty: dual_write OFF · not product Memory GA · product name **iomesh-memory-mcp**.
+
+    See [RELEASING.md](https://github.com/iome-sh/iomesh-memory-mcp/blob/main/RELEASING.md) and [CHANGELOG.md](https://github.com/iome-sh/iomesh-memory-mcp/blob/main/CHANGELOG.md).
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
