@@ -1,11 +1,12 @@
 # CI for github.com/iome-sh/iomesh-memory-mcp (lean edge Memory MCP host).
 # Required gate: lint · test · build · govulncheck · ci-success.
-# Repo remains private until deliberate flip after kernel is public (s1474 readiness).
+# Repo remains private until deliberate flip after kernel is public.
 # residual PASS ≠ public flip.
 #
 # Private dep residual (github.com/iome-sh/memory):
 #   While kernel private → IOMESH_CI_PAT / GH_PAT / GO_MODULE_TOKEN required (repo read on iome-sh/memory).
 #   After kernel public  → module fetch is public; PAT optional (keep working config until then).
+#   Dependabot: add IOMESH_CI_PAT under Settings → Secrets and variables → Dependabot, or land bumps via maintainer PR.
 name: ci
 
 on:
@@ -45,9 +46,6 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      # While kernel private: repo secret IOMESH_CI_PAT (or GH_PAT / GO_MODULE_TOKEN) required.
-      # Dependabot PRs do not receive Actions secrets by default — land action bumps via maintainer PR
-      # or add the same PAT under Settings → Secrets → Dependabot. After kernel public: PAT optional.
       - name: Configure private Go modules (iome-sh/*)
         env:
           IOMESH_CI_PAT: ${{ secrets.IOMESH_CI_PAT }}
@@ -98,9 +96,6 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      # While kernel private: repo secret IOMESH_CI_PAT (or GH_PAT / GO_MODULE_TOKEN) required.
-      # Dependabot PRs do not receive Actions secrets by default — land action bumps via maintainer PR
-      # or add the same PAT under Settings → Secrets → Dependabot. After kernel public: PAT optional.
       - name: Configure private Go modules (iome-sh/*)
         env:
           IOMESH_CI_PAT: ${{ secrets.IOMESH_CI_PAT }}
@@ -119,8 +114,6 @@ jobs:
             echo "::error::Cannot resolve github.com/iome-sh/memory — token lacks repo read, or Dependabot lacks secrets (use maintainer PR or Dependabot secret)"
             exit 1
           fi
-          git config --global url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"
-          go list -m github.com/iome-sh/memory
 
       - name: go test
         run: go test ./... -count=1 -timeout=10m
@@ -139,9 +132,6 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      # While kernel private: repo secret IOMESH_CI_PAT (or GH_PAT / GO_MODULE_TOKEN) required.
-      # Dependabot PRs do not receive Actions secrets by default — land action bumps via maintainer PR
-      # or add the same PAT under Settings → Secrets → Dependabot. After kernel public: PAT optional.
       - name: Configure private Go modules (iome-sh/*)
         env:
           IOMESH_CI_PAT: ${{ secrets.IOMESH_CI_PAT }}
@@ -160,8 +150,6 @@ jobs:
             echo "::error::Cannot resolve github.com/iome-sh/memory — token lacks repo read, or Dependabot lacks secrets (use maintainer PR or Dependabot secret)"
             exit 1
           fi
-          git config --global url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"
-          go list -m github.com/iome-sh/memory
 
       - name: go build binary
         run: |
@@ -182,9 +170,6 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      # While kernel private: repo secret IOMESH_CI_PAT (or GH_PAT / GO_MODULE_TOKEN) required.
-      # Dependabot PRs do not receive Actions secrets by default — land action bumps via maintainer PR
-      # or add the same PAT under Settings → Secrets → Dependabot. After kernel public: PAT optional.
       - name: Configure private Go modules (iome-sh/*)
         env:
           IOMESH_CI_PAT: ${{ secrets.IOMESH_CI_PAT }}
@@ -203,8 +188,6 @@ jobs:
             echo "::error::Cannot resolve github.com/iome-sh/memory — token lacks repo read, or Dependabot lacks secrets (use maintainer PR or Dependabot secret)"
             exit 1
           fi
-          git config --global url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"
-          go list -m github.com/iome-sh/memory
 
       - name: Install govulncheck
         run: go install golang.org/x/vuln/cmd/govulncheck@latest
