@@ -25,9 +25,15 @@ import (
 const (
 	// ServerName is the MCP implementation name (product edge honesty).
 	ServerName = "iomesh-memory-mcp"
-	// ServerVersion stamps the s1457 lean scaffold.
-	ServerVersion = "v0.1.0-s1457"
 )
+
+// ServerVersion is the default MCP implementation version stamp.
+// Overridden at link time by GoReleaser / make build via:
+//
+//	-X github.com/iome-sh/iomesh-memory-mcp/internal/mcphost.ServerVersion=vX.Y.Z
+//
+// Default is a clean semver-ish pre-release stamp (no private ledger serial).
+var ServerVersion = "v0.1.0"
 
 // Config configures the lean edge host.
 type Config struct {

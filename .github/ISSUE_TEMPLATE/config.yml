@@ -3,3 +3,6 @@ contact_links:
   - name: Security vulnerability
     url: https://github.com/iome-sh/iomesh-memory-mcp/security/advisories/new
     about: Please report security issues privately (see SECURITY.md) — not as a public issue.
+  - name: Documentation & readiness
+    url: https://github.com/iome-sh/iomesh-memory-mcp/tree/main/docs
+    about: Read EDGE_DOGFOOD, PUBLIC_FLIP_READINESS, and OPEN_SOURCE_AUDIT before filing a feature request.

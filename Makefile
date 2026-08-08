@@ -1,7 +1,9 @@
-.PHONY: all build test test-race cover vet fmt fmt-check tidy vuln check ci clean help edge-dogfood-gate public-flip-readiness-gate
+.PHONY: all build test test-race cover vet fmt fmt-check tidy vuln check ci clean help edge-dogfood-gate public-flip-readiness-gate release-snapshot
 
 COVER ?= coverage.out
 BIN ?= bin/iomesh-memory-mcp
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo v0.1.0)
+LDFLAGS ?= -s -w -X github.com/iome-sh/iomesh-memory-mcp/internal/mcphost.ServerVersion=$(VERSION)
 
 all: check build
 
@@ -15,7 +17,8 @@ help:
 	@echo "  ci                          fmt-check · vet · test · vuln · build (GH Actions mirror)"
 	@echo "  edge-dogfood-gate           Offline M3 residual greps (no docker daemon)"
 	@echo "  public-flip-readiness-gate  Offline M4 readiness greps (no visibility flip)"
-	@echo "  clean                       Remove bin/ and coverage artifacts"
+	@echo "  release-snapshot            Local GoReleaser snapshot (no publish; needs goreleaser + syft)"
+	@echo "  clean                       Remove bin/ dist/ and coverage artifacts"
 	@echo ""
 	@echo "Honesty: dual_write OFF · not Memory GA · still private · residual PASS ≠ live dogfood / public flip"
 
@@ -48,16 +51,22 @@ vuln:
 
 build:
 	go build ./...
-	go build -o $(BIN) ./cmd/iomesh-memory-mcp
+	go build -trimpath -ldflags "$(LDFLAGS)" -o $(BIN) ./cmd/iomesh-memory-mcp
 
 # Offline M3 edge dogfood residual (file greps only — no docker / server / gcloud).
 edge-dogfood-gate:
 	@bash scripts/edge_dogfood_gate.sh
 
 # Offline M4 public-flip readiness residual (file greps only — no visibility flip / docker / gcloud).
-# residual PASS ≠ public flip · kernel must be public first · still private on s1468.
+# residual PASS ≠ public flip · kernel must be public first · still private on s1474.
 public-flip-readiness-gate:
 	@bash scripts/public_flip_readiness_gate.sh
+
+# Local GoReleaser snapshot (no GitHub publish). Requires goreleaser (+ syft for SBOM).
+# Skips cosign (no OIDC on laptop). Tag releases sign checksums via GitHub Actions.
+#   go install github.com/goreleaser/goreleaser/v2@latest
+release-snapshot:
+	goreleaser release --snapshot --clean --skip=sign
 
 check: fmt-check vet test
 
@@ -66,4 +75,4 @@ check: fmt-check vet test
 ci: fmt-check vet test vuln build
 
 clean:
-	rm -rf bin/ $(COVER) coverage.html
+	rm -rf bin/ dist/ $(COVER) coverage.html

@@ -1,6 +1,11 @@
 # CI for github.com/iome-sh/iomesh-memory-mcp (lean edge Memory MCP host).
 # Required gate: lint · test · build · govulncheck · ci-success.
-# Repo remains private (s1457); does not flip public.
+# Repo remains private until deliberate flip after kernel is public (s1474 readiness).
+# residual PASS ≠ public flip.
+#
+# Private dep residual (github.com/iome-sh/memory):
+#   While kernel private → IOMESH_CI_PAT / GH_PAT / GO_MODULE_TOKEN required (repo read on iome-sh/memory).
+#   After kernel public  → module fetch is public; PAT optional (keep working config until then).
 name: ci
 
 on:
@@ -40,6 +45,7 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      # While kernel private: IOMESH_CI_PAT required. After kernel public: PAT optional.
       - name: Configure private Go modules (iome-sh/*)
         env:
           # IOMESH_CI_PAT / GH_PAT / GO_MODULE_TOKEN: repo or org secret with read on iome-sh/memory
@@ -81,6 +87,7 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      # While kernel private: IOMESH_CI_PAT required. After kernel public: PAT optional.
       - name: Configure private Go modules (iome-sh/*)
         env:
           TOKEN: ${{ secrets.IOMESH_CI_PAT || secrets.GH_PAT || secrets.GO_MODULE_TOKEN || github.token }}
@@ -106,6 +113,7 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      # While kernel private: IOMESH_CI_PAT required. After kernel public: PAT optional.
       - name: Configure private Go modules (iome-sh/*)
         env:
           TOKEN: ${{ secrets.IOMESH_CI_PAT || secrets.GH_PAT || secrets.GO_MODULE_TOKEN || github.token }}
@@ -133,6 +141,7 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      # While kernel private: IOMESH_CI_PAT required. After kernel public: PAT optional.
       - name: Configure private Go modules (iome-sh/*)
         env:
           TOKEN: ${{ secrets.IOMESH_CI_PAT || secrets.GH_PAT || secrets.GO_MODULE_TOKEN || github.token }}
