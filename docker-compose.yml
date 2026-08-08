@@ -1,5 +1,8 @@
-# Local edge Memory MCP (HTTP) for dogfood.
-# dual_write OFF · not Memory GA · binary name iomesh-memory-mcp
+# M3 edge dogfood (s1462) — local HTTP dogfood only.
+# dual_write OFF · not Memory GA · still private · binary/image name iomesh-memory-mcp
+# image: iomesh-memory-mcp:local  (compose PASS ≠ public registry · build PASS ≠ invent GA)
+# Optional path: docker compose up --build — NOT required for make edge-dogfood-gate (offline greps).
+# residual PASS ≠ live dogfood · ≠ public flip · ≠ full platform sidecar parity · no aion import
 services:
   iomesh-memory-mcp:
     build:
