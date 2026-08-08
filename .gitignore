@@ -27,6 +27,13 @@ go.work.sum
 # env file
 .env
 
+# Local palace data / build artifacts
+bin/
+data/
+*.out
+coverage.*
+
 # Editor/IDE
 # .idea/
 # .vscode/
+

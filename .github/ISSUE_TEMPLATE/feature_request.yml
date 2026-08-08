@@ -1,0 +1,31 @@
+name: Feature request
+description: Propose an improvement to the lean edge Memory MCP host
+title: "[feat]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Keep scope lean: FS Palace MCP host. Do **not** invent product Memory GA,
+        default dual_write, or private aion broker features here.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What friction exists today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: Desired tool/API/docs change
+    validations:
+      required: true
+  - type: checkboxes
+    id: honesty
+    attributes:
+      label: Honesty
+      options:
+        - label: This does not claim Memory GA or default dual_write ON
+          required: true
