@@ -4,16 +4,21 @@ Checklist for bringing **github.com/iome-sh/iomesh-memory-mcp** (lean edge Memor
 to the same OSS **process bar** as public **iomesh-tui** and private kernel **memory** (s1452).
 Re-run before any deliberate visibility flip and before each major release.
 
-**Serial stamp:** free eng concurrent **s1457+** after free-floor **s1455** · lag **s1456** ·
-peers TUI s1458 · aion residual s1459 (mention only) · free-floor peer **s1460**.
+**Serial stamp:** free eng concurrent **s1467+** after free-floor **s1465** · lag **s1466** ·
+M4 readiness residual **s1468** · peers memory s1467 · TUI s1469 · aion residual s1470
+(mention only) · free-floor peer **s1471** · free eng **s1473+**.
+
+**M4 readiness SSOT:** [docs/PUBLIC_FLIP_READINESS.md](PUBLIC_FLIP_READINESS.md) ·
+`make public-flip-readiness-gate` (offline greps; residual PASS ≠ public flip).
 
 ## Visibility
 
 | Check | Status |
 |-------|--------|
-| Repository visibility | **Still private** — do **not** flip public on this serial. Deliberate future flip only after re-audit (after kernel public flip in Option A M4). |
+| Repository visibility | **Still private** — do **not** flip public on **s1468**. Deliberate M4 flip only after re-audit and **kernel (`github.com/iome-sh/memory`) public first**. |
 | Private vulnerability reporting path documented | Pass (SECURITY.md · security@iome.sh · advisory) |
 | No accidental “we are public Memory GA” claims | Pass (honesty locks below) |
+| public-flip-readiness residual | Pass (docs + offline gate on s1468; **not** a visibility flip) |
 
 ## Security
 
@@ -59,24 +64,30 @@ peers TUI s1458 · aion residual s1459 (mention only) · free-floor peer **s1460
 | Makefile `ci` / `check` / `vuln` / `fmt-check` | Present |
 | Dockerfile + docker-compose | Present |
 | README badges + honesty locks + quick start | Present |
+| M3 edge dogfood SSOT + offline gate | Present ([EDGE_DOGFOOD.md](EDGE_DOGFOOD.md) · s1462) |
+| M4 public-flip readiness SSOT + offline gate | Present ([PUBLIC_FLIP_READINESS.md](PUBLIC_FLIP_READINESS.md) · s1468) |
 
 ## Residual risks
 
 | Risk | Rating | Notes |
 |------|--------|-------|
-| Visibility still private | **Pass (intentional)** | s1457 does not flip public |
-| Private kernel dependency | Partial | M4 public flip kernel first, then this host |
+| Visibility still private | **Pass (intentional)** | s1468 readiness residual does **not** flip public |
+| Private kernel dependency | Partial | M4: **kernel first**, then this host; private dep residual until kernel public |
+| CI token residual while kernel private | Partial | `GO_MODULE_TOKEN` / org access for module fetch |
 | HTTP unauthenticated lean v1 | Residual | Documented; bind localhost / proxy |
 | Path tenancy same-process | Residual | Documented |
 | dual_write optional later | Residual | Interface not wired; default OFF |
 
-## Maintainer actions **after** going public (future — not this PR)
+## Maintainer actions **after** going public (future — not this PR / not s1468)
 
-1. GitHub → Settings → Change visibility → Public (**deliberate**, after kernel public)  
-2. Enable **Private vulnerability reporting**  
-3. Branch protection on `main`: require PR + status check **`ci-success`**  
-4. Publish GHCR image as **`ghcr.io/iome-sh/iomesh-memory-mcp`** only  
-5. Do **not** invent Memory GA or default dual_write ON  
+See [PUBLIC_FLIP_READINESS.md](PUBLIC_FLIP_READINESS.md) post-flip steps. Summary:
+
+1. Confirm kernel `github.com/iome-sh/memory` is **public** first  
+2. GitHub → Settings → Change visibility → Public (**deliberate**)  
+3. Enable **Private vulnerability reporting**  
+4. Branch protection on `main`: require PR + status check **`ci-success`**  
+5. Publish GHCR image as **`ghcr.io/iome-sh/iomesh-memory-mcp`** only (optional; not invent green on readiness gate)  
+6. Do **not** invent Memory GA or default dual_write ON  
 
 ## Out of scope for this host
 
@@ -85,13 +96,16 @@ peers TUI s1458 · aion residual s1459 (mention only) · free-floor peer **s1460
 - Embed/recmem workers, rqlite plan gate, Cloud Run residual product path  
 - Guarantees about third-party Qdrant / model hubs  
 
-## Audit verdict (s1457)
+## Audit verdict (s1468 refresh)
 
 | Dimension | Verdict |
 |-----------|---------|
 | Process bar vs memory s1452 / iomesh-tui | **Pass** (artifacts + CI spirit aligned) |
+| M4 readiness residual (docs + offline gate) | **Pass** — readiness only |
 | Visibility public-ready flip | **Not done** — still private by design |
 | Product honesty | **Pass** |
 | Lean extract (no aion) | **Pass** |
 
-**Overall:** Ready for **private** OSS process bar + lean MCP dogfood. Public flip remains a separate, deliberate decision after re-audit (Option A M4).
+**Overall:** Ready for **private** OSS process bar + lean MCP dogfood + **M4 readiness residual**.
+Public flip remains a separate, deliberate decision after re-audit and **kernel public first**
+(Option A M4). residual PASS ≠ public flip.

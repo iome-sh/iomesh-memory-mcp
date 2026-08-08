@@ -10,6 +10,7 @@
 | [LICENSE](LICENSE) (MIT) · [NOTICE](NOTICE) | [SECURITY](SECURITY.md) · [CONTRIBUTING](CONTRIBUTING.md) |
 | [SUPPORT](SUPPORT.md) · [CODE_OF_CONDUCT](CODE_OF_CONDUCT.md) | [RELEASING](RELEASING.md) · [CHANGELOG](CHANGELOG.md) |
 | [Open-source audit](docs/OPEN_SOURCE_AUDIT.md) | [**M3 edge dogfood**](docs/EDGE_DOGFOOD.md) |
+| [**M4 public-flip readiness**](docs/PUBLIC_FLIP_READINESS.md) | residual only · still private |
 
 ### Honesty locks (read first)
 
@@ -21,8 +22,8 @@
 - **No aion import** — builds MCP directly on the Palace kernel.
 - **aion broker / control plane stays private**.
 - **Qdrant / ONNX not required** for the default hybrid path (kernel hash/simple embeddings).
-- **Visibility:** this repository is **still private** until a deliberate public flip ([audit](docs/OPEN_SOURCE_AUDIT.md)). M2 lean scaffold (**s1457**) + **M3** edge dogfood surfaces (**s1462**) — residual PASS ≠ public flip / live dogfood green / full platform sidecar parity.
-- Program continuum: free eng concurrent **s1462+** after free-floor **s1460** · lag **s1461** · peers TUI s1463 · aion residual s1464 (mention only) · free-floor peer s1465 · free eng after s1467+ · **M4** public flip later.
+- **Visibility:** this repository is **still private** until a deliberate public flip ([audit](docs/OPEN_SOURCE_AUDIT.md) · [M4 readiness](docs/PUBLIC_FLIP_READINESS.md)). M2 lean scaffold (**s1457**) + **M3** edge dogfood (**s1462**) + **M4** readiness residual (**s1468**) — residual PASS ≠ public flip / live dogfood green / full platform sidecar parity. **Kernel public first**, then this host.
+- Program continuum: free eng concurrent **s1467+** after free-floor **s1465** · lag **s1466** · peers memory s1467 · TUI s1469 · aion residual s1470 (mention only) · free-floor peer s1471 · free eng **s1473+** · serial **s1468** (this host M4 readiness).
 
 ```text
 iomesh-tui (or other MCP client)
@@ -102,11 +103,25 @@ Residual-honest offline SSOT for operator dogfood (stdio · HTTP healthz/`/mcp` 
 |--|--|
 | Checklist | [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) |
 | Offline gate | `make edge-dogfood-gate` → `scripts/edge_dogfood_gate.sh` (file greps only; **no docker daemon**) |
-| Serial | **s1462** · peers TUI s1463 · aion residual s1464 (mention only) · **M4** deliberate later |
+| Serial | **s1462** · peers TUI s1463 · aion residual s1464 (mention only) |
 
 ```bash
 make edge-dogfood-gate   # residual PASS ≠ live dogfood green
-make help                # lists targets including edge-dogfood-gate
+```
+
+## M4 public-flip readiness
+
+Residual-honest offline SSOT for a **deliberate** visibility flip later. **Wait for** `github.com/iome-sh/memory` **public first**, then this host. dual_write **OFF** · not Memory GA · **still private** · residual PASS ≠ public flip · no aion import · naming **iomesh-memory-mcp** · compose PASS ≠ public registry · offline dogfood tip ≠ invent live dogfood green.
+
+| | |
+|--|--|
+| Checklist | [docs/PUBLIC_FLIP_READINESS.md](docs/PUBLIC_FLIP_READINESS.md) |
+| Offline gate | `make public-flip-readiness-gate` → `scripts/public_flip_readiness_gate.sh` (file greps only; **no visibility flip**) |
+| Serial | **s1468** · peers memory s1467 · TUI s1469 · aion residual s1470 (mention only) · free eng **s1473+** |
+
+```bash
+make public-flip-readiness-gate   # residual PASS ≠ public flip
+make help                         # lists edge-dogfood-gate · public-flip-readiness-gate
 ```
 
 ## CLI / env
@@ -154,22 +169,23 @@ Multi-tenant isolation is **path-based** in one process (residual-honest: not cl
 ## Develop / CI
 
 ```bash
-make check              # fmt-check · vet · test
-make ci                 # + govulncheck · build
-make edge-dogfood-gate  # offline M3 residual greps (optional; not required by ci)
+make check                        # fmt-check · vet · test
+make ci                           # + govulncheck · build
+make edge-dogfood-gate            # offline M3 residual greps (optional; not required by ci)
+make public-flip-readiness-gate   # offline M4 readiness greps (optional; not required by ci)
 ```
 
 Required GitHub Actions gate: **ci-success** (lint · test · build · govulncheck).  
-`edge-dogfood-gate` is an offline residual; it does **not** need a docker daemon and is not invent live dogfood.
+`edge-dogfood-gate` and `public-flip-readiness-gate` are offline residuals; they do **not** need a docker daemon, do **not** invent live dogfood, and do **not** flip visibility.
 
-While `memory` is private, CI needs org access or `GO_MODULE_TOKEN` with `repo` read on `iome-sh/memory`.
+While `memory` is private, CI needs org access or `GO_MODULE_TOKEN` with `repo` read on `iome-sh/memory` (CI token residual until kernel public).
 
 ## Option A (edge OSS)
 
 1. **M1** — private kernel TUI-grade bar (`memory` s1452)  
 2. **M2** — this repo lean scaffold/extract (**s1457**)  
-3. **M3** — edge dogfood checklist + offline gate (**s1462**; peers TUI s1463 · aion residual s1464)  
-4. **M4** — public flip (kernel first, then this host) — **later · deliberate**  
+3. **M3** — edge dogfood checklist + offline gate (**s1462**)  
+4. **M4** — public flip readiness residual (**s1468**); flip itself is **later · deliberate · kernel first**  
 5. **M5** — signing / matrix / extensions  
 
 ## License

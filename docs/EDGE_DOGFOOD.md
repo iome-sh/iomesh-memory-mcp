@@ -200,6 +200,14 @@ Peers (mention only): TUI s1463 dogfood tip · aion residual s1464 · free-floor
 
 ---
 
+## M4 public-flip readiness (pointer)
+
+M4 readiness residual lives in [PUBLIC_FLIP_READINESS.md](PUBLIC_FLIP_READINESS.md)
+(`make public-flip-readiness-gate`, serial **s1468**). Kernel public first, then this host.
+**still private** on dogfood and readiness residuals · residual PASS ≠ public flip.
+
+---
+
 ## Audit one-liner (s1462)
 
-**M3 edge dogfood docs + offline gate shipped; dual_write OFF · not Memory GA · still private · residual PASS ≠ live dogfood / public flip / platform sidecar parity · M4 public flip later.**
+**M3 edge dogfood docs + offline gate shipped; dual_write OFF · not Memory GA · still private · residual PASS ≠ live dogfood / public flip / platform sidecar parity · M4 public-flip readiness → s1468.**
