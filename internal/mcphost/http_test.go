@@ -38,6 +38,12 @@ func TestHealthzHandler(t *testing.T) {
 	if !body.NotMemoryGA {
 		t.Fatal("not_memory_ga must be true")
 	}
+	if body.Embeddings != "hash" && body.Embeddings != "onnx" {
+		t.Fatalf("embeddings: %q", body.Embeddings)
+	}
+	if body.Qdrant != "off" {
+		t.Fatalf("qdrant must be off for lean host: %q", body.Qdrant)
+	}
 	if body.Version != ServerVersion {
 		t.Fatalf("version: %q", body.Version)
 	}

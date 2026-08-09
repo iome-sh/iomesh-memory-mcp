@@ -97,7 +97,29 @@ url = "http://127.0.0.1:8080/mcp"
 ```bash
 docker compose up --build
 curl -fsS http://127.0.0.1:8080/healthz
+# expect dual_write=off · not_memory_ga=true · embeddings=hash|onnx · qdrant=off
 ```
+
+### Advanced: better semantic recall (optional ONNX)
+
+Default path needs **no** Qdrant and **no** ONNX. To maximize hybrid/semantic quality:
+
+```bash
+# From a checkout of github.com/iome-sh/memory (public):
+go run ./scripts/download_onnx_model.go
+# then point the host at the model directory/file:
+export MEMORY_ONNX_MODEL_PATH=/path/to/model   # hugot model dir or .onnx file
+iomesh-memory-mcp -palace-root ./data/memory-palaces -tenant default -http-addr :8080
+curl -fsS http://127.0.0.1:8080/healthz   # embeddings should report "onnx" when load succeeds
+```
+
+Compose (optional env passthrough already works if you set the variable on the host):
+
+```bash
+MEMORY_ONNX_MODEL_PATH=/absolute/path/to/model docker compose up --build
+```
+
+**Honesty:** ONNX improves embeddings · dual_write **OFF** · **not** Memory GA · Qdrant still **off** for lean host search · optional path ≠ invent platform GPU palace.
 
 ## Configuration
 
@@ -107,6 +129,13 @@ curl -fsS http://127.0.0.1:8080/healthz
 | `-tenant` | `MEMORY_TENANT` | `default` when empty | Tenant subdirectory |
 | `-http-addr` | `MEMORY_MCP_HTTP_ADDR` | empty = **stdio** | e.g. `:8080` |
 | `-http-path` | `MEMORY_MCP_HTTP_PATH` | `/mcp` | Streamable MCP path (`/healthz` is fixed) |
+| (env only) | `MEMORY_ONNX_MODEL_PATH` | empty = **hash** embeddings | Optional ONNX model dir/file for stronger semantic retrieve · see [memory](https://github.com/iome-sh/memory) README |
+| (env only) | `MEMORY_EMBEDDING_STRICT` | unset | When `true`, ONNX errors do not fall back to hash (kernel) |
+| (env only) | `MEMORY_HUGOT_BACKEND` | `go` | Kernel hugot backend (`go` / `ort` / `auto`) |
+
+**Embeddings:** default is **hash** (no extra deps). Set `MEMORY_ONNX_MODEL_PATH` to maximize semantic `/memory semantic` and hybrid retrieve quality in clients such as `iomesh-tui`.
+
+**Qdrant:** **not required** and **not wired** into this lean host’s search path (`healthz.qdrant=off`). The [memory](https://github.com/iome-sh/memory) kernel has an optional VectorStore API for custom Go; running Qdrant does not change lean host behavior today.
 
 ## MCP tools
 
