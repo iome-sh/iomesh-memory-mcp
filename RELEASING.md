@@ -135,6 +135,56 @@ Local dogfood image remains `iomesh-memory-mcp:local` (compose PASS ≠ public r
 - **1.0+** — SemVer; breaking tool/CLI changes require major bump  
 - Module path: `github.com/iome-sh/iomesh-memory-mcp`  
 
+## Support / version policy (E5)
+
+**Serial stamp:** free eng **s1500** — residual-honest support + version policy for the public binary host **`iomesh-memory-mcp`**. Docs only; **does not** invent forever-green signed releases, a successful production tag already shipped for all consumers, or **Edge Memory GA**.
+
+This section closes the host-side packaging of Edge Memory GA candidacy exit criterion **E5** (version / support policy). Kernel semver remains owned by [`github.com/iome-sh/memory`](https://github.com/iome-sh/memory) (library · tag + `go get`; no GoReleaser there).
+
+### What is supported
+
+| Surface | Policy |
+|---------|--------|
+| **Supported line** | **Latest GitHub Release tag** on the main line (`v*` annotated tags cut deliberately from `main`) |
+| **Best effort** | `main` tip and the latest published `v0.x` (or later major) release family |
+| **Security** | Fixes on the default branch when feasible; see [SECURITY.md](SECURITY.md) |
+| **Not a cloud SLA** | Local-primary edge host — **no** hosted Palace / multitenant Memory uptime guarantee |
+
+### Release packaging matrix (pointer)
+
+Full stage table: [M5 signing / matrix](#m5-signing--matrix-post-public-residual) above.
+
+| Piece | Truth |
+|-------|--------|
+| **GoReleaser** | [`.goreleaser.yaml`](.goreleaser.yaml) · multi-OS/arch binaries |
+| **SBOM** | Syft SPDX per archive (`*.sbom.spdx.json`) on tag releases |
+| **Keyless cosign** | Sign-blob on `checksums.txt` via GitHub OIDC / Fulcio (tag path only) |
+| **Workflow** | [`.github/workflows/release.yml`](.github/workflows/release.yml) on annotated `v*` tags |
+
+### Production pinning
+
+- **Pin versions for production** — install a specific tag (`@vX.Y.Z` or download the GitHub Release asset); do not treat `@latest` / floating `main` as a production pin.
+- **Snapshot ≠ production release** — `make release-snapshot` and Actions `workflow_dispatch` snapshot runs produce local/CI artifacts without publish + sign. Snapshots are dry-run / preflight only.
+- Kernel pin: consumers should also pin `github.com/iome-sh/memory` to a known module version when building from source for production.
+
+```bash
+# Production-shaped install (example pin — replace with a real published tag)
+go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@vX.Y.Z
+
+# Local snapshot dry-run (NOT a production release)
+make release-snapshot   # → dist/ · no GitHub publish · no cosign
+```
+
+### E5 honesty locks (non-claims)
+
+- residual PASS **≠ invent forever-green signed releases**
+- residual PASS **≠ invent Edge Memory GA** · residual PASS ≠ invent bare Memory GA · residual PASS ≠ invent hosted Memory GA
+- Support policy present **≠** invent Edge Memory GA declared
+- dual_write **OFF** · **not Memory GA** · product name **`iomesh-memory-mcp`**
+- **no auto-tag** · **aion stays private** · compose/local image ≠ public registry invent green
+
+See also [SUPPORT.md](SUPPORT.md) (issues · security · scope) and [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) (E3 install matrix · E4 operator runbook).
+
 ## Artifacts
 
 | Path | Notes |
