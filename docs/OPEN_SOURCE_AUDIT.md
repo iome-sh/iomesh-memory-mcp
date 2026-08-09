@@ -16,7 +16,7 @@ prior M4 readiness residual **s1468** · free eng concurrent **s1467+** after fr
 
 | Check | Status |
 |-------|--------|
-| Repository visibility | **Still private** — do **not** flip public on **s1474**. Deliberate M4 flip only after re-audit and **kernel (`github.com/iome-sh/memory`) public first**. |
+| Repository visibility | **Public** (MIT · flipped deliberately) — do **not** flip public on **s1474**. Deliberate M4 flip only after re-audit and **kernel (`github.com/iome-sh/memory`) public first**. |
 | Private vulnerability reporting path documented | Pass (SECURITY.md · security@iome.sh · advisory) |
 | No accidental “we are public Memory GA” claims | Pass (honesty locks below) |
 | public-flip-readiness residual | Pass (docs + offline gate; **not** a visibility flip) |
@@ -75,7 +75,7 @@ prior M4 readiness residual **s1468** · free eng concurrent **s1467+** after fr
 
 | Risk | Rating | Notes |
 |------|--------|-------|
-| Visibility still private | **Pass (intentional)** | s1474 final audit does **not** flip public |
+| Visibility public | **Pass** (deliberate flip complete) | s1474 final audit does **not** flip public |
 | Private kernel dependency | **Partial** until kernel public | M4: **kernel first**, then this host |
 | CI token residual while kernel private | **Partial** | `IOMESH_CI_PAT` / `GO_MODULE_TOKEN` / org access for module fetch; optional after kernel public |
 | HTTP unauthenticated lean v1 | Residual | Documented; bind localhost / proxy |
@@ -112,10 +112,19 @@ See [PUBLIC_FLIP_READINESS.md](PUBLIC_FLIP_READINESS.md) post-flip steps. Summar
 | Process bar vs memory s1452 | **Pass** (artifacts + CI spirit aligned) |
 | M4 readiness residual (docs + offline gate) | **Pass** — readiness only |
 | Residual private kernel dep | **Partial** until kernel public |
-| Visibility public-ready flip | **Not done** — still private by design · readiness ≠ invent flip |
+| Visibility public flip | **Done** — public MIT · residual PASS ≠ invent Memory GA · readiness ≠ invent flip (historical) |
 | Product honesty | **Pass** |
 | Lean extract (no aion) | **Pass** |
 
-**Overall:** **Ready for deliberate public flip after kernel is public** · still private ·
+**Overall:** **Public** (host + kernel) · dual_write OFF · not Memory GA · no GOPRIVATE required · Ready for deliberate public flip was pre-flip verdict · 
 readiness ≠ invent flip. residual PASS ≠ public flip · dual_write OFF · not Memory GA ·
 no aion import · naming iomesh-memory-mcp · kernel first.
+
+
+## Public import (post-flip)
+
+```bash
+# No GOPRIVATE / PAT:
+go get github.com/iome-sh/iomesh-memory-mcp@main
+go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main
+```

@@ -17,7 +17,7 @@ next **M4** public flip is deliberate and later (not this serial).
 |------|---------|
 | **dual_write OFF** | Lean host does not publish audit dual_write. Default residual; do not invent ON. |
 | **not Memory GA** | This binary is the **edge host only**, not product Memory GA. |
-| **still private** | Repo remains private until a deliberate **M4** visibility flip. |
+| **public** | Repo is public MIT · dual_write OFF · not Memory GA · still private was pre-flip residual language retired. |
 | **residual PASS ≠ live dogfood** | Offline gate / checklist PASS does **not** invent a live green dogfood run. |
 | **residual PASS ≠ public flip** | Process bar + docs do not flip GH visibility or invent GHCR publish green. |
 | **residual PASS ≠ full platform sidecar parity** | Lean extract is not the private aion `aion-memory-mcp` sidecar feature set. |

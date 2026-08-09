@@ -10,7 +10,7 @@
 | [LICENSE](LICENSE) (MIT) · [NOTICE](NOTICE) | [SECURITY](SECURITY.md) · [CONTRIBUTING](CONTRIBUTING.md) |
 | [SUPPORT](SUPPORT.md) · [CODE_OF_CONDUCT](CODE_OF_CONDUCT.md) | [RELEASING](RELEASING.md) · [CHANGELOG](CHANGELOG.md) |
 | [Open-source audit](docs/OPEN_SOURCE_AUDIT.md) | [**M3 edge dogfood**](docs/EDGE_DOGFOOD.md) |
-| [**M4 public-flip readiness**](docs/PUBLIC_FLIP_READINESS.md) | residual only · still private |
+| [Open-source audit](docs/OPEN_SOURCE_AUDIT.md) · [edge dogfood](docs/EDGE_DOGFOOD.md) | public MIT · dual_write OFF |
 
 ### Honesty locks (read first)
 
@@ -22,7 +22,7 @@
 - **No aion import** — builds MCP directly on the Palace kernel.
 - **aion broker / control plane stays private**.
 - **Qdrant / ONNX not required** for the default hybrid path (kernel hash/simple embeddings).
-- **Visibility:** this repository is **still private** until a deliberate public flip ([audit](docs/OPEN_SOURCE_AUDIT.md) · [M4 readiness](docs/PUBLIC_FLIP_READINESS.md)). M2 lean scaffold (**s1457**) + **M3** edge dogfood (**s1462**) + **M4** readiness residual (**s1468**) + **s1474** final TUI-parity audit closeout — residual PASS ≠ public flip / live dogfood green / full platform sidecar parity · readiness ≠ invent flip. **Kernel public first**, then this host.
+- **Visibility:** this repository is **public** (MIT). Product honesty unchanged: **not Memory GA** · dual_write **OFF** · aion broker stays private. Kernel dependency is public `github.com/iome-sh/memory` — **no `GOPRIVATE` / PAT required** for `go get` / CI.
 - Program continuum: free eng concurrent **s1467+** after free-floor **s1465** · lag **s1466** · peers memory s1467 · TUI s1469 · aion residual s1470 (mention only) · free-floor peer s1471 · free eng **s1473+** · serial **s1474** (final public-flip audit closeout · still private).
 
 ```text
@@ -43,8 +43,6 @@ local palace FS   (PALACE_ROOT/<tenant>/…)
 ### Build
 
 ```bash
-export GOPRIVATE=github.com/iome-sh/*
-export GONOSUMDB=github.com/iome-sh/*
 make build   # → bin/iomesh-memory-mcp
 ```
 
@@ -88,8 +86,8 @@ url = "http://127.0.0.1:8080/mcp"
 ### Docker Compose (local edge)
 
 ```bash
-# While kernel is private, pass a GitHub token with read access to iome-sh/memory:
-export GH_TOKEN=ghp_...
+# Public modules: no PAT required for github.com/iome-sh/memory.
+# Optional GH_TOKEN only if your Docker build still needs private deps.
 docker compose up --build
 # image: iomesh-memory-mcp:local  — compose PASS ≠ public registry · build PASS ≠ invent GA
 curl -fsS http://127.0.0.1:8080/healthz
