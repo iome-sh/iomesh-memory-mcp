@@ -14,6 +14,7 @@ package mcphost
 import (
 	"fmt"
 	"log"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -41,28 +42,72 @@ type Config struct {
 	PalaceRoot string
 	// DefaultTenant used when tool input omits tenant.
 	DefaultTenant string
+	// EmbeddingMode is residual-honest: "hash" (default) or "onnx" when MEMORY_ONNX_MODEL_PATH loads.
+	// Qdrant is NOT wired into lean host search (kernel VectorStore residual only).
+	EmbeddingMode string
 }
 
 // Host owns per-tenant PalaceStore instances and MCP registration.
 type Host struct {
-	cfg    Config
-	mu     sync.Mutex
-	stores map[string]*palace.PalaceStore
+	cfg      Config
+	mu       sync.Mutex
+	stores   map[string]*palace.PalaceStore
+	embedFn  palace.EmbeddingFunc
+	batchFn  palace.BatchEmbeddingFunc
+	embedDim int
 }
 
 // New constructs a Host. PalaceRoot must be non-empty.
+// Optional advanced embeddings: set MEMORY_ONNX_MODEL_PATH to an ONNX model dir/file
+// (see github.com/iome-sh/memory README). Empty path keeps hash embeddings (default).
+// dual_write OFF · not Memory GA · Qdrant not required / not wired for lean search.
 func New(cfg Config) (*Host, error) {
 	root := strings.TrimSpace(cfg.PalaceRoot)
 	if root == "" {
 		return nil, fmt.Errorf("mcphost: palace root required")
 	}
+	mode := "hash"
+	var embedFn palace.EmbeddingFunc
+	var batchFn palace.BatchEmbeddingFunc
+	dim := 0
+	if path := strings.TrimSpace(os.Getenv(palace.EnvONNXModelPath)); path != "" {
+		emb, err := palace.NewGONNXEmbedder(palace.GONNXOptions{ModelPath: path})
+		if err != nil {
+			return nil, fmt.Errorf("mcphost: ONNX embeddings (MEMORY_ONNX_MODEL_PATH): %w", err)
+		}
+		embedFn = emb.Func()
+		batchFn = emb.BatchFunc()
+		dim = emb.Dimension()
+		if dim <= 0 {
+			dim = palace.ResolveEmbeddingDim(path)
+		}
+		mode = "onnx"
+		log.Printf("mcphost: embeddings=onnx path=%s dim=%d dual_write=off not_memory_ga=true", path, dim)
+	} else {
+		// Explicit hash path; NewPalaceStoreWithConfig also defaults EmbeddingFunc.
+		embedFn = palace.GenerateSimpleEmbedding
+		mode = "hash"
+		log.Printf("mcphost: embeddings=hash (set MEMORY_ONNX_MODEL_PATH for ONNX) dual_write=off not_memory_ga=true")
+	}
 	return &Host{
 		cfg: Config{
 			PalaceRoot:    root,
 			DefaultTenant: strings.TrimSpace(cfg.DefaultTenant),
+			EmbeddingMode: mode,
 		},
-		stores: make(map[string]*palace.PalaceStore),
+		stores:   make(map[string]*palace.PalaceStore),
+		embedFn:  embedFn,
+		batchFn:  batchFn,
+		embedDim: dim,
 	}, nil
+}
+
+// EmbeddingMode returns residual-honest embedding backend for healthz / operators.
+func (h *Host) EmbeddingMode() string {
+	if h == nil || strings.TrimSpace(h.cfg.EmbeddingMode) == "" {
+		return "hash"
+	}
+	return h.cfg.EmbeddingMode
 }
 
 // ResolveTenant returns a non-empty tenant id (input, else default, else "default").
@@ -84,6 +129,8 @@ func (h *Host) TenantDir(tenant string) string {
 
 // Store returns (creating if needed) the PalaceStore for tenant.
 // Multi-tenant isolation is path-based only; this is one process residual-honest.
+// Embeddings: hash default · optional ONNX when host was constructed with MEMORY_ONNX_MODEL_PATH.
+// Qdrant is not attached here (lean FS hybrid + EmbeddingFunc re-rank only).
 func (h *Host) Store(tenant string) *palace.PalaceStore {
 	key := h.ResolveTenant(tenant)
 	h.mu.Lock()
@@ -92,7 +139,12 @@ func (h *Host) Store(tenant string) *palace.PalaceStore {
 		return ps
 	}
 	base := filepath.Join(h.cfg.PalaceRoot, key)
-	ps := palace.NewPalaceStore(base)
+	cfg := palace.PalaceConfig{
+		BaseDir:            base,
+		EmbeddingFunc:      h.embedFn,
+		BatchEmbeddingFunc: h.batchFn,
+	}
+	ps := palace.NewPalaceStoreWithConfig(cfg)
 	h.stores[key] = ps
 	return ps
 }

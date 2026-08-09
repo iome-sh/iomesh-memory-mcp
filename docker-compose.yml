@@ -20,8 +20,14 @@ services:
       MEMORY_TENANT: ${MEMORY_TENANT:-default}
       MEMORY_MCP_HTTP_ADDR: ":8080"
       MEMORY_MCP_HTTP_PATH: /mcp
+      # Optional advanced embeddings (empty = hash). Mount model + set path for onnx.
+      MEMORY_ONNX_MODEL_PATH: ${MEMORY_ONNX_MODEL_PATH:-}
+      MEMORY_EMBEDDING_STRICT: ${MEMORY_EMBEDDING_STRICT:-}
+      MEMORY_HUGOT_BACKEND: ${MEMORY_HUGOT_BACKEND:-go}
     volumes:
       - palace-data:/data/memory-palaces
+      # Optional: mount ONNX model dir when MEMORY_ONNX_MODEL_PATH is set inside the container
+      # - ${MEMORY_ONNX_HOST_PATH:-./models}:/models:ro
     # distroless has no curl/wget — probe from host:
     #   curl -fsS http://127.0.0.1:8080/healthz
     restart: unless-stopped

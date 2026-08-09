@@ -148,10 +148,17 @@ func (h *Host) handleRetrieve(_ context.Context, _ *mcp.CallToolRequest, in retr
 		opts.TimeTo = &t
 	}
 
-	// Default hybrid path uses palace EmbeddingFunc (hash fallback; no Qdrant/ONNX required).
-	// Provide a query vec so vector re-rank path can run when embeddings are available.
+	// Default hybrid path uses palace EmbeddingFunc (hash default; optional ONNX via MEMORY_ONNX_MODEL_PATH).
+	// Provide a query vec so vector re-rank path can run. Qdrant not required for lean host search.
 	if ps.Config.EmbeddingFunc != nil {
-		opts.QueryVec = ps.Config.EmbeddingFunc(query, 384)
+		dim := h.embedDim
+		if dim <= 0 {
+			dim = palace.ResolveEmbeddingDimFromEnv()
+		}
+		if dim <= 0 {
+			dim = 384
+		}
+		opts.QueryVec = ps.Config.EmbeddingFunc(query, dim)
 	}
 
 	entries := ps.SearchMemoryWithOptions(query, opts)
@@ -196,7 +203,14 @@ func (h *Host) handleSearchSemantic(_ context.Context, _ *mcp.CallToolRequest, i
 		Limit: limit,
 	}
 	if query != "" && ps.Config.EmbeddingFunc != nil {
-		opts.QueryVec = ps.Config.EmbeddingFunc(query, 384)
+		dim := h.embedDim
+		if dim <= 0 {
+			dim = palace.ResolveEmbeddingDimFromEnv()
+		}
+		if dim <= 0 {
+			dim = 384
+		}
+		opts.QueryVec = ps.Config.EmbeddingFunc(query, dim)
 	}
 	entries := ps.SearchMemoryWithOptions(query, opts)
 	// Fallback: if hybrid returns empty and query set, substring filter tier listing.
@@ -226,7 +240,7 @@ func (h *Host) handleSearchSemantic(_ context.Context, _ *mcp.CallToolRequest, i
 	out := searchSemanticOutput{
 		Facts:  facts,
 		Tenant: tenant,
-		Note:   "semantic_tier_hybrid; Qdrant/ONNX not required for default path; not Memory GA",
+		Note:   "semantic_tier_hybrid; default hash · optional ONNX via MEMORY_ONNX_MODEL_PATH · Qdrant not wired lean host; not Memory GA",
 	}
 	return toolJSON(out), out, nil
 }

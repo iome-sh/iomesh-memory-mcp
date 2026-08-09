@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -17,21 +18,38 @@ type HealthzResponse struct {
 	Service     string `json:"service"`
 	DualWrite   string `json:"dual_write"`
 	NotMemoryGA bool   `json:"not_memory_ga"`
-	Version     string `json:"version,omitempty"`
+	// Embeddings: "hash" (default) or "onnx" when MEMORY_ONNX_MODEL_PATH is set at process start.
+	Embeddings string `json:"embeddings"`
+	// Qdrant: lean host does not wire VectorStore into search — always "off" here (kernel residual only).
+	Qdrant  string `json:"qdrant"`
+	Version string `json:"version,omitempty"`
 }
 
 // HealthzHandler returns 200 JSON honesty locks for edge probes.
-func HealthzHandler() http.HandlerFunc {
+// Optional host argument reports live embedding mode; nil → env snapshot.
+func HealthzHandler(hosts ...*Host) http.HandlerFunc {
+	var host *Host
+	if len(hosts) > 0 {
+		host = hosts[0]
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
+		}
+		emb := "hash"
+		if host != nil {
+			emb = host.EmbeddingMode()
+		} else if strings.TrimSpace(os.Getenv("MEMORY_ONNX_MODEL_PATH")) != "" {
+			emb = "onnx" // process env intent; host construction may still fail-open
 		}
 		body := HealthzResponse{
 			Status:      "ok",
 			Service:     ServerName,
 			DualWrite:   "off",
 			NotMemoryGA: true,
+			Embeddings:  emb,
+			Qdrant:      "off",
 			Version:     ServerVersion,
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -47,6 +65,8 @@ func HealthzHandler() http.HandlerFunc {
 type HTTPConfig struct {
 	Addr string
 	Path string
+	// Host optional — when set, /healthz reports live EmbeddingMode.
+	Host *Host
 }
 
 // RunHTTP serves streamable MCP at Path with GET /healthz and graceful shutdown.
@@ -60,7 +80,7 @@ func RunHTTP(ctx context.Context, sdk *mcp.Server, cfg HTTPConfig) error {
 	})
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/healthz", HealthzHandler())
+	mux.HandleFunc("/healthz", HealthzHandler(cfg.Host))
 	if path == "/" {
 		mux.Handle("/", handler)
 	} else {

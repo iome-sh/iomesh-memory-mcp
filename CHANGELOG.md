@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Optional ONNX embeddings (s1525)** — when `MEMORY_ONNX_MODEL_PATH` is set, the lean host constructs Palace stores with kernel ONNX embeddings (else hash). `/healthz` reports `embeddings` (`hash`|`onnx`) and `qdrant=off` (Qdrant not wired into lean search). dual_write OFF · not Memory GA · optional path ≠ invent platform GPU palace.
+
+
 - **s1509 / E4 TUI client attach residual dogfood evidence** (public binary host residual-honest):
   - [docs/EDGE_DOGFOOD_EVIDENCE.md](docs/EDGE_DOGFOOD_EVIDENCE.md) — stamp **2026-08-09T06:23:34Z** · MCP tip `f46afe2` · TUI tip `6b3958a` · healthz ok on `:18081` (`dual_write=off`, `not_memory_ga=true`) · TUI `iomesh mcp --connect` → **connected=1** **tools=6** (`memory_ingest_turn`, `memory_retrieve`, `memory_search_semantic`, `memory_list`, `memory_compact_status`, `memory_facts_as_of`)
   - [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) — E4 section peer link to s1509 client attach evidence

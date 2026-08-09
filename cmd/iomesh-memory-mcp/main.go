@@ -49,14 +49,15 @@ func main() {
 		if err := mcphost.RunHTTP(ctx, sdk, mcphost.HTTPConfig{
 			Addr: addr,
 			Path: *httpPath,
+			Host: host,
 		}); err != nil {
 			log.Fatalf("http: %v", err)
 		}
 		return
 	}
 
-	log.Printf("%s mode=stdio palace=%s tenant_default=%q dual_write=off not_memory_ga=true version=%s",
-		mcphost.ServerName, *palaceRoot, host.ResolveTenant(""), mcphost.ServerVersion)
+	log.Printf("%s mode=stdio palace=%s tenant_default=%q embeddings=%s qdrant=off dual_write=off not_memory_ga=true version=%s",
+		mcphost.ServerName, *palaceRoot, host.ResolveTenant(""), host.EmbeddingMode(), mcphost.ServerVersion)
 	if err := sdk.Run(ctx, &mcp.StdioTransport{}); err != nil && ctx.Err() == nil {
 		log.Fatalf("mcp server: %v", err)
 	}
