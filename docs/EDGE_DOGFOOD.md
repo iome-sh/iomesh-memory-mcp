@@ -11,7 +11,7 @@ This doc advances **Edge Memory GA candidacy** exit criteria on the public binar
 | **E3** | Install matrix clarity (stdio · HTTP · Docker Compose · TUI attach example) |
 | **E4** | Operator dogfood **runbook** (ingest → retrieve → list → as-of → status) |
 
-**Serial stamp:** **s1500** · free eng **s1504** (local E4 evidence log) · free eng after free-floor **s1499+** · prior M3 offline SSOT **s1462** · peers TUI **s1463** · aion residual **s1464** (mention only) · free-floor peer **s1465** · free eng after **s1467+** · M4 public flip residual **s1468+** · M5 signing **s1492** · Edge Memory GA candidacy residual (aion **s1496**, mention only).
+**Serial stamp:** **s1500** · free eng **s1504** (local E4 unit + healthz evidence) · free eng **s1509** (TUI client attach evidence) · free eng after free-floor **s1499+** · prior M3 offline SSOT **s1462** · peers TUI **s1463** · aion residual **s1464** (mention only) · free-floor peer **s1465** · free eng after **s1467+** · M4 public flip residual **s1468+** · M5 signing **s1492** · Edge Memory GA candidacy residual (aion **s1496**, mention only).
 
 **Modules are public:** host + kernel (`github.com/iome-sh/memory`) are public MIT. Historical “still private” language on pre-flip residuals is **retired** for install paths (no `GOPRIVATE` / PAT for consumers).
 
@@ -108,11 +108,18 @@ Peers: TUI product tip serial **s1463** (mention only — not implemented in thi
 Human (or client-driven) steps for residual-honest edge dogfood.  
 **This runbook documents order of operations only — residual PASS ≠ live dogfood green.** Do not treat checklist presence as invent of a recorded green run.
 
-**Local residual evidence (s1504):** contemporaneous unit + healthz stamps are logged in
-[EDGE_DOGFOOD_EVIDENCE.md](EDGE_DOGFOOD_EVIDENCE.md) (date UTC **2026-08-09T06:06:22Z**, tip
-`f46afe2`). Honesty: residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ invent
+**Local residual evidence (s1504 · s1509):** contemporaneous stamps are logged in
+[EDGE_DOGFOOD_EVIDENCE.md](EDGE_DOGFOOD_EVIDENCE.md):
+
+| Serial | Date UTC | What was observed |
+|--------|----------|-------------------|
+| **s1504** | **2026-08-09T06:06:22Z** | unit `go test ./internal/mcphost/` ok · HTTP healthz ok (tip `f46afe2`) |
+| **s1509** | **2026-08-09T06:23:34Z** | healthz ok on `:18081` · TUI `iomesh mcp --connect` → **connected=1** **tools=6** (MCP tip `f46afe2` · TUI tip `6b3958a`) |
+
+Honesty: residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ invent
 forever product green · dual_write OFF · not bare Memory GA · not hosted Memory GA ·
-**unit test path ≠ full MCP client attach dogfood** · **healthz ≠ tool round-trip over MCP JSON-RPC**.
+**unit test path ≠ full MCP client attach dogfood** · **healthz ≠ tool round-trip over MCP JSON-RPC** ·
+**attach + tools/list ≠ invent Edge Memory GA** · **attach + tools/list ≠ invent forever green full product dogfood**.
 
 ### E4.1 Build
 
@@ -219,7 +226,7 @@ curl -fsS http://127.0.0.1:8080/healthz
 | **M5** signing / matrix / extensions (s1492) | Packaging residual (tip ≠ invent forever-green signed releases) |
 | **E3** install matrix | **This serial (s1500)** — documented above |
 | **E4** operator dogfood runbook | **s1500** — runbook only; residual PASS ≠ live dogfood green |
-| **E4** local residual evidence | **s1504** — [EDGE_DOGFOOD_EVIDENCE.md](EDGE_DOGFOOD_EVIDENCE.md) (unit tools + healthz); residual PASS ≠ invent Edge Memory GA · unit ≠ full MCP client attach · healthz ≠ MCP JSON-RPC tool RT |
+| **E4** local residual evidence | **s1504** unit + healthz · **s1509** TUI client attach — [EDGE_DOGFOOD_EVIDENCE.md](EDGE_DOGFOOD_EVIDENCE.md); residual PASS ≠ invent Edge Memory GA · unit ≠ full MCP client attach · healthz ≠ MCP JSON-RPC tool RT · attach + tools/list ≠ invent Edge Memory GA / forever green full product dogfood |
 | **E5** support / version policy | [RELEASING.md](../RELEASING.md) · [SUPPORT.md](../SUPPORT.md) |
 | **Edge Memory GA declared** | **Not this serial** — residual PASS ≠ invent Edge Memory GA |
 
@@ -247,10 +254,10 @@ Peers (mention only): TUI s1463 dogfood tip · aion residual s1464 · free-floor
 | [Dockerfile](../Dockerfile) | Multi-stage build → `iomesh-memory-mcp` |
 | [Makefile](../Makefile) | `edge-dogfood-gate` · `check` · `ci` |
 | [scripts/edge_dogfood_gate.sh](../scripts/edge_dogfood_gate.sh) | Offline residual greps |
-| [EDGE_DOGFOOD_EVIDENCE.md](EDGE_DOGFOOD_EVIDENCE.md) | **s1504** local residual E4 evidence (unit + healthz) |
+| [EDGE_DOGFOOD_EVIDENCE.md](EDGE_DOGFOOD_EVIDENCE.md) | **s1504** unit + healthz · **s1509** TUI client attach evidence |
 | [docs/OPEN_SOURCE_AUDIT.md](OPEN_SOURCE_AUDIT.md) | Visibility / OSS process bar |
 | [docs/PUBLIC_FLIP_READINESS.md](PUBLIC_FLIP_READINESS.md) | M4 public-flip readiness residual |
-| [CHANGELOG.md](../CHANGELOG.md) | s1462 · s1500 · s1504 entries |
+| [CHANGELOG.md](../CHANGELOG.md) | s1462 · s1500 · s1504 · s1509 entries |
 
 ---
 
@@ -262,6 +269,6 @@ residual PASS ≠ public flip (process residual; visibility flip is a separate d
 
 ---
 
-## Audit one-liner (s1500 · s1504 · prior s1462)
+## Audit one-liner (s1500 · s1504 · s1509 · prior s1462)
 
-**E3 install matrix + E4 operator dogfood runbook shipped on public host; s1504 local residual E4 evidence (unit tools + healthz) in EDGE_DOGFOOD_EVIDENCE; dual_write OFF · not Memory GA · public · residual PASS ≠ live dogfood / invent Edge Memory GA / public flip invent / platform sidecar parity · unit ≠ full MCP client attach · healthz ≠ MCP JSON-RPC tool RT · M4 readiness → PUBLIC_FLIP_READINESS · E5 → RELEASING/SUPPORT · residual PASS ≠ invent Edge Memory GA declared.**
+**E3 install matrix + E4 operator dogfood runbook shipped on public host; s1504 local residual E4 evidence (unit tools + healthz) + s1509 TUI client attach (connected=1 tools=6) in EDGE_DOGFOOD_EVIDENCE; dual_write OFF · not Memory GA · public · residual PASS ≠ live dogfood / invent Edge Memory GA / public flip invent / platform sidecar parity · unit ≠ full MCP client attach · healthz ≠ MCP JSON-RPC tool RT · attach + tools/list ≠ invent Edge Memory GA / forever green full product dogfood · M4 readiness → PUBLIC_FLIP_READINESS · E5 → RELEASING/SUPPORT · residual PASS ≠ invent Edge Memory GA declared.**
