@@ -155,12 +155,13 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 | Document | Description |
 |----------|-------------|
 | [CHANGELOG.md](CHANGELOG.md) | Release notes |
-| [RELEASING.md](RELEASING.md) | Tags, GoReleaser, SBOM, cosign |
+| [RELEASING.md](RELEASING.md) | Tags, GoReleaser, SBOM, cosign · support / version policy (E5) |
 | [SECURITY.md](SECURITY.md) | Security policy |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contributor guide |
 | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community standards |
-| [SUPPORT.md](SUPPORT.md) | How to get help |
-| [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) | Local edge run checklist |
+| [SUPPORT.md](SUPPORT.md) | Issues, security, support scope |
+| [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) | E3 install matrix · E4 operator dogfood runbook |
+| [docs/PUBLIC_FLIP_READINESS.md](docs/PUBLIC_FLIP_READINESS.md) | M4 public-flip readiness residual |
 | [docs/OPEN_SOURCE_AUDIT.md](docs/OPEN_SOURCE_AUDIT.md) | OSS process checklist |
 
 ## Related projects
