@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **s1504 / E4 local residual dogfood evidence** (public binary host residual-honest):
+  - [docs/EDGE_DOGFOOD_EVIDENCE.md](docs/EDGE_DOGFOOD_EVIDENCE.md) — contemporaneous stamp **2026-08-09T06:06:22Z** · tip `f46afe2` · unit `go test ./internal/mcphost/` ok · HTTP `/healthz` ok (`dual_write=off`, `not_memory_ga=true`)
+  - [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) — E4 section + continuum link to evidence log
+  - Honesty: residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ invent forever product green · dual_write OFF · not bare Memory GA · not hosted Memory GA · unit ≠ full MCP client attach · healthz ≠ MCP JSON-RPC tool round-trip
 - **s1500 / E3 install matrix · E4 operator dogfood runbook · E5 support/version policy** (public binary host residual-honest):
   - [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) — E3 install matrix (stdio · HTTP · Docker Compose · TUI attach) · **E4 operator runbook** (build → stdio health → `memory_ingest_turn` → `memory_retrieve` → `memory_list` → `memory_facts_as_of` → `memory_compact_status` → optional HTTP /healthz)
   - [RELEASING.md](RELEASING.md) — **Support / version policy (E5)**: latest GitHub Release tag · GoReleaser + SBOM + keyless cosign · pin for production · snapshot ≠ production release
@@ -45,7 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Honesty
 
-- dual_write **OFF** · not product Memory GA · host + kernel public · residual PASS ≠ live dogfood / invent forever-green signed releases · residual PASS ≠ invent Edge Memory GA · readiness ≠ invent flip · tip ≠ invent tag release shipped · no aion import · naming **iomesh-memory-mcp** · kernel public prerequisite met · M5 packaging residual (s1492) ≠ invent M5 complete · s1500 E3–E5 docs ≠ invent Edge Memory GA declared · no auto-tag
+- dual_write **OFF** · not product Memory GA · host + kernel public · residual PASS ≠ live dogfood / invent forever-green signed releases · residual PASS ≠ invent Edge Memory GA · readiness ≠ invent flip · tip ≠ invent tag release shipped · no aion import · naming **iomesh-memory-mcp** · kernel public prerequisite met · M5 packaging residual (s1492) ≠ invent M5 complete · s1500 E3–E5 docs ≠ invent Edge Memory GA declared · s1504 local evidence ≠ invent Edge Memory GA / forever product green · no auto-tag
 
 ## [0.1.0-s1457] — 2026-08-08
 
