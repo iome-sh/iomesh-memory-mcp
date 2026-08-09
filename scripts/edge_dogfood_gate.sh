@@ -96,12 +96,12 @@ need_needle "docs/EDGE_DOGFOOD.md" "edge-dogfood-gate|edge_dogfood_gate" "gate t
 
 echo
 echo "-- README / Makefile / CHANGELOG --"
-need_needle "README.md" "EDGE_DOGFOOD|edge dogfood|M3 edge dogfood" "README M3 edge dogfood"
-need_needle "README.md" "edge-dogfood-gate" "README edge-dogfood-gate"
-need_needle "README.md" "s1462" "README continuum s1462"
-need_needle "README.md" "dual_write OFF|dual_write \*\*OFF\*\*" "README dual_write OFF"
-need_needle "README.md" "not product Memory GA|not Memory GA" "README not Memory GA"
+# Public README is consumer-facing; continuum honesty lives in docs/EDGE_DOGFOOD.md
+need_needle "README.md" "EDGE_DOGFOOD|edge-dogfood-gate|edge dogfood" "README edge dogfood docs pointer"
 need_needle "README.md" "iomesh-memory-mcp" "README naming"
+need_needle "docs/EDGE_DOGFOOD.md" "s1462" "EDGE_DOGFOOD continuum s1462"
+need_needle "docs/EDGE_DOGFOOD.md" "dual_write OFF|dual_write remains OFF" "EDGE_DOGFOOD dual_write OFF"
+need_needle "docs/EDGE_DOGFOOD.md" "not product Memory GA|not Memory GA" "EDGE_DOGFOOD not Memory GA"
 need_needle "Makefile" "edge-dogfood-gate" "Makefile edge-dogfood-gate"
 need_needle "Makefile" "edge_dogfood_gate\\.sh" "Makefile script path"
 need_needle "CHANGELOG.md" "s1462" "CHANGELOG s1462"

@@ -2,51 +2,62 @@
 
 [![ci](https://github.com/iome-sh/iomesh-memory-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/iome-sh/iomesh-memory-mcp/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Go Reference](https://pkg.go.dev/badge/github.com/iome-sh/iomesh-memory-mcp.svg)](https://pkg.go.dev/github.com/iome-sh/iomesh-memory-mcp)
 
-**Lean edge Memory MCP host** — stdio or streamable HTTP tools over the Palace kernel (`github.com/iome-sh/memory`).
-
-| Docs | |
-|------|--|
-| [LICENSE](LICENSE) (MIT) · [NOTICE](NOTICE) | [SECURITY](SECURITY.md) · [CONTRIBUTING](CONTRIBUTING.md) |
-| [SUPPORT](SUPPORT.md) · [CODE_OF_CONDUCT](CODE_OF_CONDUCT.md) | [RELEASING](RELEASING.md) · [CHANGELOG](CHANGELOG.md) |
-| [Open-source audit](docs/OPEN_SOURCE_AUDIT.md) | [**M3 edge dogfood**](docs/EDGE_DOGFOOD.md) |
-| [Open-source audit](docs/OPEN_SOURCE_AUDIT.md) · [edge dogfood](docs/EDGE_DOGFOOD.md) | public MIT · dual_write OFF |
-
-### Honesty locks (read first)
-
-- **Edge host only** — this binary is **not product Memory GA**.
-- **Local-primary** — durable memory lives under `PALACE_ROOT` on the operator’s filesystem.
-- **dual_write OFF** by default (audit dual_write is a later optional path; not wired in lean v1).
-- **Naming honesty** — product edge binary/image = **`iomesh-memory-mcp`** / `ghcr.io/iome-sh/iomesh-memory-mcp`.  
-  Do **not** ship product edge as **`aion-memory-mcp`** (private monorepo may thin-wrap only).
-- **No aion import** — builds MCP directly on the Palace kernel.
-- **aion broker / control plane stays private**.
-- **Qdrant / ONNX not required** for the default hybrid path (kernel hash/simple embeddings).
-- **Visibility:** this repository is **public** (MIT). Product honesty unchanged: **not Memory GA** · dual_write **OFF** · aion broker stays private. Kernel dependency is public `github.com/iome-sh/memory` — **no `GOPRIVATE` / PAT required** for `go get` / CI.
-- Program continuum: free eng concurrent **s1467+** after free-floor **s1465** · lag **s1466** · peers memory s1467 · TUI s1469 · aion residual s1470 (mention only) · free-floor peer s1471 · free eng **s1473+** · serial **s1474** (final public-flip audit closeout · still private).
+**MCP host for local agent memory** — exposes the [memory](https://github.com/iome-sh/memory) kernel over [Model Context Protocol](https://modelcontextprotocol.io/) (stdio or streamable HTTP).
 
 ```text
-iomesh-tui (or other MCP client)
+MCP client (e.g. iomesh-tui)
         │
         ▼
-iomesh-memory-mcp   ← this repo (stdio | HTTP)
+iomesh-memory-mcp     ← this repo (stdio | HTTP)
         │
         ▼
-github.com/iome-sh/memory  PalaceStore
+github.com/iome-sh/memory  (PalaceStore)
         │
         ▼
-local palace FS   (PALACE_ROOT/<tenant>/…)
+local filesystem under PALACE_ROOT/<tenant>/…
+```
+
+## Features
+
+- **stdio or HTTP** — default stdio for local clients; optional streamable HTTP + `GET /healthz`
+- **Local-first** — durable data under `PALACE_ROOT` on disk
+- **Thin host** — tools map to the public `github.com/iome-sh/memory` API
+- **Tenant paths** — one process, filesystem isolation by tenant subdirectory
+- **Releases** — multi-platform binaries via GoReleaser (SBOM + keyless cosign on checksums)
+
+## Install
+
+### From source
+
+```bash
+go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@latest
+```
+
+### Build from a clone
+
+```bash
+git clone https://github.com/iome-sh/iomesh-memory-mcp.git
+cd iomesh-memory-mcp
+make build   # → bin/iomesh-memory-mcp
+```
+
+Requires the Go version in [`go.mod`](go.mod). The kernel dependency is public: `github.com/iome-sh/memory`.
+
+### Tagged releases
+
+Push an annotated `v*` tag to run [`.github/workflows/release.yml`](.github/workflows/release.yml). See [RELEASING.md](RELEASING.md) for the release checklist and signing matrix.
+
+Local dry-run (needs `goreleaser` + `syft` on `PATH`):
+
+```bash
+make release-snapshot
 ```
 
 ## Quick start
 
-### Build
-
-```bash
-make build   # → bin/iomesh-memory-mcp
-```
-
-### Stdio (local / TUI attach)
+### Stdio (local MCP client)
 
 ```bash
 export PALACE_ROOT=./data/memory-palaces
@@ -54,7 +65,7 @@ export MEMORY_TENANT=default
 ./bin/iomesh-memory-mcp -palace-root "$PALACE_ROOT" -tenant "$MEMORY_TENANT"
 ```
 
-### HTTP (streamable MCP + healthz)
+### HTTP (streamable MCP + health)
 
 ```bash
 ./bin/iomesh-memory-mcp \
@@ -64,93 +75,51 @@ export MEMORY_TENANT=default
   -http-path /mcp
 
 curl -fsS http://127.0.0.1:8080/healthz
-# {"status":"ok","service":"iomesh-memory-mcp","dual_write":"off","not_memory_ga":true,"version":"v0.1.0"}
 ```
 
-### TUI attach snippet (illustrative)
+### Client config example
 
 ```toml
-# e.g. MCP client config — product name is iomesh-memory-mcp
 [[mcp.servers]]
 name = "iomesh-memory-mcp"
 command = "/path/to/iomesh-memory-mcp"
 args = ["-palace-root", "/path/to/memory-palaces", "-tenant", "default"]
 ```
 
-HTTP attach (when supported by the client):
+HTTP (when the client supports a URL transport):
 
 ```text
 url = "http://127.0.0.1:8080/mcp"
 ```
 
-### Docker Compose (local edge)
+### Docker Compose
 
 ```bash
-# Public modules: no PAT required for github.com/iome-sh/memory.
-# Optional GH_TOKEN only if your Docker build still needs private deps.
 docker compose up --build
-# image: iomesh-memory-mcp:local  — compose PASS ≠ public registry · build PASS ≠ invent GA
 curl -fsS http://127.0.0.1:8080/healthz
 ```
 
-## M3 edge dogfood
+## Configuration
 
-Residual-honest offline SSOT for operator dogfood (stdio · HTTP healthz/`/mcp` · local compose · tool honesty). **Not** live dogfood invent · **not** public flip · **not** Memory GA · dual_write **OFF**.
-
-| | |
-|--|--|
-| Checklist | [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) |
-| Offline gate | `make edge-dogfood-gate` → `scripts/edge_dogfood_gate.sh` (file greps only; **no docker daemon**) |
-| Serial | **s1462** · peers TUI s1463 · aion residual s1464 (mention only) |
-
-```bash
-make edge-dogfood-gate   # residual PASS ≠ live dogfood green
-```
-
-## M4 public-flip readiness
-
-Residual-honest offline SSOT for a **deliberate** visibility flip later. **Wait for** `github.com/iome-sh/memory` **public first**, then this host. dual_write **OFF** · not Memory GA · **still private** · residual PASS ≠ public flip · no aion import · naming **iomesh-memory-mcp** · compose PASS ≠ public registry · offline dogfood tip ≠ invent live dogfood green.
-
-| | |
-|--|--|
-| Checklist | [docs/PUBLIC_FLIP_READINESS.md](docs/PUBLIC_FLIP_READINESS.md) |
-| Offline gate | `make public-flip-readiness-gate` → `scripts/public_flip_readiness_gate.sh` (file greps only; **no visibility flip**) |
-| Serial | **s1474** final TUI-parity audit closeout · prior **s1468** readiness residual · peers memory s1467 · TUI s1469 · aion residual s1470 (mention only) · free eng **s1473+** |
-
-```bash
-make public-flip-readiness-gate   # residual PASS ≠ public flip · readiness ≠ invent flip
-make help                         # lists edge-dogfood-gate · public-flip-readiness-gate · release-snapshot
-```
-
-## CLI / env
-
-| Flag | Env | Default | Notes |
-|------|-----|---------|--------|
-| `-palace-root` | `PALACE_ROOT` | `./data/memory-palaces` or `/data/memory-palaces` | Tenant base dir |
-| `-tenant` | `MEMORY_TENANT` | `default` (when empty at resolve) | Default tenant subdir |
+| Flag | Environment | Default | Notes |
+|------|-------------|---------|--------|
+| `-palace-root` | `PALACE_ROOT` | `./data/memory-palaces` (or `/data/memory-palaces` in image) | Base directory for tenants |
+| `-tenant` | `MEMORY_TENANT` | `default` when empty | Tenant subdirectory |
 | `-http-addr` | `MEMORY_MCP_HTTP_ADDR` | empty = **stdio** | e.g. `:8080` |
-| `-http-path` | `MEMORY_MCP_HTTP_PATH` | `/mcp` | Streamable MCP path |
-
-Deprecated env aliases (one log line if set without preferred key):
-
-- `AION_MEMORY_MCP_HTTP_ADDR` → prefer `MEMORY_MCP_HTTP_ADDR`
-- `AION_MEMORY_MCP_HTTP_PATH` → prefer `MEMORY_MCP_HTTP_PATH`
-- `AION_PALACE_ROOT` → prefer `PALACE_ROOT`
-
-Lean v1 has **no** `-enable-audit` / `-aion-url` (dual_write residual · default OFF).
+| `-http-path` | `MEMORY_MCP_HTTP_PATH` | `/mcp` | Streamable MCP path (`/healthz` is fixed) |
 
 ## MCP tools
 
-| Tool | Kernel call |
-|------|-------------|
+| Tool | Kernel API |
+|------|------------|
 | `memory_ingest_turn` | `IngestTurn` |
 | `memory_retrieve` | `SearchMemoryWithOptions` |
-| `memory_search_semantic` | hybrid on `TierSemantic` (+ substring residual) |
+| `memory_search_semantic` | Hybrid search on semantic tier |
 | `memory_list` | `ListMemoryWithOptions` |
 | `memory_compact_status` | `GetStats` |
 | `memory_facts_as_of` | `ListFactsAsOf` |
 
-Server name: **`iomesh-memory-mcp`** · version stamp e.g. **`v0.1.0`** (GoReleaser / `make build` ldflags override).
+Server name: **`iomesh-memory-mcp`**. Default version stamp: **`v0.1.0`** (overridden by `make build` / GoReleaser ldflags).
 
 ## Tenant layout
 
@@ -162,33 +131,46 @@ $PALACE_ROOT/
     …
 ```
 
-Multi-tenant isolation is **path-based** in one process (residual-honest: not cloud multi-tenant).
+Isolation is path-based within a single process.
 
-## Develop / CI
+## Development
 
 ```bash
-make check                        # fmt-check · vet · test
-make ci                           # + govulncheck · build
-make edge-dogfood-gate            # offline M3 residual greps (optional; not required by ci)
-make public-flip-readiness-gate   # offline M4 readiness greps (optional; not required by ci)
-make release-snapshot             # local GoReleaser multi-arch dry-run (needs goreleaser + syft)
+make check   # fmt-check · vet · test
+make ci      # + govulncheck · build
+make test
 ```
 
-Required GitHub Actions gate: **ci-success** (lint · test · build · govulncheck).  
-`edge-dogfood-gate` and `public-flip-readiness-gate` are offline residuals; they do **not** need a docker daemon, do **not** invent live dogfood, and do **not** flip visibility.
+Optional offline checklists (file greps only; not required for `ci-success`):
 
-While `memory` is private, CI needs org access or `IOMESH_CI_PAT` / `GO_MODULE_TOKEN` with `repo` read on `iome-sh/memory` (CI token residual). **After the kernel is public**, module fetch is public and the PAT is optional.
+```bash
+make edge-dogfood-gate
+make public-flip-readiness-gate
+```
 
-Binary release packaging (TUI parity): tag `v*` → [`.github/workflows/release.yml`](.github/workflows/release.yml) · [`.goreleaser.yaml`](.goreleaser.yaml) · keyless cosign on checksums — see [RELEASING.md](RELEASING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 
-## Option A (edge OSS)
+## Documentation
 
-1. **M1** — private kernel TUI-grade bar (`memory` s1452)  
-2. **M2** — this repo lean scaffold/extract (**s1457**)  
-3. **M3** — edge dogfood checklist + offline gate (**s1462**)  
-4. **M4** — public flip readiness residual (**s1468**) + final TUI-parity audit closeout (**s1474**); flip itself is **later · deliberate · kernel first**  
-5. **M5** — extensions / matrix (signing already in release workflow)  
+| Document | Description |
+|----------|-------------|
+| [CHANGELOG.md](CHANGELOG.md) | Release notes |
+| [RELEASING.md](RELEASING.md) | Tags, GoReleaser, SBOM, cosign |
+| [SECURITY.md](SECURITY.md) | Security policy |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Contributor guide |
+| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community standards |
+| [SUPPORT.md](SUPPORT.md) | How to get help |
+| [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) | Local edge run checklist |
+| [docs/OPEN_SOURCE_AUDIT.md](docs/OPEN_SOURCE_AUDIT.md) | OSS process checklist |
+
+## Related projects
+
+| Repository | Role |
+|------------|------|
+| [memory](https://github.com/iome-sh/memory) | Go memory kernel library |
+| [iomesh-tui](https://github.com/iome-sh/iomesh-tui) | Agent TUI/CLI (MCP client) |
+| [iomesh-client-sdk-go](https://github.com/iome-sh/iomesh-client-sdk-go) | Official Go client for I/O Mesh |
 
 ## License
 
-MIT © IOMesh Technology Ltd. — see [LICENSE](LICENSE).
+[MIT](LICENSE) · [NOTICE](NOTICE)
