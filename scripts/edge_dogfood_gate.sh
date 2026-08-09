@@ -47,7 +47,7 @@ need_needle() {
 }
 
 echo "== edge_dogfood_gate (s1462 M3) offline — $ROOT =="
-echo "   dual_write OFF · not Memory GA · still private · no docker daemon required"
+echo "   dual_write OFF · not Memory GA · public · dual_write OFF · no docker daemon required"
 echo
 
 # --- required surfaces ---
@@ -67,7 +67,7 @@ echo "-- docs/EDGE_DOGFOOD.md honesty + checklist --"
 need_needle "docs/EDGE_DOGFOOD.md" "s1462" "serial s1462"
 need_needle "docs/EDGE_DOGFOOD.md" "dual_write OFF|dual_write \*\*OFF\*\*|dual_write OFF" "dual_write OFF"
 need_needle "docs/EDGE_DOGFOOD.md" "not Memory GA" "not Memory GA"
-need_needle "docs/EDGE_DOGFOOD.md" "still private" "still private"
+need_needle "docs/EDGE_DOGFOOD.md" "public|still private" "public (or historical still private)"
 need_needle "docs/EDGE_DOGFOOD.md" "residual PASS ≠ live dogfood|residual PASS != live dogfood" "residual ≠ live dogfood"
 need_needle "docs/EDGE_DOGFOOD.md" "residual PASS ≠ public flip|residual PASS != public flip" "residual ≠ public flip"
 need_needle "docs/EDGE_DOGFOOD.md" "full platform sidecar parity|platform sidecar parity" "no full platform sidecar parity"

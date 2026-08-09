@@ -1,12 +1,8 @@
 # CI for github.com/iome-sh/iomesh-memory-mcp (lean edge Memory MCP host).
 # Required gate: lint · test · build · govulncheck · ci-success.
-# Repo remains private until deliberate flip after kernel is public.
-# residual PASS ≠ public flip.
-#
-# Private dep residual (github.com/iome-sh/memory):
-#   While kernel private → IOMESH_CI_PAT / GH_PAT / GO_MODULE_TOKEN required (repo read on iome-sh/memory).
-#   After kernel public  → module fetch is public; PAT optional (keep working config until then).
-#   Dependabot: add IOMESH_CI_PAT under Settings → Secrets and variables → Dependabot, or land bumps via maintainer PR.
+# Both this host and github.com/iome-sh/memory are PUBLIC — no GOPRIVATE / PAT required.
+# After kernel public: module fetch is public; PAT optional/removed (historical IOMESH_CI_PAT residual retired).
+# residual PASS ≠ invent Memory GA · dual_write OFF · aion stays private.
 name: ci
 
 on:
@@ -28,8 +24,6 @@ concurrency:
 
 env:
   GOTOOLCHAIN: auto
-  GOPRIVATE: github.com/iome-sh/*
-  GONOSUMDB: github.com/iome-sh/*
 
 jobs:
   lint:
@@ -46,29 +40,17 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Configure private Go modules (iome-sh/*)
-        env:
-          IOMESH_CI_PAT: ${{ secrets.IOMESH_CI_PAT }}
-          GH_PAT: ${{ secrets.GH_PAT }}
-          GO_MODULE_TOKEN: ${{ secrets.GO_MODULE_TOKEN }}
-          GITHUB_TOKEN: ${{ github.token }}
+      - name: Module verify (public modules)
         run: |
           set -euo pipefail
-          TOKEN="${IOMESH_CI_PAT:-${GH_PAT:-${GO_MODULE_TOKEN:-${GITHUB_TOKEN:-}}}}"
-          if [ -z "$TOKEN" ]; then
-            echo "::error::No token available to fetch private github.com/iome-sh/memory (set IOMESH_CI_PAT)"
-            exit 1
-          fi
-          git config --global url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"
-          if ! go list -m github.com/iome-sh/memory; then
-            echo "::error::Cannot resolve github.com/iome-sh/memory — token lacks repo read, or Dependabot lacks secrets (use maintainer PR or Dependabot secret)"
-            exit 1
-          fi
-
-      - name: Module verify
-        run: |
+          go list -m github.com/iome-sh/memory
           go mod download
           go mod verify
+          go mod tidy
+          git diff --exit-code -- go.mod go.sum || {
+            echo "::error::go.mod/go.sum dirty after tidy — run tidy and commit"
+            exit 1
+          }
 
       - name: gofmt
         run: |
@@ -96,25 +78,6 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Configure private Go modules (iome-sh/*)
-        env:
-          IOMESH_CI_PAT: ${{ secrets.IOMESH_CI_PAT }}
-          GH_PAT: ${{ secrets.GH_PAT }}
-          GO_MODULE_TOKEN: ${{ secrets.GO_MODULE_TOKEN }}
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          TOKEN="${IOMESH_CI_PAT:-${GH_PAT:-${GO_MODULE_TOKEN:-${GITHUB_TOKEN:-}}}}"
-          if [ -z "$TOKEN" ]; then
-            echo "::error::No token available to fetch private github.com/iome-sh/memory (set IOMESH_CI_PAT)"
-            exit 1
-          fi
-          git config --global url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"
-          if ! go list -m github.com/iome-sh/memory; then
-            echo "::error::Cannot resolve github.com/iome-sh/memory — token lacks repo read, or Dependabot lacks secrets (use maintainer PR or Dependabot secret)"
-            exit 1
-          fi
-
       - name: go test
         run: go test ./... -count=1 -timeout=10m
 
@@ -131,25 +94,6 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
-
-      - name: Configure private Go modules (iome-sh/*)
-        env:
-          IOMESH_CI_PAT: ${{ secrets.IOMESH_CI_PAT }}
-          GH_PAT: ${{ secrets.GH_PAT }}
-          GO_MODULE_TOKEN: ${{ secrets.GO_MODULE_TOKEN }}
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          TOKEN="${IOMESH_CI_PAT:-${GH_PAT:-${GO_MODULE_TOKEN:-${GITHUB_TOKEN:-}}}}"
-          if [ -z "$TOKEN" ]; then
-            echo "::error::No token available to fetch private github.com/iome-sh/memory (set IOMESH_CI_PAT)"
-            exit 1
-          fi
-          git config --global url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"
-          if ! go list -m github.com/iome-sh/memory; then
-            echo "::error::Cannot resolve github.com/iome-sh/memory — token lacks repo read, or Dependabot lacks secrets (use maintainer PR or Dependabot secret)"
-            exit 1
-          fi
 
       - name: go build binary
         run: |
@@ -169,25 +113,6 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
-
-      - name: Configure private Go modules (iome-sh/*)
-        env:
-          IOMESH_CI_PAT: ${{ secrets.IOMESH_CI_PAT }}
-          GH_PAT: ${{ secrets.GH_PAT }}
-          GO_MODULE_TOKEN: ${{ secrets.GO_MODULE_TOKEN }}
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          TOKEN="${IOMESH_CI_PAT:-${GH_PAT:-${GO_MODULE_TOKEN:-${GITHUB_TOKEN:-}}}}"
-          if [ -z "$TOKEN" ]; then
-            echo "::error::No token available to fetch private github.com/iome-sh/memory (set IOMESH_CI_PAT)"
-            exit 1
-          fi
-          git config --global url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"
-          if ! go list -m github.com/iome-sh/memory; then
-            echo "::error::Cannot resolve github.com/iome-sh/memory — token lacks repo read, or Dependabot lacks secrets (use maintainer PR or Dependabot secret)"
-            exit 1
-          fi
 
       - name: Install govulncheck
         run: go install golang.org/x/vuln/cmd/govulncheck@latest

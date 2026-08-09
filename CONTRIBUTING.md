@@ -22,10 +22,7 @@ workflows until that flip lands. Readiness residual PASS ≠ public flip.
 #
 # While github.com/iome-sh/memory is still private, set GOPRIVATE so module fetch
 # uses git credentials (SSH or a PAT with repo read on iome-sh/memory):
-export GOPRIVATE=github.com/iome-sh/*
-export GONOSUMDB=github.com/iome-sh/*
-
-git clone git@github.com:iome-sh/iomesh-memory-mcp.git
+git clone https://github.com/iome-sh/iomesh-memory-mcp.git
 cd iomesh-memory-mcp
 make test
 make vet
