@@ -1,5 +1,12 @@
 # Publish multi-platform binaries via GoReleaser when a version tag is pushed.
 # Local dry-run: make release-snapshot
+#
+# Host + kernel (github.com/iome-sh/memory) are PUBLIC — no GOPRIVATE / PAT required
+# for release builds (aligned with ci.yml public modules). Historical IOMESH_CI_PAT
+# residual retired after public flip.
+# Keep GoReleaser + Syft SBOM + keyless cosign (id-token: write) intact.
+# residual PASS ≠ invent forever-green signed releases · dual_write OFF · not Memory GA ·
+# no auto-tag · tip ≠ invent a successful public tag release already shipped.
 name: release
 
 on:
@@ -24,10 +31,6 @@ permissions:
 
 env:
   GOTOOLCHAIN: auto
-  # While github.com/iome-sh/memory is private, release builds need the same
-  # private-module residual as ci.yml. After kernel is public, GOPRIVATE/PAT optional.
-  GOPRIVATE: github.com/iome-sh/*
-  GONOSUMDB: github.com/iome-sh/*
 
 jobs:
   goreleaser:
@@ -46,15 +49,13 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      # Private kernel residual: IOMESH_CI_PAT required while memory is private.
-      # After kernel public, module fetch is public and this rewrite is optional.
-      - name: Configure private Go modules (iome-sh/*)
-        env:
-          TOKEN: ${{ secrets.IOMESH_CI_PAT || secrets.GH_PAT || secrets.GO_MODULE_TOKEN || github.token }}
+      # Public modules: host + github.com/iome-sh/memory — no GOPRIVATE / PAT.
+      - name: Module verify (public modules)
         run: |
           set -euo pipefail
-          git config --global url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"
           go list -m github.com/iome-sh/memory
+          go mod download
+          go mod verify
 
       # Syft generates SPDX SBOMs declared in .goreleaser.yaml (sboms:).
       - name: Install Syft

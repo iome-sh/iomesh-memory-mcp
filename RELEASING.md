@@ -28,9 +28,9 @@ Checklist items that must move with the tag:
 3. [ ] [CHANGELOG.md](CHANGELOG.md) updated (move Unreleased → version section)  
 4. [ ] No secrets or palace data in tree  
 5. [ ] Honesty locks intact: dual_write OFF · not Memory GA · no aion import · naming **iomesh-memory-mcp**  
-6. [ ] **Kernel public prerequisite** for public consumers: `github.com/iome-sh/memory` must be public (or consumers need `GOPRIVATE` + token while kernel private)  
+6. [ ] **Kernel public prerequisite met:** `github.com/iome-sh/memory` is public — no `GOPRIVATE` / PAT for consumers or release CI  
 7. [ ] Default `ServerVersion` string matches the tag family (GoReleaser ldflags set `v{{.Version}}`)  
-8. [ ] Annotated tag `vX.Y.Z` pushed (GoReleaser **release** workflow green; assets on GitHub Release)
+8. [ ] Annotated tag `vX.Y.Z` pushed (GoReleaser **release** workflow green; assets on GitHub Release) — **no auto-tag**; maintainers cut tags deliberately
 
 ## Tag and publish (maintainers)
 
@@ -42,6 +42,7 @@ git commit -am "chore: release vX.Y.Z"
 git push origin main
 
 # Annotated tag — triggers .github/workflows/release.yml (GoReleaser)
+# Do not auto-tag from CI; maintainers push tags deliberately.
 git tag -a vX.Y.Z -m "vX.Y.Z — short release title"
 git push origin vX.Y.Z
 ```
@@ -66,9 +67,9 @@ LICENSE + README + CHANGELOG; `checksums.txt` + per-archive **SPDX SBOM**
 via GitHub OIDC / Fulcio (`id-token: write`). No long-lived `COSIGN_*` secrets.
 Snapshot / `workflow_dispatch` runs use `--skip=sign`.
 
-**Private kernel residual:** while `github.com/iome-sh/memory` is private, the release
-workflow needs the same module token residual as CI (`IOMESH_CI_PAT` / org access).
-After the kernel is public, module fetch is public and the PAT is optional.
+**Public modules:** host + kernel (`github.com/iome-sh/memory`) are public. Release CI
+fetches modules without `GOPRIVATE` / private PAT (aligned with `ci.yml` after public flip).
+Historical `IOMESH_CI_PAT` residual is retired for release builds.
 
 Verify:
 
@@ -80,6 +81,46 @@ cosign verify-blob \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
   checksums.txt
 ```
+
+## M5 signing / matrix (post-public residual)
+
+**Serial stamp:** free eng **s1492** — residual-honest M5 signing/matrix tip for the public
+binary host **`iomesh-memory-mcp`**. Packaging and verify docs only; **does not** invent a
+successful public tag release already shipped or forever-green signed CI.
+
+### Release matrix
+
+| Stage | What runs |
+|-------|-----------|
+| **Trigger** | Annotated `v*` tag push (maintainer deliberate — **no auto-tag**) or `workflow_dispatch` snapshot |
+| **Workflow** | [`.github/workflows/release.yml`](.github/workflows/release.yml) |
+| **Build** | GoReleaser v2 ([`.goreleaser.yaml`](.goreleaser.yaml)): CGO_ENABLED=0, multi-OS/arch |
+| **Archives** | `tar.gz` / Windows `zip` + LICENSE + README + CHANGELOG |
+| **Checksums** | `checksums.txt` (sha256) |
+| **SBOM** | Syft SPDX per archive (`*.sbom.spdx.json`) |
+| **Sign** | Keyless cosign on `checksums.txt` (tag path only; OIDC `id-token: write`) |
+| **Publish** | GitHub Release assets (tag path); snapshot skips publish + sign |
+
+Platforms: **linux / darwin / windows** × **amd64 / arm64** (windows/arm64 ignored).
+
+### Local dry-run
+
+```bash
+# Needs goreleaser (+ syft for SBOM generation). Skips cosign (no laptop OIDC).
+make release-snapshot   # → dist/ multi-arch; no GitHub publish
+```
+
+Snapshot CI path: Actions **workflow_dispatch** with `snapshot: true` →
+`goreleaser release --snapshot --clean --skip=sign`.
+
+### M5 honesty locks (non-claims)
+
+- This tip **≠ invent a successful public tag release already shipped**
+- residual PASS **≠ invent forever-green signed releases** · residual PASS **≠ invent M5 complete**
+- dual_write **OFF** · **not Memory GA** · no invent GA
+- Product binary name **`iomesh-memory-mcp`** (not `aion-memory-mcp`)
+- **Kernel public prerequisite met** (`github.com/iome-sh/memory` public; no release PAT)
+- **aion stays private** · **no auto-tag releases**
 
 ## Image name honesty
 
@@ -98,8 +139,8 @@ Local dogfood image remains `iomesh-memory-mcp:local` (compose PASS ≠ public r
 
 | Path | Notes |
 |------|--------|
-| GitHub Release assets | GoReleaser on each `v*` tag (primary binary packaging) |
-| `go install …@vX.Y.Z` | Works with a Go toolchain; needs public kernel (or GOPRIVATE) |
+| GitHub Release assets | GoReleaser on each deliberate `v*` tag (primary binary packaging) |
+| `go install …@vX.Y.Z` | Works with a Go toolchain; public kernel — no GOPRIVATE |
 | CI `build` job | linux/amd64 smoke on main / PR |
 | GHCR image | Optional deliberate publish — not invent green on readiness residual |
 
@@ -113,5 +154,7 @@ go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@vX.Y.Z
 
 - dual_write **OFF** · not product Memory GA · no aion import  
 - Product name **iomesh-memory-mcp** (not `aion-memory-mcp`)  
-- Repo visibility flip is a separate deliberate act (**kernel first**)  
-- residual PASS ≠ public flip · release packaging present ≠ invent GHCR green  
+- Kernel public prerequisite **met** · host public after deliberate flip  
+- residual PASS ≠ invent signed release forever green · tip ≠ invent tag release shipped  
+- M5 packaging residual present ≠ invent M5 complete · release packaging present ≠ invent GHCR green  
+- **aion stays private** · **no auto-tag**  

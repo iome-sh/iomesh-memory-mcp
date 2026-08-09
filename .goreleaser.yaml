@@ -82,7 +82,7 @@ release:
 
     ```bash
     # Go module (any platform with Go toolchain)
-    # After github.com/iome-sh/memory is public, no GOPRIVATE needed for the kernel dep.
+    # Kernel github.com/iome-sh/memory is public — no GOPRIVATE / PAT for the dep.
     go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v{{.Version}}
 
     # Or download the archive for your OS/arch from the Assets list below.
@@ -94,7 +94,7 @@ release:
     #     checksums.txt
     ```
 
-    Honesty: dual_write OFF · not product Memory GA · product name **iomesh-memory-mcp**.
+    Honesty: dual_write OFF · not product Memory GA · product name **iomesh-memory-mcp** · residual PASS ≠ invent forever-green signed releases.
 
     See [RELEASING.md](https://github.com/iome-sh/iomesh-memory-mcp/blob/main/RELEASING.md) and [CHANGELOG.md](https://github.com/iome-sh/iomesh-memory-mcp/blob/main/CHANGELOG.md).
 
