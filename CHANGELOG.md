@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Go toolchain pin `go 1.26.6` so CI `govulncheck` is clean on stdlib GO-2026-5972 / GO-2026-5026 (fixed in go1.26.6).
+
 ### Fixed
 - **`memory_retrieve` / `memory_search_semantic` (#21):** do not inject hash `QueryVec`. SHA-256 unit vectors skipped the kernel keyword path and dropped exact tokens past `Limit`. ONNX still passes a query vector. dual_write OFF · not Memory GA.
 
