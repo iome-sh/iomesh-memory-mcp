@@ -161,6 +161,7 @@ Optional additional surface (not required for the E4 sequence):
 | Tool | Intent |
 |------|--------|
 | `memory_search_semantic` | Hybrid semantic (+ residual) |
+| `memory_write` | Durable fact `Write` / optional `WriteAndSupersede` (#20) · dual_write OFF |
 
 Operator expectations when dogfooding against a client:
 

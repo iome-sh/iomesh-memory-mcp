@@ -124,6 +124,86 @@ func TestRetrieveHashKeepsHyphenNeedle(t *testing.T) {
 	}
 }
 
+func TestWriteFactAndSupersede(t *testing.T) {
+	h, err := New(Config{PalaceRoot: t.TempDir(), DefaultTenant: "dogfood"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	ctx := context.Background()
+	const key = "lattice:status"
+
+	_, first, err := h.handleWrite(ctx, nil, writeInput{
+		Summary:   "lattice open",
+		Full:      "human-gate lattice is open",
+		EntityKey: key,
+		Tier:      2,
+	})
+	if err != nil {
+		t.Fatalf("write 1: %v", err)
+	}
+	if first.DualWrite != "off" || first.Audited || !first.Superseded {
+		t.Fatalf("honesty/supersede: %+v", first)
+	}
+	if first.Tier != 2 {
+		t.Fatalf("default/set tier: %+v", first)
+	}
+
+	_, second, err := h.handleWrite(ctx, nil, writeInput{
+		Summary:   "lattice closed",
+		Full:      "human-gate lattice is closed",
+		EntityKey: key,
+	})
+	if err != nil {
+		t.Fatalf("write 2: %v", err)
+	}
+	if !second.Superseded {
+		t.Fatal("second write should WriteAndSupersede")
+	}
+
+	_, facts, err := h.handleFactsAsOf(ctx, nil, factsAsOfInput{
+		AsOf:   time.Now().UTC().Format(time.RFC3339),
+		Entity: key,
+		Limit:  10,
+	})
+	if err != nil {
+		t.Fatalf("facts as of: %v", err)
+	}
+	foundSecond := false
+	for _, f := range facts.Facts {
+		if f.ID == first.MemoryID {
+			t.Fatalf("superseded fact still valid: %+v", f)
+		}
+		if f.ID == second.MemoryID {
+			foundSecond = true
+		}
+	}
+	if !foundSecond {
+		t.Fatalf("new fact missing from as-of; got %+v", facts.Facts)
+	}
+
+	off := false
+	_, plain, err := h.handleWrite(ctx, nil, writeInput{
+		Summary:   "catalog honesty pin",
+		Tags:      []string{"honesty:catalog"},
+		EntityKey: "catalog:honesty",
+		Supersede: &off,
+	})
+	if err != nil {
+		t.Fatalf("write no-supersede: %v", err)
+	}
+	if plain.Superseded || plain.DualWrite != "off" {
+		t.Fatalf("plain write: %+v", plain)
+	}
+
+	_, empty, err := h.handleWrite(ctx, nil, writeInput{})
+	if err == nil {
+		t.Fatal("expected summary or full required")
+	}
+	if empty.MemoryID != "" {
+		t.Fatalf("empty write leaked id: %+v", empty)
+	}
+}
+
 func TestTenantPathIsolation(t *testing.T) {
 	root := t.TempDir()
 	h, err := New(Config{PalaceRoot: root})

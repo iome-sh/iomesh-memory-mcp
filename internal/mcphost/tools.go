@@ -100,6 +100,123 @@ func (h *Host) handleIngestTurn(_ context.Context, _ *mcp.CallToolRequest, in in
 	return toolJSON(out), out, nil
 }
 
+// --- memory_write (durable fact; kernel Write / WriteAndSupersede) ---
+
+type writeInput struct {
+	Tenant    string   `json:"tenant,omitempty" jsonschema:"tenant subdirectory under palace root"`
+	Summary   string   `json:"summary,omitempty" jsonschema:"short fact summary"`
+	Full      string   `json:"full,omitempty" jsonschema:"full fact text (defaults to summary)"`
+	Tags      []string `json:"tags,omitempty"`
+	Tier      int      `json:"tier,omitempty" jsonschema:"optional MemoryTier 1..4 (default contextual=2)"`
+	EntityKey string   `json:"entity_key,omitempty" jsonschema:"optional entity key; stamps entity: tag"`
+	MemoryID  string   `json:"memory_id,omitempty"`
+	// Supersede, when true (default if entity_key set), calls WriteAndSupersede.
+	Supersede *bool `json:"supersede,omitempty" jsonschema:"when entity_key set, default true → WriteAndSupersede"`
+}
+
+type writeOutput struct {
+	MemoryID   string `json:"memory_id"`
+	Tier       int    `json:"tier"`
+	Tenant     string `json:"tenant"`
+	Superseded bool   `json:"superseded"`
+	Audited    bool   `json:"audited"`
+	DualWrite  string `json:"dual_write"`
+}
+
+func (h *Host) handleWrite(_ context.Context, _ *mcp.CallToolRequest, in writeInput) (*mcp.CallToolResult, writeOutput, error) {
+	summary := strings.TrimSpace(in.Summary)
+	full := strings.TrimSpace(in.Full)
+	if summary == "" && full == "" {
+		err := fmt.Errorf("summary or full required")
+		return toolError(err), writeOutput{}, err
+	}
+	if summary == "" {
+		summary = truncate(full, 280)
+	}
+	if full == "" {
+		full = summary
+	}
+
+	tenant := h.ResolveTenant(in.Tenant)
+	ps := h.Store(tenant)
+	ts := time.Now().UTC()
+	id := strings.TrimSpace(in.MemoryID)
+	if id == "" {
+		id = palace.GenerateMemoryID()
+	}
+	tier := palace.MemoryTier(in.Tier)
+	if tier == 0 {
+		tier = palace.TierContextual
+	}
+
+	tags := append([]string{"source:iomesh-memory-mcp", "type:fact"}, in.Tags...)
+	var temporal []string
+	entityKey := strings.TrimSpace(in.EntityKey)
+	if tag := entityTag(entityKey); tag != "" {
+		tags = append(tags, tag)
+		temporal = append(temporal, tag)
+	}
+
+	entry := palace.MemoryEntry{
+		ID:           id,
+		Type:         "fact",
+		Tier:         tier,
+		Version:      1,
+		CreatedAt:    ts,
+		UpdatedAt:    ts,
+		Timestamp:    ts,
+		TemporalTags: temporal,
+		OriginalText: full,
+		Content: palace.MemoryContent{
+			Summary: summary,
+			Full:    full,
+			Tags:    tags,
+		},
+		Provenance: palace.MemoryProvenance{
+			SourceStep: "mcp_memory_write",
+		},
+		Metrics: palace.MemoryMetrics{
+			UsageCount: 1,
+		},
+	}
+
+	doSuper := entityKey != ""
+	if in.Supersede != nil {
+		doSuper = *in.Supersede && entityKey != ""
+	}
+
+	var err error
+	if doSuper {
+		err = ps.WriteAndSupersede(entry, []string{entityKey})
+	} else {
+		err = ps.Write(entry)
+	}
+	if err != nil {
+		return toolError(err), writeOutput{}, err
+	}
+
+	out := writeOutput{
+		MemoryID:   id,
+		Tier:       int(tier),
+		Tenant:     tenant,
+		Superseded: doSuper,
+		Audited:    false,
+		DualWrite:  "off",
+	}
+	return toolJSON(out), out, nil
+}
+
+func entityTag(key string) string {
+	key = strings.TrimSpace(key)
+	if key == "" {
+		return ""
+	}
+	if strings.HasPrefix(strings.ToLower(key), "entity:") {
+		return key
+	}
+	return "entity:" + key
+}
+
 // --- memory_retrieve ---
 
 type retrieveInput struct {

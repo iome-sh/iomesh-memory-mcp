@@ -142,6 +142,7 @@ MEMORY_ONNX_MODEL_PATH=/absolute/path/to/model docker compose up --build
 | Tool | Kernel API |
 |------|------------|
 | `memory_ingest_turn` | `IngestTurn` |
+| `memory_write` | `Write` / `WriteAndSupersede` (durable facts; not a conversation turn) |
 | `memory_retrieve` | `SearchMemoryWithOptions` |
 | `memory_search_semantic` | Hybrid search on semantic tier |
 | `memory_list` | `ListMemoryWithOptions` |

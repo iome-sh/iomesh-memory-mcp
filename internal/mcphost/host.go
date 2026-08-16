@@ -167,6 +167,11 @@ func (h *Host) Register(sdkServer *mcp.Server) {
 	}, h.handleIngestTurn)
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
+		Name:        "memory_write",
+		Description: "Write a durable fact via kernel Write (optional WriteAndSupersede when entity_key set). dual_write OFF · not Memory GA",
+	}, h.handleWrite)
+
+	mcp.AddTool(sdkServer, &mcp.Tool{
 		Name:        "memory_retrieve",
 		Description: "Hybrid retrieve memories via SearchMemoryWithOptions (keyword + optional vector re-rank residual)",
 	}, h.handleRetrieve)
