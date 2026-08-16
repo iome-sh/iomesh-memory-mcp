@@ -81,6 +81,7 @@ export MEMORY_TENANT=default
   -http-path /mcp
 
 curl -fsS http://127.0.0.1:8080/healthz
+# expect dual_write=off · not_memory_ga=true · qdrant=off · tools>=9 (compile-time)
 ```
 
 ### Client config example (TUI)
@@ -147,6 +148,8 @@ Probe honesty (not a live APPLY):
 ```bash
 curl -fsS http://127.0.0.1:8080/healthz
 # expect dual_write=off · not_memory_ga=true · embeddings=hash|onnx · qdrant=off
+#   + residual-honest "tools" (compile-time lean count, >=9) and "tool_names"
+#   healthz.tools ≠ live MCP tools/list stamp · s1509 TUI attach tools=6 is historical
 ```
 
 Tools exposed after `tools/list` (lean kernel maps; dual_write OFF):
@@ -159,7 +162,7 @@ Tools exposed after `tools/list` (lean kernel maps; dual_write OFF):
 ```bash
 docker compose up --build
 curl -fsS http://127.0.0.1:8080/healthz
-# expect dual_write=off · not_memory_ga=true · embeddings=hash|onnx · qdrant=off
+# expect dual_write=off · not_memory_ga=true · embeddings=hash|onnx · qdrant=off · tools>=9
 ```
 
 ### Advanced: better semantic recall (optional ONNX)

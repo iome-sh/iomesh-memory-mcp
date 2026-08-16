@@ -117,7 +117,7 @@ Human (or client-driven) steps for residual-honest edge dogfood.
 | Serial | Date UTC | What was observed |
 |--------|----------|-------------------|
 | **s1504** | **2026-08-09T06:06:22Z** | unit `go test ./internal/mcphost/` ok · HTTP healthz ok (tip `f46afe2`) |
-| **s1509** | **2026-08-09T06:23:34Z** | healthz ok on `:18081` · TUI `iomesh mcp --connect` → **connected=1** **tools=6** (MCP tip `f46afe2` · TUI tip `6b3958a`) |
+| **s1509** | **2026-08-09T06:23:34Z** | healthz ok on `:18081` · TUI `iomesh mcp --connect` → **connected=1** **tools=6** (MCP tip `f46afe2` · TUI tip `6b3958a`) — **historical attach stamp**, not a live forever-green count |
 
 Honesty: residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ invent
 forever product green · dual_write OFF · not bare Memory GA · not hosted Memory GA ·
@@ -192,6 +192,14 @@ curl -fsS http://127.0.0.1:8080/healthz
 #   "service":"iomesh-memory-mcp"
 #   "dual_write":"off"
 #   "not_memory_ga":true
+#   "embeddings":"hash" | "onnx"
+#   "qdrant":"off"
+#   "tools": <compile-time lean count, currently >= 9>
+#   "tool_names": [..., "memory_write", "memory_related",
+#                  "memory_supersede_entity", "memory_retrieve", ...]
+# honesty: healthz.tools is residual-honest registration, not a live MCP
+#   tools/list stamp. s1509 TUI attach tools=6 at tip f46afe2 is
+#   contemporaneous evidence — do not restamp as live forever-green.
 ```
 
 Streamable MCP endpoint (client-dependent):

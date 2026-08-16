@@ -23,6 +23,11 @@ type HealthzResponse struct {
 	// Qdrant: lean host does not wire VectorStore into search — always "off" here (kernel residual only).
 	Qdrant  string `json:"qdrant"`
 	Version string `json:"version,omitempty"`
+	// Tools is the compile-time lean registered count (not a live MCP tools/list stamp).
+	Tools int `json:"tools"`
+	// ToolNames is the compile-time lean registered names. Residual-honest; optional
+	// for probes that only need the count. s1509 TUI attach tools=6 is historical.
+	ToolNames []string `json:"tool_names,omitempty"`
 }
 
 // HealthzHandler returns 200 JSON honesty locks for edge probes.
@@ -43,6 +48,7 @@ func HealthzHandler(hosts ...*Host) http.HandlerFunc {
 		} else if strings.TrimSpace(os.Getenv("MEMORY_ONNX_MODEL_PATH")) != "" {
 			emb = "onnx" // process env intent; host construction may still fail-open
 		}
+		names := LeanToolNames()
 		body := HealthzResponse{
 			Status:      "ok",
 			Service:     ServerName,
@@ -51,6 +57,8 @@ func HealthzHandler(hosts ...*Host) http.HandlerFunc {
 			Embeddings:  emb,
 			Qdrant:      "off",
 			Version:     ServerVersion,
+			Tools:       len(names),
+			ToolNames:   names,
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -66,6 +74,7 @@ type HTTPConfig struct {
 	Addr string
 	Path string
 	// Host optional — when set, /healthz reports live EmbeddingMode.
+	// tools / tool_names are always compile-time lean registration.
 	Host *Host
 }
 
@@ -96,8 +105,8 @@ func RunHTTP(ctx context.Context, sdk *mcp.Server, cfg HTTPConfig) error {
 
 	errCh := make(chan error, 1)
 	go func() {
-		log.Printf("%s mode=http addr=%s path=%s healthz=/healthz dual_write=off not_memory_ga=true version=%s (stateless+json)",
-			ServerName, cfg.Addr, path, ServerVersion)
+		log.Printf("%s mode=http addr=%s path=%s healthz=/healthz tools=%d dual_write=off not_memory_ga=true version=%s (stateless+json)",
+			ServerName, cfg.Addr, path, len(leanToolNames), ServerVersion)
 		if err := httpSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			errCh <- err
 			return

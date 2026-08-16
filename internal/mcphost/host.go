@@ -149,6 +149,29 @@ func (h *Host) Store(tenant string) *palace.PalaceStore {
 	return ps
 }
 
+// leanToolNames is the compile-time registered lean MCP surface.
+// GET /healthz reports tools + tool_names from this list. That is residual-honest
+// registration, not a live MCP tools/list client stamp (s1509 tools=6 at tip
+// f46afe2 stays contemporaneous attach evidence — do not restamp as live forever-green).
+var leanToolNames = []string{
+	"memory_ingest_turn",
+	"memory_write",
+	"memory_retrieve",
+	"memory_search_semantic",
+	"memory_list",
+	"memory_compact_status",
+	"memory_facts_as_of",
+	"memory_related",
+	"memory_supersede_entity",
+}
+
+// LeanToolNames returns a copy of the compile-time lean registered tool names.
+func LeanToolNames() []string {
+	out := make([]string, len(leanToolNames))
+	copy(out, leanToolNames)
+	return out
+}
+
 // NewSDKServer builds a configured modelcontextprotocol/go-sdk server with tools.
 func (h *Host) NewSDKServer() *mcp.Server {
 	sdk := mcp.NewServer(&mcp.Implementation{
@@ -206,6 +229,6 @@ func (h *Host) Register(sdkServer *mcp.Server) {
 		Description: "Close open facts for an entity key (SupersedeEntityFacts). Mutating; HITL stays at the client. dual_write OFF",
 	}, h.handleSupersedeEntity)
 
-	log.Printf("mcphost: registered tools server=%s version=%s dual_write=off not_memory_ga=true",
-		ServerName, ServerVersion)
+	log.Printf("mcphost: registered tools=%d server=%s version=%s dual_write=off not_memory_ga=true",
+		len(leanToolNames), ServerName, ServerVersion)
 }

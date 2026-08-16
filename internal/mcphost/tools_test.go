@@ -122,6 +122,21 @@ func TestRetrieveHashKeepsHyphenNeedle(t *testing.T) {
 	if len(ret.Memories) > 5 {
 		t.Fatalf("Limit 5 not applied; n=%d", len(ret.Memories))
 	}
+
+	_, listed, err := h.handleList(ctx, nil, listInput{Query: needle, Limit: 5})
+	if err != nil {
+		t.Fatalf("list: %v", err)
+	}
+	if len(listed.Entries) == 0 {
+		t.Fatalf("list Query=%q returned no entries", needle)
+	}
+	top := listed.Entries[0]
+	if !strings.Contains(top.Summary, needle) && !strings.Contains(top.Full, needle) {
+		t.Fatalf("list rank 1 missed hyphen needle %q: %+v", needle, top)
+	}
+	if len(listed.Entries) > 5 {
+		t.Fatalf("list Limit 5 not applied; n=%d", len(listed.Entries))
+	}
 }
 
 func TestWriteFactAndSupersede(t *testing.T) {
@@ -330,6 +345,10 @@ func TestRegisterSDKServer(t *testing.T) {
 	sdk := h.NewSDKServer()
 	if sdk == nil {
 		t.Fatal("nil sdk server")
+	}
+	names := LeanToolNames()
+	if len(names) < 9 {
+		t.Fatalf("lean tools=%d want >= 9: %v", len(names), names)
 	}
 }
 
