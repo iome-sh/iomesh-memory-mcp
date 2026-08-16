@@ -79,6 +79,7 @@ func TestIngestRetrieveListRoundTrip(t *testing.T) {
 }
 
 func TestRetrieveHashKeepsHyphenNeedle(t *testing.T) {
+	t.Setenv("MEMORY_ONNX_MODEL_PATH", "")
 	h, err := New(Config{PalaceRoot: t.TempDir(), DefaultTenant: "dogfood"})
 	if err != nil {
 		t.Fatalf("New: %v", err)
@@ -117,6 +118,9 @@ func TestRetrieveHashKeepsHyphenNeedle(t *testing.T) {
 	}
 	if !found {
 		t.Fatalf("hash retrieve missed exact needle %q in top %d (ids=%d)", needle, 5, len(ret.Memories))
+	}
+	if len(ret.Memories) > 5 {
+		t.Fatalf("Limit 5 not applied; n=%d", len(ret.Memories))
 	}
 }
 
