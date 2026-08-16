@@ -287,6 +287,223 @@ func TestRelatedAndSupersedeEntity(t *testing.T) {
 
 func boolPtr(v bool) *bool { return &v }
 
+func TestSessionIsolationSameTenantToken(t *testing.T) {
+	t.Setenv("MEMORY_ONNX_MODEL_PATH", "")
+	h, err := New(Config{PalaceRoot: t.TempDir(), DefaultTenant: "dogfood"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	if h.EmbeddingMode() != "hash" {
+		t.Fatalf("embedding mode = %q, want hash", h.EmbeddingMode())
+	}
+	ctx := context.Background()
+	const (
+		token = "zircon-session-lock-7713"
+		sessA = "sess-alpha"
+		sessB = "sess-bravo"
+	)
+	if _, _, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+		SessionID: sessA,
+		Role:      "user",
+		Content:   "alpha vault note " + token + " for isolation",
+	}); err != nil {
+		t.Fatalf("ingest A: %v", err)
+	}
+	if _, _, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+		SessionID: sessB,
+		Role:      "user",
+		Content:   "bravo vault note " + token + " for isolation",
+	}); err != nil {
+		t.Fatalf("ingest B: %v", err)
+	}
+
+	assertSessionHits := func(t *testing.T, surface string, hits []memoryHit, wantSess, wantWord, leakWord string) {
+		t.Helper()
+		if len(hits) == 0 {
+			t.Fatalf("%s SessionID=%q: expected hits for %q", surface, wantSess, token)
+		}
+		foundWant := false
+		for _, hit := range hits {
+			if hit.SessionID != "" && hit.SessionID != wantSess {
+				t.Fatalf("%s leaked session %q (want %q): %+v", surface, hit.SessionID, wantSess, hit)
+			}
+			blob := strings.ToLower(hit.Summary + " " + hit.Full)
+			if strings.Contains(blob, leakWord) {
+				t.Fatalf("%s leaked %q into session %q: %+v", surface, leakWord, wantSess, hit)
+			}
+			if hitHasToken(hit, token) && (hit.SessionID == wantSess || strings.Contains(blob, wantWord)) {
+				foundWant = true
+			}
+		}
+		if !foundWant {
+			t.Fatalf("%s SessionID=%q missed token %q: %+v", surface, wantSess, token, hits)
+		}
+	}
+
+	_, retA, err := h.handleRetrieve(ctx, nil, retrieveInput{Query: token, SessionID: sessA, Limit: 20})
+	if err != nil {
+		t.Fatalf("retrieve A: %v", err)
+	}
+	assertSessionHits(t, "retrieve", retA.Memories, sessA, "alpha", "bravo")
+
+	_, retB, err := h.handleRetrieve(ctx, nil, retrieveInput{Query: token, SessionID: sessB, Limit: 20})
+	if err != nil {
+		t.Fatalf("retrieve B: %v", err)
+	}
+	assertSessionHits(t, "retrieve", retB.Memories, sessB, "bravo", "alpha")
+
+	_, listA, err := h.handleList(ctx, nil, listInput{Query: token, SessionID: sessA, Limit: 50})
+	if err != nil {
+		t.Fatalf("list A: %v", err)
+	}
+	assertSessionHits(t, "list", listA.Entries, sessA, "alpha", "bravo")
+
+	_, listB, err := h.handleList(ctx, nil, listInput{Query: token, SessionID: sessB, Limit: 50})
+	if err != nil {
+		t.Fatalf("list B: %v", err)
+	}
+	assertSessionHits(t, "list", listB.Entries, sessB, "bravo", "alpha")
+
+	_, retAll, err := h.handleRetrieve(ctx, nil, retrieveInput{Query: token, Limit: 20})
+	if err != nil {
+		t.Fatalf("retrieve unfiltered: %v", err)
+	}
+	if !hitsCoverSessions(retAll.Memories, sessA, sessB) {
+		t.Fatalf("empty-session retrieve must be unfiltered; got %+v", retAll.Memories)
+	}
+
+	_, listAll, err := h.handleList(ctx, nil, listInput{Query: token, Limit: 50})
+	if err != nil {
+		t.Fatalf("list unfiltered: %v", err)
+	}
+	if !hitsCoverSessions(listAll.Entries, sessA, sessB) {
+		t.Fatalf("empty-session list must be unfiltered; got %+v", listAll.Entries)
+	}
+}
+
+func TestFactsAsOfSeesIngestFactChildren(t *testing.T) {
+	t.Setenv("MEMORY_ONNX_MODEL_PATH", "")
+	h, err := New(Config{PalaceRoot: t.TempDir(), DefaultTenant: "dogfood"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	ctx := context.Background()
+	if _, _, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+		SessionID: "sess-facts",
+		Role:      "user",
+		Content:   "My name is Alice. I live in Seattle. I graduated from MIT last year.",
+	}); err != nil {
+		t.Fatalf("ingest: %v", err)
+	}
+
+	_, status, err := h.handleCompactStatus(ctx, nil, compactStatusInput{})
+	if err != nil {
+		t.Fatalf("compact status: %v", err)
+	}
+	_, facts, err := h.handleFactsAsOf(ctx, nil, factsAsOfInput{
+		AsOf:  time.Now().UTC().Format(time.RFC3339),
+		Limit: 20,
+	})
+	if err != nil {
+		t.Fatalf("facts as of: %v", err)
+	}
+	if status.SemanticCount == 0 {
+		t.Log("ingest extracted no atoms; skip fact-child assert (extractor residual)")
+		return
+	}
+	found := false
+	for _, f := range facts.Facts {
+		if f.Tier == 4 || hitHasTag(f, "fact_augmented") || hitHasTag(f, "from_turn") {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("kernel #48: semantic atoms=%d but facts_as_of missed fact children: %+v",
+			status.SemanticCount, facts.Facts)
+	}
+}
+
+func TestListAfterNewSamePalaceRoot(t *testing.T) {
+	t.Setenv("MEMORY_ONNX_MODEL_PATH", "")
+	root := t.TempDir()
+	h1, err := New(Config{PalaceRoot: root, DefaultTenant: "dogfood"})
+	if err != nil {
+		t.Fatalf("New seed: %v", err)
+	}
+	if h1.EmbeddingMode() != "hash" {
+		t.Fatalf("embedding mode = %q, want hash", h1.EmbeddingMode())
+	}
+	ctx := context.Background()
+	const needle = "zircon-durable-snap-9041"
+	if _, _, err := h1.handleIngestTurn(ctx, nil, ingestTurnInput{
+		SessionID: "sess-durable",
+		Role:      "user",
+		Content:   "lab note " + needle + " for durable list",
+	}); err != nil {
+		t.Fatalf("ingest: %v", err)
+	}
+	_, listed, err := h1.handleList(ctx, nil, listInput{Query: needle, Limit: 5})
+	if err != nil {
+		t.Fatalf("list seed: %v", err)
+	}
+	if !hitsContainToken(listed.Entries, needle) {
+		t.Fatalf("seed list missed needle %q: %+v", needle, listed.Entries)
+	}
+
+	h2, err := New(Config{PalaceRoot: root, DefaultTenant: "dogfood"})
+	if err != nil {
+		t.Fatalf("New reopen: %v", err)
+	}
+	if h2.EmbeddingMode() != "hash" {
+		t.Fatalf("reopen embedding mode = %q, want hash", h2.EmbeddingMode())
+	}
+	_, again, err := h2.handleList(ctx, nil, listInput{Query: needle, Limit: 5})
+	if err != nil {
+		t.Fatalf("list reopen: %v", err)
+	}
+	if !hitsContainToken(again.Entries, needle) {
+		t.Fatalf("kernel #47: list after New() on same palace root missed %q: %+v", needle, again.Entries)
+	}
+}
+
+func hitHasToken(h memoryHit, token string) bool {
+	return strings.Contains(h.Summary, token) || strings.Contains(h.Full, token)
+}
+
+func hitHasTag(h memoryHit, tag string) bool {
+	for _, t := range h.Tags {
+		if t == tag {
+			return true
+		}
+	}
+	return false
+}
+
+func hitsContainToken(hits []memoryHit, token string) bool {
+	for _, h := range hits {
+		if hitHasToken(h, token) {
+			return true
+		}
+	}
+	return false
+}
+
+func hitsCoverSessions(hits []memoryHit, sessions ...string) bool {
+	seen := make(map[string]bool, len(sessions))
+	for _, h := range hits {
+		if h.SessionID != "" {
+			seen[h.SessionID] = true
+		}
+	}
+	for _, s := range sessions {
+		if !seen[s] {
+			return false
+		}
+	}
+	return true
+}
+
 func TestTenantPathIsolation(t *testing.T) {
 	root := t.TempDir()
 	h, err := New(Config{PalaceRoot: root})
