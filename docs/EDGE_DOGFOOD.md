@@ -101,6 +101,9 @@ url = "http://127.0.0.1:8080/mcp"
 
 Peers: TUI product tip serial **s1463** (mention only — not implemented in this repo).
 
+Cursor / Claude Desktop / generic `mcp.json` (stdio + HTTP) lives in the README
+**Other MCP clients** section (#18). No TUI required. Not Memory GA.
+
 ---
 
 ## E4 — Operator dogfood runbook

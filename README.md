@@ -77,7 +77,9 @@ export MEMORY_TENANT=default
 curl -fsS http://127.0.0.1:8080/healthz
 ```
 
-### Client config example
+### Client config example (TUI)
+
+[iomesh-tui](https://github.com/iome-sh/iomesh-tui) TOML:
 
 ```toml
 [[mcp.servers]]
@@ -91,6 +93,60 @@ HTTP (when the client supports a URL transport):
 ```text
 url = "http://127.0.0.1:8080/mcp"
 ```
+
+### Other MCP clients (Cursor, Claude Desktop, generic)
+
+No TUI, mesh, or Memory Ops Pack required. Point any MCP client at the same binary
+or HTTP URL. **Not** a partnership claim. **Not** Memory GA.
+
+**stdio** (`command` + `args`). Flags match `PALACE_ROOT` / `MEMORY_TENANT`:
+
+```json
+{
+  "mcpServers": {
+    "iomesh-memory-mcp": {
+      "command": "iomesh-memory-mcp",
+      "args": [
+        "-palace-root", "/path/to/memory-palaces",
+        "-tenant", "default"
+      ],
+      "env": {
+        "PALACE_ROOT": "/path/to/memory-palaces",
+        "MEMORY_TENANT": "default"
+      }
+    }
+  }
+}
+```
+
+Put that block in the client’s MCP config (`~/.cursor/mcp.json`, Claude Desktop
+`claude_desktop_config.json`, or equivalent). `command` can be an absolute path
+if `iomesh-memory-mcp` is not on `PATH`.
+
+**HTTP** (streamable MCP). Start the host with `-http-addr :8080 -http-path /mcp`,
+then:
+
+```json
+{
+  "mcpServers": {
+    "iomesh-memory-mcp": {
+      "url": "http://127.0.0.1:8080/mcp"
+    }
+  }
+}
+```
+
+Probe honesty (not a live APPLY):
+
+```bash
+curl -fsS http://127.0.0.1:8080/healthz
+# expect dual_write=off · not_memory_ga=true · embeddings=hash|onnx · qdrant=off
+```
+
+Tools exposed after `tools/list` (lean kernel maps; dual_write OFF):
+`memory_ingest_turn`, `memory_write`, `memory_retrieve`, `memory_search_semantic`,
+`memory_list`, `memory_compact_status`, `memory_facts_as_of`, `memory_related`,
+`memory_supersede_entity`.
 
 ### Docker Compose
 
