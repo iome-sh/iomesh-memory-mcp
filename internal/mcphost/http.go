@@ -85,7 +85,9 @@ func RunHTTP(ctx context.Context, sdk *mcp.Server, cfg HTTPConfig) error {
 		return sdk
 	}, &mcp.StreamableHTTPOptions{
 		JSONResponse: true,
-		Stateless:    true,
+		// go-sdk v1.7.0 serves protocol 2026-07-28 on HTTP only when Stateless.
+		// Keep true so new clients can discover; legacy initialize still works.
+		Stateless: true,
 	})
 
 	mux := http.NewServeMux()
