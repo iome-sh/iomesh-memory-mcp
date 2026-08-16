@@ -66,8 +66,8 @@ github.com/google/jsonschema-go v0.4.3 h1:/DBOLZTfDow7pe2GmaJNhltueGTtDKICi8V8p+
 github.com/google/jsonschema-go v0.4.3/go.mod h1:r5quNTdLOYEz95Ru18zA0ydNbBuYoo9tgaYcxEYhJVE=
 github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
 github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
-github.com/iome-sh/memory v1.5.8-0.20260808222331-29a0a0dd473b h1:4XoNK1igwORa1uFuPLCtGNVB6dABy6FvH3fQwb0Wsx8=
-github.com/iome-sh/memory v1.5.8-0.20260808222331-29a0a0dd473b/go.mod h1:ptPAmlTQR12tFTBJDYFU+AwSWQAkhfg2/oaaS+NLquk=
+github.com/iome-sh/memory v1.5.8-0.20260816062432-e1ffb9db873e h1:tlPl7OU6nt0NOkJ2dagcUjsO9FvJc6+R1QiVEIhm1+c=
+github.com/iome-sh/memory v1.5.8-0.20260816062432-e1ffb9db873e/go.mod h1:JEkLsXIvd+3eZMl6Cy5/Y2xvKBygNGgFxXBzgvKf85U=
 github.com/janpfeifer/go-benchmarks v0.1.1 h1:gLLy07/JrOKSnMWeUxSnjTdhkglgmrNR2IBDnR4kRqw=
 github.com/janpfeifer/go-benchmarks v0.1.1/go.mod h1:5AagXCOUzevvmYFQalcgoa4oWPyH1IkZNckolGWfiSM=
 github.com/knights-analytics/hugot v0.7.7 h1:+gVc2p8Q2VLwgE1XVZcBidpYj4pNnTjUiVE5w7RIUSU=
