@@ -162,6 +162,8 @@ Optional additional surface (not required for the E4 sequence):
 |------|--------|
 | `memory_search_semantic` | Hybrid semantic (+ residual) |
 | `memory_write` | Durable fact `Write` / optional `WriteAndSupersede` (#20) · dual_write OFF |
+| `memory_related` | `MultiHopRetrieve` (#17) · not full graph RAG |
+| `memory_supersede_entity` | `SupersedeEntityFacts` (#17) · HITL at the client |
 
 Operator expectations when dogfooding against a client:
 

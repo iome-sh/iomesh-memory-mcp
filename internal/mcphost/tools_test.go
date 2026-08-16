@@ -204,6 +204,74 @@ func TestWriteFactAndSupersede(t *testing.T) {
 	}
 }
 
+func TestRelatedAndSupersedeEntity(t *testing.T) {
+	h, err := New(Config{PalaceRoot: t.TempDir(), DefaultTenant: "dogfood"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	ctx := context.Background()
+	const key = "person:alice"
+
+	_, wrote, err := h.handleWrite(ctx, nil, writeInput{
+		Summary:   "alice prefers dark mode",
+		EntityKey: key,
+		Supersede: boolPtr(false),
+	})
+	if err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	_, rel, err := h.handleRelated(ctx, nil, relatedInput{SeedEntity: key, Limit: 10})
+	if err != nil {
+		t.Fatalf("related: %v", err)
+	}
+	found := false
+	for _, m := range rel.Memories {
+		if m.ID == wrote.MemoryID {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("related missed written fact; got %+v", rel.Memories)
+	}
+	if !strings.Contains(rel.Note, "not Memory GA") {
+		t.Fatalf("related note honesty: %q", rel.Note)
+	}
+
+	_, empty, err := h.handleRelated(ctx, nil, relatedInput{})
+	if err == nil {
+		t.Fatal("expected seed required")
+	}
+	_ = empty
+
+	_, sup, err := h.handleSupersedeEntity(ctx, nil, supersedeEntityInput{EntityKey: key})
+	if err != nil {
+		t.Fatalf("supersede: %v", err)
+	}
+	if sup.Updated < 1 {
+		t.Fatalf("expected at least one closed fact: %+v", sup)
+	}
+	if sup.DualWrite != "off" || sup.Audited {
+		t.Fatalf("supersede honesty: %+v", sup)
+	}
+
+	_, facts, err := h.handleFactsAsOf(ctx, nil, factsAsOfInput{
+		AsOf:   time.Now().UTC().Format(time.RFC3339),
+		Entity: key,
+	})
+	if err != nil {
+		t.Fatalf("facts as of: %v", err)
+	}
+	for _, f := range facts.Facts {
+		if f.ID == wrote.MemoryID {
+			t.Fatalf("closed fact still valid: %+v", f)
+		}
+	}
+}
+
+func boolPtr(v bool) *bool { return &v }
+
 func TestTenantPathIsolation(t *testing.T) {
 	root := t.TempDir()
 	h, err := New(Config{PalaceRoot: root})

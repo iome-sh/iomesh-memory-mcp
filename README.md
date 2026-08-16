@@ -148,6 +148,8 @@ MEMORY_ONNX_MODEL_PATH=/absolute/path/to/model docker compose up --build
 | `memory_list` | `ListMemoryWithOptions` |
 | `memory_compact_status` | `GetStats` |
 | `memory_facts_as_of` | `ListFactsAsOf` |
+| `memory_related` | `MultiHopRetrieve` (entity BFS lite; not full graph RAG) |
+| `memory_supersede_entity` | `SupersedeEntityFacts` (mutating; HITL stays at the client) |
 
 Server name: **`iomesh-memory-mcp`**. Default version stamp: **`v0.1.0`** (overridden by `make build` / GoReleaser ldflags).
 

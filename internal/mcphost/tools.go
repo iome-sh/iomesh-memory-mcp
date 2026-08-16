@@ -499,6 +499,112 @@ func (h *Host) handleFactsAsOf(_ context.Context, _ *mcp.CallToolRequest, in fac
 	return toolJSON(out), out, nil
 }
 
+// --- memory_related (MultiHopRetrieve) ---
+
+type relatedInput struct {
+	Tenant          string `json:"tenant,omitempty"`
+	SeedEntity      string `json:"seed_entity,omitempty" jsonschema:"starting entity key"`
+	SeedQuery       string `json:"seed_query,omitempty" jsonschema:"optional search text to derive entity seeds"`
+	MaxHops         int    `json:"max_hops,omitempty" jsonschema:"default 2, clamped 1..4"`
+	Limit           int    `json:"limit,omitempty"`
+	SessionID       string `json:"session_id,omitempty"`
+	AsOf            string `json:"as_of,omitempty" jsonschema:"optional RFC3339 validity instant"`
+	IncludeArchival bool   `json:"include_archival,omitempty"`
+}
+
+type relatedOutput struct {
+	Memories []memoryHit `json:"memories"`
+	Tenant   string      `json:"tenant"`
+	Note     string      `json:"note"`
+}
+
+func (h *Host) handleRelated(_ context.Context, _ *mcp.CallToolRequest, in relatedInput) (*mcp.CallToolResult, relatedOutput, error) {
+	seedEntity := strings.TrimSpace(in.SeedEntity)
+	seedQuery := strings.TrimSpace(in.SeedQuery)
+	if seedEntity == "" && seedQuery == "" {
+		err := fmt.Errorf("seed_entity or seed_query required")
+		return toolError(err), relatedOutput{}, err
+	}
+	tenant := h.ResolveTenant(in.Tenant)
+	ps := h.Store(tenant)
+	opts := palace.MultiHopOptions{
+		SeedEntity:      seedEntity,
+		SeedQuery:       seedQuery,
+		MaxHops:         in.MaxHops,
+		Limit:           in.Limit,
+		SessionID:       strings.TrimSpace(in.SessionID),
+		IncludeArchival: in.IncludeArchival,
+	}
+	if t, ok := parseOptionalTime(in.AsOf); ok {
+		opts.AsOf = &t
+	}
+	// Do not inject hash QueryVec (same miss as retrieve #21 / kernel #45).
+	if seedQuery != "" && h.EmbeddingMode() != "hash" && ps != nil && ps.Config.EmbeddingFunc != nil {
+		dim := h.embedDim
+		if dim <= 0 {
+			dim = palace.ResolveEmbeddingDimFromEnv()
+		}
+		if dim <= 0 {
+			dim = palace.DefaultHashEmbeddingDim
+		}
+		opts.QueryVec = ps.Config.EmbeddingFunc(seedQuery, dim)
+	}
+	entries := ps.MultiHopRetrieve(opts)
+	hits := make([]memoryHit, 0, len(entries))
+	for _, e := range entries {
+		hits = append(hits, hitFromEntry(e))
+	}
+	out := relatedOutput{
+		Memories: hits,
+		Tenant:   tenant,
+		Note:     "multi-hop lite (BFS entity tags / RelatedConcepts); not full graph RAG; dual_write off; not Memory GA",
+	}
+	return toolJSON(out), out, nil
+}
+
+// --- memory_supersede_entity (SupersedeEntityFacts) ---
+
+type supersedeEntityInput struct {
+	Tenant    string `json:"tenant,omitempty"`
+	EntityKey string `json:"entity_key" jsonschema:"entity key to close (valid_until=as_of)"`
+	AsOf      string `json:"as_of,omitempty" jsonschema:"RFC3339 exclusive end (default now)"`
+}
+
+type supersedeEntityOutput struct {
+	Updated   int    `json:"updated"`
+	Tenant    string `json:"tenant"`
+	EntityKey string `json:"entity_key"`
+	AsOf      string `json:"as_of"`
+	Audited   bool   `json:"audited"`
+	DualWrite string `json:"dual_write"`
+	Note      string `json:"note"`
+}
+
+func (h *Host) handleSupersedeEntity(_ context.Context, _ *mcp.CallToolRequest, in supersedeEntityInput) (*mcp.CallToolResult, supersedeEntityOutput, error) {
+	key := strings.TrimSpace(in.EntityKey)
+	if key == "" {
+		err := fmt.Errorf("entity_key required")
+		return toolError(err), supersedeEntityOutput{}, err
+	}
+	tenant := h.ResolveTenant(in.Tenant)
+	ps := h.Store(tenant)
+	asOf := parseTimeOrNow(in.AsOf)
+	n, err := ps.SupersedeEntityFacts(key, asOf)
+	if err != nil {
+		return toolError(err), supersedeEntityOutput{}, err
+	}
+	out := supersedeEntityOutput{
+		Updated:   n,
+		Tenant:    tenant,
+		EntityKey: key,
+		AsOf:      asOf.UTC().Format(time.RFC3339),
+		Audited:   false,
+		DualWrite: "off",
+		Note:      "closes open facts for entity_key (valid_until); does not delete; HITL stays at the client; dual_write off; not Memory GA",
+	}
+	return toolJSON(out), out, nil
+}
+
 // --- helpers ---
 
 func hitFromEntry(e palace.MemoryEntry) memoryHit {

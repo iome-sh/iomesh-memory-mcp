@@ -196,6 +196,16 @@ func (h *Host) Register(sdkServer *mcp.Server) {
 		Description: "List facts valid at as_of (ListFactsAsOf bi-temporal lite; not full dual-clock KG)",
 	}, h.handleFactsAsOf)
 
+	mcp.AddTool(sdkServer, &mcp.Tool{
+		Name:        "memory_related",
+		Description: "Multi-hop lite retrieve (MultiHopRetrieve; entity BFS). dual_write OFF · not Memory GA",
+	}, h.handleRelated)
+
+	mcp.AddTool(sdkServer, &mcp.Tool{
+		Name:        "memory_supersede_entity",
+		Description: "Close open facts for an entity key (SupersedeEntityFacts). Mutating; HITL stays at the client. dual_write OFF",
+	}, h.handleSupersedeEntity)
+
 	log.Printf("mcphost: registered tools server=%s version=%s dual_write=off not_memory_ga=true",
 		ServerName, ServerVersion)
 }
