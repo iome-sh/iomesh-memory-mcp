@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **go-sdk v1.7.0:** bump `github.com/modelcontextprotocol/go-sdk` 1.6.1 → 1.7.0 (protocol `2026-07-28` + legacy `2025-11-25` negotiate). Streamable HTTP already sets `Stateless: true`, which is required for the new revision on HTTP; stdio/legacy clients still negotiate down. Not a protocol-only-new-clients cut. dual_write OFF · not Memory GA.
+
+### Changed
 - Pin `github.com/iome-sh/memory` to public main tip `e1ffb9d` (`v1.5.8-0.20260816062432-e1ffb9db873e`) so ONNX retrieve gets keyword-first + expanded haystack (memory #46) and list uses durable event-time snapshot (memory #47). Ingest `valid_from` + Write errors (memory #48). Hash still omits `QueryVec`. dual_write OFF · not Memory GA. Do not invent Edge Memory GA / first `v*` tag.
 - Go toolchain pin `go 1.26.6` so CI `govulncheck` is clean on stdlib GO-2026-5972 / GO-2026-5026 (fixed in go1.26.6).
 
