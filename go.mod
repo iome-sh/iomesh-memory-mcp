@@ -1,6 +1,6 @@
 module github.com/iome-sh/iomesh-memory-mcp
 
-go 1.26.5
+go 1.26.6
 
 require (
 	github.com/iome-sh/memory v1.5.8-0.20260808222331-29a0a0dd473b

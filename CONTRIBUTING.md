@@ -60,7 +60,7 @@ make release-snapshot           # local GoReleaser snapshot (needs goreleaser + 
 | Package / surface | Focus |
 |-------------------|--------|
 | `internal/mcphost` tools | Temp palace dirs; ingest / retrieve / list / facts_as_of honesty |
-| `internal/mcphost` HTTP | `/healthz` dual_write=off · not_memory_ga · version stamp |
+| `internal/mcphost` HTTP | `/healthz` dual_write=off · not_memory_ga · tools count · version stamp |
 | CLI / flags | stdio vs HTTP mode selection; env aliases residual |
 
 New features should include unit tests. Prefer temp dirs for Palace FS (no live

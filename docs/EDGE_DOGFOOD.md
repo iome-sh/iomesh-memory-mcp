@@ -70,16 +70,16 @@ Supported install / attach surfaces for the **local-primary** edge host. All pat
 ### Install options
 
 ```bash
-# go install (public modules)
-go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@latest
+# go install (public modules) — no annotated v* release yet; @latest is a pseudo-version
+go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main
 
 # from clone
 git clone https://github.com/iome-sh/iomesh-memory-mcp.git
 cd iomesh-memory-mcp
-make build   # → bin/iomesh-memory-mcp
+make build   # → bin/iomesh-memory-mcp (embeds git describe)
 
-# optional: pin a release tag for production (see RELEASING.md Support / version policy)
-go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@vX.Y.Z
+# after the first annotated tag (maintainers; see RELEASING.md) pin a release
+# go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@vX.Y.Z
 ```
 
 Honesty: **build PASS ≠ invent GA** · dual_write remains OFF · not Memory GA · residual PASS ≠ invent Edge Memory GA.
@@ -101,6 +101,9 @@ url = "http://127.0.0.1:8080/mcp"
 
 Peers: TUI product tip serial **s1463** (mention only — not implemented in this repo).
 
+Cursor / Claude Desktop / generic `mcp.json` (stdio + HTTP) lives in the README
+**Other MCP clients** section (#18). No TUI required. Not Memory GA.
+
 ---
 
 ## E4 — Operator dogfood runbook
@@ -114,7 +117,7 @@ Human (or client-driven) steps for residual-honest edge dogfood.
 | Serial | Date UTC | What was observed |
 |--------|----------|-------------------|
 | **s1504** | **2026-08-09T06:06:22Z** | unit `go test ./internal/mcphost/` ok · HTTP healthz ok (tip `f46afe2`) |
-| **s1509** | **2026-08-09T06:23:34Z** | healthz ok on `:18081` · TUI `iomesh mcp --connect` → **connected=1** **tools=6** (MCP tip `f46afe2` · TUI tip `6b3958a`) |
+| **s1509** | **2026-08-09T06:23:34Z** | healthz ok on `:18081` · TUI `iomesh mcp --connect` → **connected=1** **tools=6** (MCP tip `f46afe2` · TUI tip `6b3958a`) — **historical attach stamp**, not a live forever-green count |
 
 Honesty: residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ invent
 forever product green · dual_write OFF · not bare Memory GA · not hosted Memory GA ·
@@ -161,6 +164,9 @@ Optional additional surface (not required for the E4 sequence):
 | Tool | Intent |
 |------|--------|
 | `memory_search_semantic` | Hybrid semantic (+ residual) |
+| `memory_write` | Durable fact `Write` / optional `WriteAndSupersede` (#20) · dual_write OFF |
+| `memory_related` | `MultiHopRetrieve` (#17) · not full graph RAG |
+| `memory_supersede_entity` | `SupersedeEntityFacts` (#17) · HITL at the client |
 
 Operator expectations when dogfooding against a client:
 
@@ -186,6 +192,14 @@ curl -fsS http://127.0.0.1:8080/healthz
 #   "service":"iomesh-memory-mcp"
 #   "dual_write":"off"
 #   "not_memory_ga":true
+#   "embeddings":"hash" | "onnx"
+#   "qdrant":"off"
+#   "tools": <compile-time lean count, currently >= 9>
+#   "tool_names": [..., "memory_write", "memory_related",
+#                  "memory_supersede_entity", "memory_retrieve", ...]
+# honesty: healthz.tools is residual-honest registration, not a live MCP
+#   tools/list stamp. s1509 TUI attach tools=6 at tip f46afe2 is
+#   contemporaneous evidence — do not restamp as live forever-green.
 ```
 
 Streamable MCP endpoint (client-dependent):

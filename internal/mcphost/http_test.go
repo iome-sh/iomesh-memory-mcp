@@ -47,6 +47,21 @@ func TestHealthzHandler(t *testing.T) {
 	if body.Version != ServerVersion {
 		t.Fatalf("version: %q", body.Version)
 	}
+	if body.Tools < 9 {
+		t.Fatalf("tools count: %d want >= 9", body.Tools)
+	}
+	if body.Tools != len(body.ToolNames) {
+		t.Fatalf("tools=%d tool_names=%d (%v)", body.Tools, len(body.ToolNames), body.ToolNames)
+	}
+	have := make(map[string]bool, len(body.ToolNames))
+	for _, n := range body.ToolNames {
+		have[n] = true
+	}
+	for _, n := range []string{"memory_write", "memory_related", "memory_supersede_entity", "memory_retrieve"} {
+		if !have[n] {
+			t.Fatalf("tool_names missing %q: %v", n, body.ToolNames)
+		}
+	}
 }
 
 func TestHealthzMethodNotAllowed(t *testing.T) {

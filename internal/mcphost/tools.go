@@ -100,6 +100,123 @@ func (h *Host) handleIngestTurn(_ context.Context, _ *mcp.CallToolRequest, in in
 	return toolJSON(out), out, nil
 }
 
+// --- memory_write (durable fact; kernel Write / WriteAndSupersede) ---
+
+type writeInput struct {
+	Tenant    string   `json:"tenant,omitempty" jsonschema:"tenant subdirectory under palace root"`
+	Summary   string   `json:"summary,omitempty" jsonschema:"short fact summary"`
+	Full      string   `json:"full,omitempty" jsonschema:"full fact text (defaults to summary)"`
+	Tags      []string `json:"tags,omitempty"`
+	Tier      int      `json:"tier,omitempty" jsonschema:"optional MemoryTier 1..4 (default contextual=2)"`
+	EntityKey string   `json:"entity_key,omitempty" jsonschema:"optional entity key; stamps entity: tag"`
+	MemoryID  string   `json:"memory_id,omitempty"`
+	// Supersede, when true (default if entity_key set), calls WriteAndSupersede.
+	Supersede *bool `json:"supersede,omitempty" jsonschema:"when entity_key set, default true → WriteAndSupersede"`
+}
+
+type writeOutput struct {
+	MemoryID   string `json:"memory_id"`
+	Tier       int    `json:"tier"`
+	Tenant     string `json:"tenant"`
+	Superseded bool   `json:"superseded"`
+	Audited    bool   `json:"audited"`
+	DualWrite  string `json:"dual_write"`
+}
+
+func (h *Host) handleWrite(_ context.Context, _ *mcp.CallToolRequest, in writeInput) (*mcp.CallToolResult, writeOutput, error) {
+	summary := strings.TrimSpace(in.Summary)
+	full := strings.TrimSpace(in.Full)
+	if summary == "" && full == "" {
+		err := fmt.Errorf("summary or full required")
+		return toolError(err), writeOutput{}, err
+	}
+	if summary == "" {
+		summary = truncate(full, 280)
+	}
+	if full == "" {
+		full = summary
+	}
+
+	tenant := h.ResolveTenant(in.Tenant)
+	ps := h.Store(tenant)
+	ts := time.Now().UTC()
+	id := strings.TrimSpace(in.MemoryID)
+	if id == "" {
+		id = palace.GenerateMemoryID()
+	}
+	tier := palace.MemoryTier(in.Tier)
+	if tier == 0 {
+		tier = palace.TierContextual
+	}
+
+	tags := append([]string{"source:iomesh-memory-mcp", "type:fact"}, in.Tags...)
+	var temporal []string
+	entityKey := strings.TrimSpace(in.EntityKey)
+	if tag := entityTag(entityKey); tag != "" {
+		tags = append(tags, tag)
+		temporal = append(temporal, tag)
+	}
+
+	entry := palace.MemoryEntry{
+		ID:           id,
+		Type:         "fact",
+		Tier:         tier,
+		Version:      1,
+		CreatedAt:    ts,
+		UpdatedAt:    ts,
+		Timestamp:    ts,
+		TemporalTags: temporal,
+		OriginalText: full,
+		Content: palace.MemoryContent{
+			Summary: summary,
+			Full:    full,
+			Tags:    tags,
+		},
+		Provenance: palace.MemoryProvenance{
+			SourceStep: "mcp_memory_write",
+		},
+		Metrics: palace.MemoryMetrics{
+			UsageCount: 1,
+		},
+	}
+
+	doSuper := entityKey != ""
+	if in.Supersede != nil {
+		doSuper = *in.Supersede && entityKey != ""
+	}
+
+	var err error
+	if doSuper {
+		err = ps.WriteAndSupersede(entry, []string{entityKey})
+	} else {
+		err = ps.Write(entry)
+	}
+	if err != nil {
+		return toolError(err), writeOutput{}, err
+	}
+
+	out := writeOutput{
+		MemoryID:   id,
+		Tier:       int(tier),
+		Tenant:     tenant,
+		Superseded: doSuper,
+		Audited:    false,
+		DualWrite:  "off",
+	}
+	return toolJSON(out), out, nil
+}
+
+func entityTag(key string) string {
+	key = strings.TrimSpace(key)
+	if key == "" {
+		return ""
+	}
+	if strings.HasPrefix(strings.ToLower(key), "entity:") {
+		return key
+	}
+	return "entity:" + key
+}
+
 // --- memory_retrieve ---
 
 type retrieveInput struct {
@@ -148,18 +265,10 @@ func (h *Host) handleRetrieve(_ context.Context, _ *mcp.CallToolRequest, in retr
 		opts.TimeTo = &t
 	}
 
-	// Default hybrid path uses palace EmbeddingFunc (hash default; optional ONNX via MEMORY_ONNX_MODEL_PATH).
-	// Provide a query vec so vector re-rank path can run. Qdrant not required for lean host search.
-	if ps.Config.EmbeddingFunc != nil {
-		dim := h.embedDim
-		if dim <= 0 {
-			dim = palace.ResolveEmbeddingDimFromEnv()
-		}
-		if dim <= 0 {
-			dim = 384
-		}
-		opts.QueryVec = ps.Config.EmbeddingFunc(query, dim)
-	}
+	// Hash embeddings are random unit vectors (SHA-256 seed). Injecting them as
+	// QueryVec used to skip the kernel keyword path (#21 / kernel #45).
+	// Only pass a query vector when a real embedder (ONNX) is loaded.
+	opts.QueryVec = h.searchQueryVec(ps, query)
 
 	entries := ps.SearchMemoryWithOptions(query, opts)
 	hits := make([]memoryHit, 0, len(entries))
@@ -172,6 +281,30 @@ func (h *Host) handleRetrieve(_ context.Context, _ *mcp.CallToolRequest, in retr
 		Mode:     "hybrid_search_memory_with_options",
 	}
 	return toolJSON(out), out, nil
+}
+
+// searchQueryVec returns a query embedding only for a real embedder (ONNX).
+// Hash mode must not set QueryVec: SHA-256 random vectors skip kernel keyword
+// matching and can drop an exact token past Limit (issue #21 / memory#45).
+func (h *Host) searchQueryVec(ps *palace.PalaceStore, query string) []float32 {
+	if h == nil || h.EmbeddingMode() == "hash" {
+		return nil
+	}
+	if ps == nil || ps.Config.EmbeddingFunc == nil {
+		return nil
+	}
+	query = strings.TrimSpace(query)
+	if query == "" {
+		return nil
+	}
+	dim := h.embedDim
+	if dim <= 0 {
+		dim = palace.ResolveEmbeddingDimFromEnv()
+	}
+	if dim <= 0 {
+		dim = palace.DefaultHashEmbeddingDim
+	}
+	return ps.Config.EmbeddingFunc(query, dim)
 }
 
 // --- memory_search_semantic ---
@@ -202,15 +335,8 @@ func (h *Host) handleSearchSemantic(_ context.Context, _ *mcp.CallToolRequest, i
 		Tier:  &tier,
 		Limit: limit,
 	}
-	if query != "" && ps.Config.EmbeddingFunc != nil {
-		dim := h.embedDim
-		if dim <= 0 {
-			dim = palace.ResolveEmbeddingDimFromEnv()
-		}
-		if dim <= 0 {
-			dim = 384
-		}
-		opts.QueryVec = ps.Config.EmbeddingFunc(query, dim)
+	if query != "" {
+		opts.QueryVec = h.searchQueryVec(ps, query)
 	}
 	entries := ps.SearchMemoryWithOptions(query, opts)
 	// Fallback: if hybrid returns empty and query set, substring filter tier listing.
@@ -369,6 +495,112 @@ func (h *Host) handleFactsAsOf(_ context.Context, _ *mcp.CallToolRequest, in fac
 		Tenant: tenant,
 		AsOf:   asOf.UTC().Format(time.RFC3339),
 		Note:   "bi-temporal lite (valid_from/valid_until tags); not full Graphiti dual-clock KG; not Memory GA",
+	}
+	return toolJSON(out), out, nil
+}
+
+// --- memory_related (MultiHopRetrieve) ---
+
+type relatedInput struct {
+	Tenant          string `json:"tenant,omitempty"`
+	SeedEntity      string `json:"seed_entity,omitempty" jsonschema:"starting entity key"`
+	SeedQuery       string `json:"seed_query,omitempty" jsonschema:"optional search text to derive entity seeds"`
+	MaxHops         int    `json:"max_hops,omitempty" jsonschema:"default 2, clamped 1..4"`
+	Limit           int    `json:"limit,omitempty"`
+	SessionID       string `json:"session_id,omitempty"`
+	AsOf            string `json:"as_of,omitempty" jsonschema:"optional RFC3339 validity instant"`
+	IncludeArchival bool   `json:"include_archival,omitempty"`
+}
+
+type relatedOutput struct {
+	Memories []memoryHit `json:"memories"`
+	Tenant   string      `json:"tenant"`
+	Note     string      `json:"note"`
+}
+
+func (h *Host) handleRelated(_ context.Context, _ *mcp.CallToolRequest, in relatedInput) (*mcp.CallToolResult, relatedOutput, error) {
+	seedEntity := strings.TrimSpace(in.SeedEntity)
+	seedQuery := strings.TrimSpace(in.SeedQuery)
+	if seedEntity == "" && seedQuery == "" {
+		err := fmt.Errorf("seed_entity or seed_query required")
+		return toolError(err), relatedOutput{}, err
+	}
+	tenant := h.ResolveTenant(in.Tenant)
+	ps := h.Store(tenant)
+	opts := palace.MultiHopOptions{
+		SeedEntity:      seedEntity,
+		SeedQuery:       seedQuery,
+		MaxHops:         in.MaxHops,
+		Limit:           in.Limit,
+		SessionID:       strings.TrimSpace(in.SessionID),
+		IncludeArchival: in.IncludeArchival,
+	}
+	if t, ok := parseOptionalTime(in.AsOf); ok {
+		opts.AsOf = &t
+	}
+	// Do not inject hash QueryVec (same miss as retrieve #21 / kernel #45).
+	if seedQuery != "" && h.EmbeddingMode() != "hash" && ps != nil && ps.Config.EmbeddingFunc != nil {
+		dim := h.embedDim
+		if dim <= 0 {
+			dim = palace.ResolveEmbeddingDimFromEnv()
+		}
+		if dim <= 0 {
+			dim = palace.DefaultHashEmbeddingDim
+		}
+		opts.QueryVec = ps.Config.EmbeddingFunc(seedQuery, dim)
+	}
+	entries := ps.MultiHopRetrieve(opts)
+	hits := make([]memoryHit, 0, len(entries))
+	for _, e := range entries {
+		hits = append(hits, hitFromEntry(e))
+	}
+	out := relatedOutput{
+		Memories: hits,
+		Tenant:   tenant,
+		Note:     "multi-hop lite (BFS entity tags / RelatedConcepts); not full graph RAG; dual_write off; not Memory GA",
+	}
+	return toolJSON(out), out, nil
+}
+
+// --- memory_supersede_entity (SupersedeEntityFacts) ---
+
+type supersedeEntityInput struct {
+	Tenant    string `json:"tenant,omitempty"`
+	EntityKey string `json:"entity_key" jsonschema:"entity key to close (valid_until=as_of)"`
+	AsOf      string `json:"as_of,omitempty" jsonschema:"RFC3339 exclusive end (default now)"`
+}
+
+type supersedeEntityOutput struct {
+	Updated   int    `json:"updated"`
+	Tenant    string `json:"tenant"`
+	EntityKey string `json:"entity_key"`
+	AsOf      string `json:"as_of"`
+	Audited   bool   `json:"audited"`
+	DualWrite string `json:"dual_write"`
+	Note      string `json:"note"`
+}
+
+func (h *Host) handleSupersedeEntity(_ context.Context, _ *mcp.CallToolRequest, in supersedeEntityInput) (*mcp.CallToolResult, supersedeEntityOutput, error) {
+	key := strings.TrimSpace(in.EntityKey)
+	if key == "" {
+		err := fmt.Errorf("entity_key required")
+		return toolError(err), supersedeEntityOutput{}, err
+	}
+	tenant := h.ResolveTenant(in.Tenant)
+	ps := h.Store(tenant)
+	asOf := parseTimeOrNow(in.AsOf)
+	n, err := ps.SupersedeEntityFacts(key, asOf)
+	if err != nil {
+		return toolError(err), supersedeEntityOutput{}, err
+	}
+	out := supersedeEntityOutput{
+		Updated:   n,
+		Tenant:    tenant,
+		EntityKey: key,
+		AsOf:      asOf.UTC().Format(time.RFC3339),
+		Audited:   false,
+		DualWrite: "off",
+		Note:      "closes open facts for entity_key (valid_until); does not delete; HITL stays at the client; dual_write off; not Memory GA",
 	}
 	return toolJSON(out), out, nil
 }

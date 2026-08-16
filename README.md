@@ -31,8 +31,14 @@ local filesystem under PALACE_ROOT/<tenant>/…
 
 ### From source
 
+There is **no** annotated `v*` GitHub Release yet (`/releases/latest` is 404).
+`@latest` therefore resolves to a **pseudo-version**, and `ServerVersion` in a
+`go install` binary stays the default `v0.1.0` ldflag unless you `make build`.
+Pin `@main` (or an exact pseudo-version) until maintainers cut the first tag
+per [RELEASING.md](RELEASING.md). Do not invent forever-green cosign or Memory GA.
+
 ```bash
-go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@latest
+go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main
 ```
 
 ### Build from a clone
@@ -75,9 +81,12 @@ export MEMORY_TENANT=default
   -http-path /mcp
 
 curl -fsS http://127.0.0.1:8080/healthz
+# expect dual_write=off · not_memory_ga=true · qdrant=off · tools>=9 (compile-time)
 ```
 
-### Client config example
+### Client config example (TUI)
+
+[iomesh-tui](https://github.com/iome-sh/iomesh-tui) TOML:
 
 ```toml
 [[mcp.servers]]
@@ -92,12 +101,68 @@ HTTP (when the client supports a URL transport):
 url = "http://127.0.0.1:8080/mcp"
 ```
 
+### Other MCP clients (Cursor, Claude Desktop, generic)
+
+No TUI, mesh, or Memory Ops Pack required. Point any MCP client at the same binary
+or HTTP URL. **Not** a partnership claim. **Not** Memory GA.
+
+**stdio** (`command` + `args`). Flags match `PALACE_ROOT` / `MEMORY_TENANT`:
+
+```json
+{
+  "mcpServers": {
+    "iomesh-memory-mcp": {
+      "command": "iomesh-memory-mcp",
+      "args": [
+        "-palace-root", "/path/to/memory-palaces",
+        "-tenant", "default"
+      ],
+      "env": {
+        "PALACE_ROOT": "/path/to/memory-palaces",
+        "MEMORY_TENANT": "default"
+      }
+    }
+  }
+}
+```
+
+Put that block in the client’s MCP config (`~/.cursor/mcp.json`, Claude Desktop
+`claude_desktop_config.json`, or equivalent). `command` can be an absolute path
+if `iomesh-memory-mcp` is not on `PATH`.
+
+**HTTP** (streamable MCP). Start the host with `-http-addr :8080 -http-path /mcp`,
+then:
+
+```json
+{
+  "mcpServers": {
+    "iomesh-memory-mcp": {
+      "url": "http://127.0.0.1:8080/mcp"
+    }
+  }
+}
+```
+
+Probe honesty (not a live APPLY):
+
+```bash
+curl -fsS http://127.0.0.1:8080/healthz
+# expect dual_write=off · not_memory_ga=true · embeddings=hash|onnx · qdrant=off
+#   + residual-honest "tools" (compile-time lean count, >=9) and "tool_names"
+#   healthz.tools ≠ live MCP tools/list stamp · s1509 TUI attach tools=6 is historical
+```
+
+Tools exposed after `tools/list` (lean kernel maps; dual_write OFF):
+`memory_ingest_turn`, `memory_write`, `memory_retrieve`, `memory_search_semantic`,
+`memory_list`, `memory_compact_status`, `memory_facts_as_of`, `memory_related`,
+`memory_supersede_entity`.
+
 ### Docker Compose
 
 ```bash
 docker compose up --build
 curl -fsS http://127.0.0.1:8080/healthz
-# expect dual_write=off · not_memory_ga=true · embeddings=hash|onnx · qdrant=off
+# expect dual_write=off · not_memory_ga=true · embeddings=hash|onnx · qdrant=off · tools>=9
 ```
 
 ### Advanced: better semantic recall (optional ONNX)
@@ -142,11 +207,14 @@ MEMORY_ONNX_MODEL_PATH=/absolute/path/to/model docker compose up --build
 | Tool | Kernel API |
 |------|------------|
 | `memory_ingest_turn` | `IngestTurn` |
+| `memory_write` | `Write` / `WriteAndSupersede` (durable facts; not a conversation turn) |
 | `memory_retrieve` | `SearchMemoryWithOptions` |
 | `memory_search_semantic` | Hybrid search on semantic tier |
 | `memory_list` | `ListMemoryWithOptions` |
 | `memory_compact_status` | `GetStats` |
 | `memory_facts_as_of` | `ListFactsAsOf` |
+| `memory_related` | `MultiHopRetrieve` (entity BFS lite; not full graph RAG) |
+| `memory_supersede_entity` | `SupersedeEntityFacts` (mutating; HITL stays at the client) |
 
 Server name: **`iomesh-memory-mcp`**. Default version stamp: **`v0.1.0`** (overridden by `make build` / GoReleaser ldflags).
 

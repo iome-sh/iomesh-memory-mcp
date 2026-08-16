@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Go toolchain pin `go 1.26.6` so CI `govulncheck` is clean on stdlib GO-2026-5972 / GO-2026-5026 (fixed in go1.26.6).
+
+### Fixed
+- **`memory_retrieve` / `memory_search_semantic` (#21):** do not inject hash `QueryVec`. SHA-256 unit vectors skipped the kernel keyword path and dropped exact tokens past `Limit`. ONNX still passes a query vector. dual_write OFF · not Memory GA.
+
+### Added
+- **`/healthz` tools surface:** residual-honest `tools` (count) and `tool_names` for the compile-time lean registered tools. Not a live MCP `tools/list` stamp. Historical s1509 TUI attach `tools=6` at tip `f46afe2` stays contemporaneous evidence — do not restamp as live forever-green. dual_write OFF · not Memory GA.
+- **`memory_list` hyphen needle rank 1:** after hyphen ingest, `handleList{Query: needle, Limit: 5}` must hit rank 1. `TestRetrieveHashKeepsHyphenNeedle` kept.
+- **`memory_write` (#20):** durable fact ingest via kernel `Write`. Optional `entity_key` stamps `entity:` tags and defaults to `WriteAndSupersede`. `dual_write` OFF · `audited=false` · not Memory GA.
+- **`memory_related` / `memory_supersede_entity` (#17):** lean maps to kernel `MultiHopRetrieve` and `SupersedeEntityFacts`. Hash `SeedQuery` does not inject `QueryVec`. HITL stays at the client. dual_write OFF · not Memory GA.
+- **Other MCP clients (#18):** README stdio `mcp.json` + streamable HTTP URL attach (Cursor / generic). No TUI required. Not Memory GA.
+- **Install pin honesty (#19):** document `@main` until the first annotated `v*` GitHub Release. `@latest` is a pseudo-version today. No tag cut in this change. Not Memory GA.
+
+### Changed
 - **Public OSS:** host + kernel are public — CI drops `GOPRIVATE` / private PAT requirement; pin `github.com/iome-sh/memory` to public main tip; docs visibility honesty.
 - **s1492 / M5 signing matrix residual:** [`.github/workflows/release.yml`](.github/workflows/release.yml) drops `GOPRIVATE` + private module PAT residual; public `github.com/iome-sh/memory` fetch only (aligned with public CI). GoReleaser + Syft SBOM + keyless cosign kept.
 - **s1500 / Edge Memory GA candidacy (E3–E5 docs):** [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) aligns honesty with Edge Memory GA candidacy (local-primary; residual PASS ≠ invent Edge Memory GA declared; dual_write OFF; not bare Memory GA; not hosted Memory GA); public modules; retires stale private-module install residual.
@@ -56,7 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Honesty
 
-- dual_write **OFF** · not product Memory GA · host + kernel public · residual PASS ≠ live dogfood / invent forever-green signed releases · residual PASS ≠ invent Edge Memory GA · readiness ≠ invent flip · tip ≠ invent tag release shipped · no aion import · naming **iomesh-memory-mcp** · kernel public prerequisite met · M5 packaging residual (s1492) ≠ invent M5 complete · s1500 E3–E5 docs ≠ invent Edge Memory GA declared · s1504 local evidence ≠ invent Edge Memory GA / forever product green · s1509 client attach ≠ invent Edge Memory GA / forever green full product dogfood · no auto-tag
+- dual_write **OFF** · not product Memory GA · host + kernel public · residual PASS ≠ live dogfood / invent forever-green signed releases · residual PASS ≠ invent Edge Memory GA · readiness ≠ invent flip · tip ≠ invent tag release shipped · no aion import · naming **iomesh-memory-mcp** · kernel public prerequisite met · M5 packaging residual (s1492) ≠ invent M5 complete · s1500 E3–E5 docs ≠ invent Edge Memory GA declared · s1504 local evidence ≠ invent Edge Memory GA / forever product green · s1509 client attach ≠ invent Edge Memory GA / forever green full product dogfood · healthz `tools` / `tool_names` = compile-time lean surface ≠ invent live TUI attach restamp / forever-green `tools=N` · no auto-tag
 
 ## [0.1.0-s1457] — 2026-08-08
 

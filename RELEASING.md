@@ -2,6 +2,11 @@
 
 Ship from `main` via PR; cut annotated semver tags for binary/image consumers.
 
+**Current honesty (#19):** no annotated `v*` tag / GitHub Release exists yet
+(`/releases/latest` is 404). `go install …@latest` is a pseudo-version, not a
+signed/SBOM pin. Public install pin is `@main` until a maintainer cuts the first
+tag below. Do **not** auto-tag. Do not invent forever-green cosign or Memory GA.
+
 ## When to bump and tag
 
 **Do not leave feature waves only under `[Unreleased]`.** After merging a coherent
