@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **`memory_retrieve` / `memory_search_semantic` (#21):** do not inject hash `QueryVec`. SHA-256 unit vectors skipped the kernel keyword path and dropped exact tokens past `Limit`. ONNX still passes a query vector. dual_write OFF · not Memory GA.
+
 ### Changed
 - **Public OSS:** host + kernel are public — CI drops `GOPRIVATE` / private PAT requirement; pin `github.com/iome-sh/memory` to public main tip; docs visibility honesty.
 - **s1492 / M5 signing matrix residual:** [`.github/workflows/release.yml`](.github/workflows/release.yml) drops `GOPRIVATE` + private module PAT residual; public `github.com/iome-sh/memory` fetch only (aligned with public CI). GoReleaser + Syft SBOM + keyless cosign kept.

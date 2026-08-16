@@ -148,18 +148,10 @@ func (h *Host) handleRetrieve(_ context.Context, _ *mcp.CallToolRequest, in retr
 		opts.TimeTo = &t
 	}
 
-	// Default hybrid path uses palace EmbeddingFunc (hash default; optional ONNX via MEMORY_ONNX_MODEL_PATH).
-	// Provide a query vec so vector re-rank path can run. Qdrant not required for lean host search.
-	if ps.Config.EmbeddingFunc != nil {
-		dim := h.embedDim
-		if dim <= 0 {
-			dim = palace.ResolveEmbeddingDimFromEnv()
-		}
-		if dim <= 0 {
-			dim = 384
-		}
-		opts.QueryVec = ps.Config.EmbeddingFunc(query, dim)
-	}
+	// Hash embeddings are random unit vectors (SHA-256 seed). Injecting them as
+	// QueryVec used to skip the kernel keyword path (#21 / kernel #45).
+	// Only pass a query vector when a real embedder (ONNX) is loaded.
+	opts.QueryVec = h.searchQueryVec(ps, query)
 
 	entries := ps.SearchMemoryWithOptions(query, opts)
 	hits := make([]memoryHit, 0, len(entries))
@@ -172,6 +164,30 @@ func (h *Host) handleRetrieve(_ context.Context, _ *mcp.CallToolRequest, in retr
 		Mode:     "hybrid_search_memory_with_options",
 	}
 	return toolJSON(out), out, nil
+}
+
+// searchQueryVec returns a query embedding only for a real embedder (ONNX).
+// Hash mode must not set QueryVec: SHA-256 random vectors skip kernel keyword
+// matching and can drop an exact token past Limit (issue #21 / memory#45).
+func (h *Host) searchQueryVec(ps *palace.PalaceStore, query string) []float32 {
+	if h == nil || h.EmbeddingMode() == "hash" {
+		return nil
+	}
+	if ps == nil || ps.Config.EmbeddingFunc == nil {
+		return nil
+	}
+	query = strings.TrimSpace(query)
+	if query == "" {
+		return nil
+	}
+	dim := h.embedDim
+	if dim <= 0 {
+		dim = palace.ResolveEmbeddingDimFromEnv()
+	}
+	if dim <= 0 {
+		dim = palace.DefaultHashEmbeddingDim
+	}
+	return ps.Config.EmbeddingFunc(query, dim)
 }
 
 // --- memory_search_semantic ---
@@ -202,15 +218,8 @@ func (h *Host) handleSearchSemantic(_ context.Context, _ *mcp.CallToolRequest, i
 		Tier:  &tier,
 		Limit: limit,
 	}
-	if query != "" && ps.Config.EmbeddingFunc != nil {
-		dim := h.embedDim
-		if dim <= 0 {
-			dim = palace.ResolveEmbeddingDimFromEnv()
-		}
-		if dim <= 0 {
-			dim = 384
-		}
-		opts.QueryVec = ps.Config.EmbeddingFunc(query, dim)
+	if query != "" {
+		opts.QueryVec = h.searchQueryVec(ps, query)
 	}
 	entries := ps.SearchMemoryWithOptions(query, opts)
 	// Fallback: if hybrid returns empty and query set, substring filter tier listing.

@@ -44,14 +44,7 @@ func TestIngestRetrieveListRoundTrip(t *testing.T) {
 		t.Fatalf("retrieve: %v", err)
 	}
 	if len(ret.Memories) == 0 {
-		// Hybrid may still miss on hash embeddings; list should see working tier.
-		_, list, lerr := h.handleList(ctx, nil, listInput{Limit: 20})
-		if lerr != nil {
-			t.Fatalf("list: %v", lerr)
-		}
-		if len(list.Entries) == 0 {
-			t.Fatal("expected at least one entry after ingest via list")
-		}
+		t.Fatal("hash retrieve must keyword-hit ingested turn (do not inject hash QueryVec)")
 	}
 
 	_, status, err := h.handleCompactStatus(ctx, nil, compactStatusInput{})
@@ -82,6 +75,48 @@ func TestIngestRetrieveListRoundTrip(t *testing.T) {
 	}
 	if facts.AsOf == "" {
 		t.Fatal("expected as_of")
+	}
+}
+
+func TestRetrieveHashKeepsHyphenNeedle(t *testing.T) {
+	h, err := New(Config{PalaceRoot: t.TempDir(), DefaultTenant: "dogfood"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	if h.EmbeddingMode() != "hash" {
+		t.Fatalf("embedding mode = %q, want hash", h.EmbeddingMode())
+	}
+	ctx := context.Background()
+	const needle = "zircon-lantern-4829"
+	if _, _, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+		SessionID: "sess-needle",
+		Role:      "user",
+		Content:   "lab note " + needle + " for retrieve recall",
+	}); err != nil {
+		t.Fatalf("ingest needle: %v", err)
+	}
+	for i := 0; i < 8; i++ {
+		if _, _, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+			SessionID: "sess-needle",
+			Role:      "user",
+			Content:   "unrelated distractor checklist item " + string(rune('a'+i)),
+		}); err != nil {
+			t.Fatalf("ingest distractor: %v", err)
+		}
+	}
+	_, ret, err := h.handleRetrieve(ctx, nil, retrieveInput{Query: needle, Limit: 5})
+	if err != nil {
+		t.Fatalf("retrieve: %v", err)
+	}
+	found := false
+	for _, m := range ret.Memories {
+		if strings.Contains(m.Summary, needle) || strings.Contains(m.Full, needle) {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("hash retrieve missed exact needle %q in top %d (ids=%d)", needle, 5, len(ret.Memories))
 	}
 }
 
