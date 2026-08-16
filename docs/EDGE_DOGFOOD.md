@@ -70,16 +70,16 @@ Supported install / attach surfaces for the **local-primary** edge host. All pat
 ### Install options
 
 ```bash
-# go install (public modules)
-go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@latest
+# go install (public modules) — no annotated v* release yet; @latest is a pseudo-version
+go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main
 
 # from clone
 git clone https://github.com/iome-sh/iomesh-memory-mcp.git
 cd iomesh-memory-mcp
-make build   # → bin/iomesh-memory-mcp
+make build   # → bin/iomesh-memory-mcp (embeds git describe)
 
-# optional: pin a release tag for production (see RELEASING.md Support / version policy)
-go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@vX.Y.Z
+# after the first annotated tag (maintainers; see RELEASING.md) pin a release
+# go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@vX.Y.Z
 ```
 
 Honesty: **build PASS ≠ invent GA** · dual_write remains OFF · not Memory GA · residual PASS ≠ invent Edge Memory GA.

@@ -31,8 +31,14 @@ local filesystem under PALACE_ROOT/<tenant>/…
 
 ### From source
 
+There is **no** annotated `v*` GitHub Release yet (`/releases/latest` is 404).
+`@latest` therefore resolves to a **pseudo-version**, and `ServerVersion` in a
+`go install` binary stays the default `v0.1.0` ldflag unless you `make build`.
+Pin `@main` (or an exact pseudo-version) until maintainers cut the first tag
+per [RELEASING.md](RELEASING.md). Do not invent forever-green cosign or Memory GA.
+
 ```bash
-go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@latest
+go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main
 ```
 
 ### Build from a clone
