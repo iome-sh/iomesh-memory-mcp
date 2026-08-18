@@ -204,17 +204,19 @@ MEMORY_ONNX_MODEL_PATH=/absolute/path/to/model docker compose up --build
 
 ## MCP tools
 
-| Tool | Kernel API |
-|------|------------|
-| `memory_ingest_turn` | `IngestTurn` |
-| `memory_write` | `Write` / `WriteAndSupersede` (durable facts; not a conversation turn) |
-| `memory_retrieve` | `SearchMemoryWithOptions` |
-| `memory_search_semantic` | Hybrid search on semantic tier |
-| `memory_list` | `ListMemoryWithOptions` |
-| `memory_compact_status` | `GetStats` |
-| `memory_facts_as_of` | `ListFactsAsOf` |
-| `memory_related` | `MultiHopRetrieve` (entity BFS lite; not full graph RAG) |
-| `memory_supersede_entity` | `SupersedeEntityFacts` (mutating; HITL stays at the client) |
+Local palace FS on the operator machine. `tools/list` and `healthz.tool_names` are discovery / compile-time registration — they are **not** ingest. dual_write **OFF** · **not** Memory GA.
+
+| Tool | Kernel API | Surface |
+|------|------------|---------|
+| `memory_ingest_turn` | `IngestTurn` | Write local FS (conversation turn) |
+| `memory_write` | `Write` / `WriteAndSupersede` (durable facts; not a conversation turn) | Write local FS |
+| `memory_retrieve` | `SearchMemoryWithOptions` | Read/search local FS; does not ingest |
+| `memory_search_semantic` | Hybrid search on semantic tier | Read local FS; does not ingest |
+| `memory_list` | `ListMemoryWithOptions` | List local FS; does not ingest |
+| `memory_compact_status` | `GetStats` | Local FS stats; does not ingest |
+| `memory_facts_as_of` | `ListFactsAsOf` | List local FS; does not ingest |
+| `memory_related` | `MultiHopRetrieve` (entity BFS lite; not full graph RAG) | Read local FS; does not ingest |
+| `memory_supersede_entity` | `SupersedeEntityFacts` (mutating; HITL stays at the client) | Write local FS (close facts) |
 
 Server name: **`iomesh-memory-mcp`**. Default version stamp: **`v0.1.0`** (overridden by `make build` / GoReleaser ldflags).
 

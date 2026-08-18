@@ -186,47 +186,47 @@ func (h *Host) NewSDKServer() *mcp.Server {
 func (h *Host) Register(sdkServer *mcp.Server) {
 	mcp.AddTool(sdkServer, &mcp.Tool{
 		Name:        "memory_ingest_turn",
-		Description: "Ingest a conversation turn (role=user|assistant|tool) into the tenant Palace (FS; dual_write OFF)",
+		Description: "Ingest a conversation turn into the local tenant palace FS (role=user|assistant|tool). dual_write OFF · not Memory GA",
 	}, h.handleIngestTurn)
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
 		Name:        "memory_write",
-		Description: "Write a durable fact via kernel Write (optional WriteAndSupersede when entity_key set). dual_write OFF · not Memory GA",
+		Description: "Write a durable fact to the local palace FS via kernel Write (optional WriteAndSupersede when entity_key set). dual_write OFF · not Memory GA",
 	}, h.handleWrite)
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
 		Name:        "memory_retrieve",
-		Description: "Hybrid retrieve memories via SearchMemoryWithOptions (keyword + optional vector re-rank residual)",
+		Description: "Read/search the local palace FS (SearchMemoryWithOptions; keyword + optional vector re-rank). Does not ingest. dual_write OFF · not Memory GA",
 	}, h.handleRetrieve)
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
 		Name:        "memory_search_semantic",
-		Description: "Search tier-4 semantic facts (hybrid search restricted to Semantic tier; no Qdrant required)",
+		Description: "Read/search local tier-4 semantic facts (hybrid; no Qdrant). Does not ingest. dual_write OFF · not Memory GA",
 	}, h.handleSearchSemantic)
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
 		Name:        "memory_list",
-		Description: "List palace entries by event time (ListMemoryWithOptions; optional session/query/time window)",
+		Description: "List local palace FS entries by event time. Read/list only; does not ingest. dual_write OFF · not Memory GA",
 	}, h.handleList)
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
 		Name:        "memory_compact_status",
-		Description: "Return Palace tier counts (GetStats); dual_write OFF · not Memory GA",
+		Description: "Local palace FS tier counts (GetStats). Does not ingest. dual_write OFF · not Memory GA",
 	}, h.handleCompactStatus)
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
 		Name:        "memory_facts_as_of",
-		Description: "List facts valid at as_of (ListFactsAsOf bi-temporal lite; not full dual-clock KG)",
+		Description: "List local facts valid at as_of (bi-temporal lite; not full dual-clock KG). Does not ingest. not Memory GA",
 	}, h.handleFactsAsOf)
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
 		Name:        "memory_related",
-		Description: "Multi-hop lite retrieve (MultiHopRetrieve; entity BFS). dual_write OFF · not Memory GA",
+		Description: "Multi-hop lite retrieve on local FS (entity BFS). Does not ingest. dual_write OFF · not Memory GA",
 	}, h.handleRelated)
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
 		Name:        "memory_supersede_entity",
-		Description: "Close open facts for an entity key (SupersedeEntityFacts). Mutating; HITL stays at the client. dual_write OFF",
+		Description: "Close open facts for an entity key on the local palace FS (SupersedeEntityFacts). Mutating; HITL stays at the client. dual_write OFF · not Memory GA",
 	}, h.handleSupersedeEntity)
 
 	log.Printf("mcphost: registered tools=%d server=%s version=%s dual_write=off not_memory_ga=true",
