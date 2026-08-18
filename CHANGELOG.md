@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Tool copy (#29):** list/retrieve/search/facts_as_of/related/compact_status descriptions and the README tool table say local palace FS, read/list only, **does not ingest**. `tools/list` / `healthz.tool_names` remain discovery, not ingest. Write tools stay local FS only. dual_write OFF · not Memory GA.
 - **go-sdk v1.7.0:** bump `github.com/modelcontextprotocol/go-sdk` 1.6.1 → 1.7.0 (protocol `2026-07-28` + legacy `2025-11-25` negotiate). Streamable HTTP already sets `Stateless: true`, which is required for the new revision on HTTP; stdio/legacy clients still negotiate down. Not a protocol-only-new-clients cut. dual_write OFF · not Memory GA.
 
 ### Changed
