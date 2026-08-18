@@ -11,17 +11,16 @@ Please treat quality, security, honesty locks, and tests as first-class.
 - **Does not import** `github.com/iome-sh/aion/**`  
 - Private aion broker / CP / INSTALL_STORE / billing stay out of this tree  
 
-This repository remains **private** until a deliberate visibility flip **after** the
-kernel (`github.com/iome-sh/memory`) is public. Do not assume public contribution
-workflows until that flip lands. Readiness residual PASS ≠ public flip.
+This repository is **public** (MIT). The kernel (`github.com/iome-sh/memory`) is
+also public. `GOPRIVATE` / a GitHub token are **not** required to clone, test, or
+`go install` this host. Maintainers may still set `GOPRIVATE` for other private
+org modules. residual PASS ≠ invent Memory GA.
 
 ## Development setup
 
 ```bash
 # Go version: see go.mod (CI uses that exact toolchain via GOTOOLCHAIN=auto)
-#
-# While github.com/iome-sh/memory is still private, set GOPRIVATE so module fetch
-# uses git credentials (SSH or a PAT with repo read on iome-sh/memory):
+# Public modules: no GOPRIVATE / PAT required for this host + memory kernel.
 git clone https://github.com/iome-sh/iomesh-memory-mcp.git
 cd iomesh-memory-mcp
 make test
@@ -29,10 +28,8 @@ make vet
 make build
 ```
 
-**After the kernel is public**, `GOPRIVATE` / `GONOSUMDB` for `iome-sh/*` become
-optional for public consumers (module proxy + checksum DB can resolve
-`github.com/iome-sh/memory` without a token). Maintainers may still keep
-`GOPRIVATE` for other private org modules.
+Historical note: while the kernel was private, `GOPRIVATE` / `GONOSUMDB` were
+needed for module fetch. That residual is retired for this host + kernel.
 
 Optional:
 
@@ -84,8 +81,7 @@ Report vulnerabilities privately — see [SECURITY.md](SECURITY.md). **Do not op
 
 ## Public repository policy
 
-**Forward policy after the deliberate public flip** (repo is still private today).
-When public, keep private program material out of the tree and PR surface:
+**This repository is public.** Keep private program material out of the tree and PR surface:
 
 - Do **not** put private monorepo paths (`aion/**` clone/build instructions), internal pending-todos, or unpublished stage URLs in PRs, docs, or CHANGELOG  
 - Do **not** invent **Memory GA**, dual_write ON by default, or full platform sidecar parity with private `aion-memory-mcp`  
@@ -94,7 +90,7 @@ When public, keep private program material out of the tree and PR surface:
 - Binary/image names operators run (**`iomesh-memory-mcp`**, `ghcr.io/iome-sh/iomesh-memory-mcp`) may appear when documenting install/wire-up  
 - Do **not** document “clone the private aion monorepo” as the product edge build path  
 
-While still private, serial stamps may appear in readiness residuals; they are not a public claim.
+Historical readiness residuals may still mention serial stamps; they are not a public claim. The repo is public.
 
 ## Pull requests
 
@@ -119,10 +115,9 @@ GitHub Actions workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) r
 
 Jobs: **lint** · **test** · **build** · **govulncheck** · **ci-success** (aggregate gate).
 
-While the kernel is private, CI needs `IOMESH_CI_PAT` / `GH_PAT` / `GO_MODULE_TOKEN`
-(or org access) with `repo` read on `iome-sh/memory`. **After the kernel is public**,
-module fetch is public and that PAT is optional — keep working private-module config
-until the kernel flip lands.
+The kernel is public. CI module fetch does **not** need `IOMESH_CI_PAT` / `GH_PAT` /
+`GO_MODULE_TOKEN` for this host (see `.github/workflows/ci.yml`). Historical
+private-module tokens are retired here. Do not invent a token requirement.
 
 Recommended branch protection on `main`:
 
@@ -159,7 +154,7 @@ Tenant layout: `filepath.Join(palaceRoot, tenant)` as Palace `BaseDir`.
 - Inventing Memory GA  
 - Requiring Qdrant/ONNX for default path  
 - Importing private aion packages  
-- Flipping the repository public (separate deliberate act; **kernel first**)  
+- Inventing a GitHub token / `GOPRIVATE` requirement for this public host + kernel  
 
 ## License
 

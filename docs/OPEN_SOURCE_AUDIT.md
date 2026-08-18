@@ -32,7 +32,7 @@ prior M4 readiness residual **s1468** · free eng concurrent **s1467+** after fr
 | HTTP mode auth residual documented (lean v1: none) | Pass |
 | dual_write OFF residual documented | Pass |
 | govulncheck in CI | Pass |
-| Residual: private dep on `github.com/iome-sh/memory` until kernel public flip | **Partial** — CI needs module token / org access while both private; **after kernel public**, module fetch is public and PAT optional |
+| Residual: private dep on `github.com/iome-sh/memory` until kernel public flip | **Resolved** — kernel is public; module fetch is public; no PAT required |
 
 ## Honesty locks (product narrative)
 
@@ -76,8 +76,8 @@ prior M4 readiness residual **s1468** · free eng concurrent **s1467+** after fr
 | Risk | Rating | Notes |
 |------|--------|-------|
 | Visibility public | **Pass** (deliberate flip complete) | s1474 final audit does **not** flip public |
-| Private kernel dependency | **Partial** until kernel public | M4: **kernel first**, then this host |
-| CI token residual while kernel private | **Partial** | `IOMESH_CI_PAT` / `GO_MODULE_TOKEN` / org access for module fetch; optional after kernel public |
+| Private kernel dependency | **Resolved** (kernel public) | M4: **kernel first**, then this host — both public |
+| CI token residual while kernel private | **Resolved** | No `IOMESH_CI_PAT` / `GO_MODULE_TOKEN` required for this host; do not invent a token requirement |
 | HTTP unauthenticated lean v1 | Residual | Documented; bind localhost / proxy |
 | Path tenancy same-process | Residual | Documented |
 | dual_write optional later | Residual | Interface not wired; default OFF |
@@ -111,7 +111,7 @@ See [PUBLIC_FLIP_READINESS.md](PUBLIC_FLIP_READINESS.md) post-flip steps. Summar
 | Process bar vs iomesh-tui (binary product) | **Pass** — CONTRIBUTING public policy · release.yml · goreleaser · cosign · release-snapshot |
 | Process bar vs memory s1452 | **Pass** (artifacts + CI spirit aligned) |
 | M4 readiness residual (docs + offline gate) | **Pass** — readiness only |
-| Residual private kernel dep | **Partial** until kernel public |
+| Residual private kernel dep | **Resolved** (kernel public) |
 | Visibility public flip | **Done** — public MIT · residual PASS ≠ invent Memory GA · readiness ≠ invent flip (historical) |
 | Product honesty | **Pass** |
 | Lean extract (no aion) | **Pass** |

@@ -5,13 +5,12 @@
 FROM golang:1.26-bookworm AS build
 WORKDIR /src
 
-ENV GOPRIVATE=github.com/iome-sh/* \
-    GONOSUMDB=github.com/iome-sh/* \
-    CGO_ENABLED=0 \
+# Public modules (this host + github.com/iome-sh/memory). No GOPRIVATE / token required.
+ENV CGO_ENABLED=0 \
     GOTOOLCHAIN=auto
 
-# Optional: pass a netrc/token at build time for private kernel while still private.
-# docker build --build-arg GH_TOKEN=... 
+# Optional leftover only: a build-arg is accepted if an operator points at a
+# private fork. Default builds do not need it. Do not invent a token requirement.
 ARG GH_TOKEN=
 RUN if [ -n "$GH_TOKEN" ]; then \
       git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"; \
