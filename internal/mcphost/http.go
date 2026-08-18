@@ -30,6 +30,31 @@ type HealthzResponse struct {
 	ToolNames []string `json:"tool_names,omitempty"`
 }
 
+// HealthzSnapshot is the residual-honest GET /healthz body used by HTTP and CLI -preflight.
+// Live EmbeddingMode when host != nil; nil → env snapshot (same as HealthzHandler).
+// tools / tool_names are compile-time registration — not a live tools/list stamp, not ingest.
+// dual_write OFF · not Memory GA · qdrant off · no hosted palace probe.
+func HealthzSnapshot(host *Host) HealthzResponse {
+	emb := "hash"
+	if host != nil {
+		emb = host.EmbeddingMode()
+	} else if strings.TrimSpace(os.Getenv("MEMORY_ONNX_MODEL_PATH")) != "" {
+		emb = "onnx" // process env intent; host construction may still fail-open
+	}
+	names := LeanToolNames()
+	return HealthzResponse{
+		Status:      "ok",
+		Service:     ServerName,
+		DualWrite:   "off",
+		NotMemoryGA: true,
+		Embeddings:  emb,
+		Qdrant:      "off",
+		Version:     ServerVersion,
+		Tools:       len(names),
+		ToolNames:   names,
+	}
+}
+
 // HealthzHandler returns 200 JSON honesty locks for edge probes.
 // Optional host argument reports live embedding mode; nil → env snapshot.
 func HealthzHandler(hosts ...*Host) http.HandlerFunc {
@@ -42,24 +67,7 @@ func HealthzHandler(hosts ...*Host) http.HandlerFunc {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-		emb := "hash"
-		if host != nil {
-			emb = host.EmbeddingMode()
-		} else if strings.TrimSpace(os.Getenv("MEMORY_ONNX_MODEL_PATH")) != "" {
-			emb = "onnx" // process env intent; host construction may still fail-open
-		}
-		names := LeanToolNames()
-		body := HealthzResponse{
-			Status:      "ok",
-			Service:     ServerName,
-			DualWrite:   "off",
-			NotMemoryGA: true,
-			Embeddings:  emb,
-			Qdrant:      "off",
-			Version:     ServerVersion,
-			Tools:       len(names),
-			ToolNames:   names,
-		}
+		body := HealthzSnapshot(host)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		if r.Method == http.MethodHead {

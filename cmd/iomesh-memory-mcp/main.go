@@ -1,12 +1,18 @@
 // Command iomesh-memory-mcp is the lean edge Memory MCP host (Option A M2 / s1457).
 //
 // Default transport is stdio; set -http-addr (or MEMORY_MCP_HTTP_ADDR) for
-// streamable HTTP. Does not import aion. dual_write OFF · not Memory GA.
+// streamable HTTP. -preflight prints the same honesty JSON as GET /healthz
+// and exits (no listen, no stdio MCP). Does not import aion.
+// dual_write OFF · not Memory GA.
 package main
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"flag"
+	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/signal"
@@ -19,16 +25,42 @@ import (
 )
 
 func main() {
+	if err := run(os.Args[1:], os.Stdout); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			os.Exit(0)
+		}
+		if errors.Is(err, errFlag) {
+			os.Exit(2)
+		}
+		log.Fatal(err)
+	}
+}
+
+// errFlag marks FlagSet parse errors (usage already written to stderr).
+var errFlag = errors.New("flag")
+
+func run(args []string, stdout io.Writer) error {
+	fs := flag.NewFlagSet("iomesh-memory-mcp", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+
 	defaultPalace := envOr("PALACE_ROOT", defaultPalaceRoot())
-	palaceRoot := flag.String("palace-root", defaultPalace, "tenant palace root base directory")
-	tenant := flag.String("tenant", envOr("MEMORY_TENANT", ""), "default tenant subdirectory under palace root")
-	httpAddr := flag.String("http-addr", firstEnvPrefer(
+	palaceRoot := fs.String("palace-root", defaultPalace, "tenant palace root base directory")
+	tenant := fs.String("tenant", envOr("MEMORY_TENANT", ""), "default tenant subdirectory under palace root")
+	httpAddr := fs.String("http-addr", firstEnvPrefer(
 		"MEMORY_MCP_HTTP_ADDR",
 		"AION_MEMORY_MCP_HTTP_ADDR",
 	), "listen address for streamable HTTP (e.g. :8080); empty = stdio mode")
-	httpPath := flag.String("http-path", envOr("MEMORY_MCP_HTTP_PATH", "/mcp"),
+	httpPath := fs.String("http-path", envOr("MEMORY_MCP_HTTP_PATH", "/mcp"),
 		"URL path for the MCP streamable HTTP endpoint (healthz always at /healthz)")
-	flag.Parse()
+	preflight := fs.Bool("preflight", false,
+		"print the same honesty JSON as GET /healthz and exit (no listen, no stdio MCP; not tools/list, not ingest)")
+
+	if err := fs.Parse(args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return err
+		}
+		return fmt.Errorf("%w: %v", errFlag, err)
+	}
 
 	warnDeprecatedEnvAliases()
 
@@ -37,7 +69,15 @@ func main() {
 		DefaultTenant: *tenant,
 	})
 	if err != nil {
-		log.Fatalf("mcphost: %v", err)
+		return fmt.Errorf("mcphost: %w", err)
+	}
+
+	if *preflight {
+		// Same HealthzResponse fields as GET /healthz. Registration ≠ tools/list ≠ ingest.
+		if err := json.NewEncoder(stdout).Encode(mcphost.HealthzSnapshot(host)); err != nil {
+			return fmt.Errorf("preflight: %w", err)
+		}
+		return nil
 	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -51,16 +91,17 @@ func main() {
 			Path: *httpPath,
 			Host: host,
 		}); err != nil {
-			log.Fatalf("http: %v", err)
+			return fmt.Errorf("http: %w", err)
 		}
-		return
+		return nil
 	}
 
 	log.Printf("%s mode=stdio palace=%s tenant_default=%q embeddings=%s qdrant=off dual_write=off not_memory_ga=true version=%s",
 		mcphost.ServerName, *palaceRoot, host.ResolveTenant(""), host.EmbeddingMode(), mcphost.ServerVersion)
 	if err := sdk.Run(ctx, &mcp.StdioTransport{}); err != nil && ctx.Err() == nil {
-		log.Fatalf("mcp server: %v", err)
+		return fmt.Errorf("mcp server: %w", err)
 	}
+	return nil
 }
 
 // defaultPalaceRoot prefers local dogfood path; containers often bind /data.

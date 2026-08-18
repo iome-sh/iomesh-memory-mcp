@@ -26,6 +26,50 @@ func TestHealthzHandler(t *testing.T) {
 	if err := json.Unmarshal(rr.Body.Bytes(), &body); err != nil {
 		t.Fatalf("json: %v body=%s", err, rr.Body.String())
 	}
+	assertHealthzHonesty(t, body)
+}
+
+func TestHealthzSnapshotMatchesHandler(t *testing.T) {
+	t.Setenv("MEMORY_ONNX_MODEL_PATH", "")
+	h, err := New(Config{PalaceRoot: t.TempDir()})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
+	rr := httptest.NewRecorder()
+	HealthzHandler(h).ServeHTTP(rr, req)
+	var got HealthzResponse
+	if err := json.Unmarshal(rr.Body.Bytes(), &got); err != nil {
+		t.Fatalf("json: %v body=%s", err, rr.Body.String())
+	}
+	want := HealthzSnapshot(h)
+	if got.Status != want.Status || got.Service != want.Service || got.DualWrite != want.DualWrite ||
+		got.NotMemoryGA != want.NotMemoryGA || got.Embeddings != want.Embeddings || got.Qdrant != want.Qdrant ||
+		got.Version != want.Version || got.Tools != want.Tools {
+		t.Fatalf("handler vs snapshot: got=%+v want=%+v", got, want)
+	}
+	if len(got.ToolNames) != len(want.ToolNames) {
+		t.Fatalf("tool_names len: handler=%d snapshot=%d", len(got.ToolNames), len(want.ToolNames))
+	}
+	for i := range want.ToolNames {
+		if got.ToolNames[i] != want.ToolNames[i] {
+			t.Fatalf("tool_names[%d]: handler=%q snapshot=%q", i, got.ToolNames[i], want.ToolNames[i])
+		}
+	}
+	assertHealthzHonesty(t, want)
+}
+
+func TestHealthzSnapshotNilHostEnvHash(t *testing.T) {
+	t.Setenv("MEMORY_ONNX_MODEL_PATH", "")
+	body := HealthzSnapshot(nil)
+	assertHealthzHonesty(t, body)
+	if body.Embeddings != "hash" {
+		t.Fatalf("embeddings: %q want hash", body.Embeddings)
+	}
+}
+
+func assertHealthzHonesty(t *testing.T, body HealthzResponse) {
+	t.Helper()
 	if body.Status != "ok" {
 		t.Fatalf("status field: %q", body.Status)
 	}

@@ -68,6 +68,7 @@ make release-snapshot
 ```bash
 export PALACE_ROOT=./data/memory-palaces
 export MEMORY_TENANT=default
+./bin/iomesh-memory-mcp -preflight   # same honesty JSON as GET /healthz; no listen · dual_write=off · not Memory GA
 ./bin/iomesh-memory-mcp -palace-root "$PALACE_ROOT" -tenant "$MEMORY_TENANT"
 ```
 
@@ -194,6 +195,7 @@ MEMORY_ONNX_MODEL_PATH=/absolute/path/to/model docker compose up --build
 | `-tenant` | `MEMORY_TENANT` | `default` when empty | Tenant subdirectory |
 | `-http-addr` | `MEMORY_MCP_HTTP_ADDR` | empty = **stdio** | e.g. `:8080` |
 | `-http-path` | `MEMORY_MCP_HTTP_PATH` | `/mcp` | Streamable MCP path (`/healthz` is fixed) |
+| `-preflight` | — | false | Print the same honesty JSON as `GET /healthz` and exit (no listen, no stdio MCP; `tool_names` = registration, not ingest) |
 | (env only) | `MEMORY_ONNX_MODEL_PATH` | empty = **hash** embeddings | Optional ONNX model dir/file for stronger semantic retrieve · see [memory](https://github.com/iome-sh/memory) README |
 | (env only) | `MEMORY_EMBEDDING_STRICT` | unset | When `true`, ONNX errors do not fall back to hash (kernel) |
 | (env only) | `MEMORY_HUGOT_BACKEND` | `go` | Kernel hugot backend (`go` / `ort` / `auto`) |
