@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **CLI `-preflight` (#28):** constructs the host and prints the same honesty JSON as `GET /healthz` (`status`, `service`, `dual_write=off`, `not_memory_ga`, `embeddings`, `qdrant=off`, `version`, `tools`, `tool_names`), then exits without listening or running stdio MCP. Registration ≠ `tools/list` ≠ ingest. No hosted palace probe. dual_write OFF · not Memory GA.
+
 ### Fixed
 - **Invalid RFC3339 time fields (#26):** `parseOptionalTime` / `parseTimeOrNow` now return an error on non-empty unparsable input instead of treating it as unset or now. `memory_ingest_turn`, `memory_retrieve`, `memory_list`, `memory_facts_as_of`, `memory_related`, and `memory_supersede_entity` fail closed. Empty still means now / omitted. dual_write OFF · not Memory GA.
 - **Post-flip honesty (#30):** CONTRIBUTING / Makefile help / compose no longer say the repo is private. Docker and `.env.example` no longer present a GitHub token as required (kernel + host are public). Compose publishes `127.0.0.1:8080` for local dogfood. `make tidy` matches public CI (no `GOPRIVATE`). dual_write OFF · not Memory GA.
