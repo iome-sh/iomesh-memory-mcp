@@ -46,6 +46,22 @@ need_needle() {
   fi
 }
 
+# file must exist and must NOT contain pattern
+forbid_needle() {
+  local f="$1"
+  local pat="$2"
+  local label="${3:-$pat}"
+  if [[ ! -f "$f" ]]; then
+    fail_msg "forbid skip (missing file): $f ($label)"
+    return
+  fi
+  if grep -E -q -- "$pat" "$f"; then
+    fail_msg "forbid hit: $f ← $label"
+  else
+    pass "forbid: $f ↛ $label"
+  fi
+}
+
 echo "== edge_dogfood_gate (s1462 M3) offline — $ROOT =="
 echo "   dual_write OFF · not Memory GA · public · dual_write OFF · no docker daemon required"
 echo
@@ -73,8 +89,9 @@ need_needle "docs/EDGE_DOGFOOD.md" "residual PASS ≠ public flip|residual PASS 
 need_needle "docs/EDGE_DOGFOOD.md" "full platform sidecar parity|platform sidecar parity" "no full platform sidecar parity"
 need_needle "docs/EDGE_DOGFOOD.md" "no aion import" "no aion import"
 need_needle "docs/EDGE_DOGFOOD.md" "iomesh-memory-mcp" "naming iomesh-memory-mcp"
-need_needle "docs/EDGE_DOGFOOD.md" '\$88|~\$88|~\\$88|~\$88' "rates ~\$88"
-need_needle "docs/EDGE_DOGFOOD.md" '\$119|~\$119' "rates ~\$119"
+forbid_needle "docs/EDGE_DOGFOOD.md" 'Memory Ops Pack' "no Memory Ops Pack SKU"
+forbid_needle "docs/EDGE_DOGFOOD.md" '\$88|~\$88' "no ~\$88 mesh rate"
+forbid_needle "docs/EDGE_DOGFOOD.md" '\$119|~\$119' "no ~\$119 pack rate"
 need_needle "docs/EDGE_DOGFOOD.md" "Palace sunset|hosted Palace sunset" "Palace sunset"
 need_needle "docs/EDGE_DOGFOOD.md" "mesh optional" "mesh optional for pull"
 need_needle "docs/EDGE_DOGFOOD.md" "open boxes stay open" "open boxes stay open"
