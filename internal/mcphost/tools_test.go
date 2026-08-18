@@ -589,15 +589,55 @@ func TestToolJSONHelpers(t *testing.T) {
 }
 
 func TestParseTimeHelpers(t *testing.T) {
-	if _, ok := parseOptionalTime(""); ok {
-		t.Fatal("empty should be unset")
+	if _, ok, err := parseOptionalTime(""); err != nil || ok {
+		t.Fatalf("empty should be unset: ok=%v err=%v", ok, err)
 	}
 	now := time.Now().UTC().Truncate(time.Second)
-	got, ok := parseOptionalTime(now.Format(time.RFC3339))
-	if !ok || !got.Equal(now) {
-		t.Fatalf("parse: ok=%v got=%v want=%v", ok, got, now)
+	got, ok, err := parseOptionalTime(now.Format(time.RFC3339))
+	if err != nil || !ok || !got.Equal(now) {
+		t.Fatalf("parse: ok=%v err=%v got=%v want=%v", ok, err, got, now)
 	}
-	if parseTimeOrNow("").IsZero() {
-		t.Fatal("now fallback")
+	gotNow, err := parseTimeOrNow("")
+	if err != nil || gotNow.IsZero() {
+		t.Fatalf("now fallback: err=%v zero=%v", err, gotNow.IsZero())
+	}
+	if _, _, err := parseOptionalTime("last-week"); err == nil {
+		t.Fatal("invalid non-empty must error")
+	}
+	if _, err := parseTimeOrNow("last-week"); err == nil {
+		t.Fatal("parseTimeOrNow invalid must error")
+	}
+}
+
+func TestInvalidTimeFieldsFailClosed(t *testing.T) {
+	h, err := New(Config{PalaceRoot: t.TempDir(), DefaultTenant: "dogfood"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	ctx := context.Background()
+	const bad = "last-week"
+
+	if _, _, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+		SessionID: "s",
+		Role:      "user",
+		Content:   "note",
+		EventTime: bad,
+	}); err == nil {
+		t.Fatal("ingest event_time invalid must error")
+	}
+	if _, _, err := h.handleRetrieve(ctx, nil, retrieveInput{Query: "note", Since: bad}); err == nil {
+		t.Fatal("retrieve since invalid must error")
+	}
+	if _, _, err := h.handleList(ctx, nil, listInput{Until: bad}); err == nil {
+		t.Fatal("list until invalid must error")
+	}
+	if _, _, err := h.handleFactsAsOf(ctx, nil, factsAsOfInput{AsOf: bad}); err == nil {
+		t.Fatal("facts_as_of invalid must error")
+	}
+	if _, _, err := h.handleRelated(ctx, nil, relatedInput{SeedEntity: "e", AsOf: bad}); err == nil {
+		t.Fatal("related as_of invalid must error")
+	}
+	if _, _, err := h.handleSupersedeEntity(ctx, nil, supersedeEntityInput{EntityKey: "e", AsOf: bad}); err == nil {
+		t.Fatal("supersede as_of invalid must error")
 	}
 }

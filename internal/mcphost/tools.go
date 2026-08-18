@@ -47,7 +47,10 @@ func (h *Host) handleIngestTurn(_ context.Context, _ *mcp.CallToolRequest, in in
 	tenant := h.ResolveTenant(in.Tenant)
 	ps := h.Store(tenant)
 
-	ts := parseTimeOrNow(firstNonEmpty(in.EventTime, in.Timestamp))
+	ts, err := parseTimeOrNow(firstNonEmpty(in.EventTime, in.Timestamp))
+	if err != nil {
+		return toolError(err), ingestTurnOutput{}, err
+	}
 	id := strings.TrimSpace(in.MemoryID)
 	if id == "" {
 		id = palace.GenerateMemoryID()
@@ -258,10 +261,14 @@ func (h *Host) handleRetrieve(_ context.Context, _ *mcp.CallToolRequest, in retr
 		SessionID: strings.TrimSpace(in.SessionID),
 		Limit:     in.Limit,
 	}
-	if t, ok := parseOptionalTime(in.Since); ok {
+	if t, ok, err := parseOptionalTime(in.Since); err != nil {
+		return toolError(err), retrieveOutput{}, err
+	} else if ok {
 		opts.TimeFrom = &t
 	}
-	if t, ok := parseOptionalTime(in.Until); ok {
+	if t, ok, err := parseOptionalTime(in.Until); err != nil {
+		return toolError(err), retrieveOutput{}, err
+	} else if ok {
 		opts.TimeTo = &t
 	}
 
@@ -403,10 +410,14 @@ func (h *Host) handleList(_ context.Context, _ *mcp.CallToolRequest, in listInpu
 		IncludeArchival: in.IncludeArchival,
 		Ascending:       in.Ascending,
 	}
-	if t, ok := parseOptionalTime(in.Since); ok {
+	if t, ok, err := parseOptionalTime(in.Since); err != nil {
+		return toolError(err), listOutput{}, err
+	} else if ok {
 		opts.TimeFrom = &t
 	}
-	if t, ok := parseOptionalTime(in.Until); ok {
+	if t, ok, err := parseOptionalTime(in.Until); err != nil {
+		return toolError(err), listOutput{}, err
+	} else if ok {
 		opts.TimeTo = &t
 	}
 	entries := ps.ListMemoryWithOptions(opts)
@@ -477,7 +488,10 @@ type factsAsOfOutput struct {
 func (h *Host) handleFactsAsOf(_ context.Context, _ *mcp.CallToolRequest, in factsAsOfInput) (*mcp.CallToolResult, factsAsOfOutput, error) {
 	tenant := h.ResolveTenant(in.Tenant)
 	ps := h.Store(tenant)
-	asOf := parseTimeOrNow(in.AsOf)
+	asOf, err := parseTimeOrNow(in.AsOf)
+	if err != nil {
+		return toolError(err), factsAsOfOutput{}, err
+	}
 	opts := palace.FactsAsOfOptions{
 		AsOf:      asOf,
 		Query:     strings.TrimSpace(in.Query),
@@ -535,7 +549,9 @@ func (h *Host) handleRelated(_ context.Context, _ *mcp.CallToolRequest, in relat
 		SessionID:       strings.TrimSpace(in.SessionID),
 		IncludeArchival: in.IncludeArchival,
 	}
-	if t, ok := parseOptionalTime(in.AsOf); ok {
+	if t, ok, err := parseOptionalTime(in.AsOf); err != nil {
+		return toolError(err), relatedOutput{}, err
+	} else if ok {
 		opts.AsOf = &t
 	}
 	// Do not inject hash QueryVec (same miss as retrieve #21 / kernel #45).
@@ -588,7 +604,10 @@ func (h *Host) handleSupersedeEntity(_ context.Context, _ *mcp.CallToolRequest, 
 	}
 	tenant := h.ResolveTenant(in.Tenant)
 	ps := h.Store(tenant)
-	asOf := parseTimeOrNow(in.AsOf)
+	asOf, err := parseTimeOrNow(in.AsOf)
+	if err != nil {
+		return toolError(err), supersedeEntityOutput{}, err
+	}
 	n, err := ps.SupersedeEntityFacts(key, asOf)
 	if err != nil {
 		return toolError(err), supersedeEntityOutput{}, err
@@ -664,24 +683,30 @@ func truncate(s string, n int) string {
 	return s[:n]
 }
 
-func parseOptionalTime(s string) (time.Time, bool) {
+// parseOptionalTime parses RFC3339 or RFC3339Nano.
+// Empty → (zero, false, nil). Invalid non-empty → error (do not treat as unset/now).
+func parseOptionalTime(s string) (time.Time, bool, error) {
 	s = strings.TrimSpace(s)
 	if s == "" {
-		return time.Time{}, false
+		return time.Time{}, false, nil
 	}
 	t, err := time.Parse(time.RFC3339, s)
 	if err != nil {
 		t, err = time.Parse(time.RFC3339Nano, s)
 	}
 	if err != nil {
-		return time.Time{}, false
+		return time.Time{}, false, fmt.Errorf("invalid RFC3339 time %q", s)
 	}
-	return t, true
+	return t, true, nil
 }
 
-func parseTimeOrNow(s string) time.Time {
-	if t, ok := parseOptionalTime(s); ok {
-		return t
+func parseTimeOrNow(s string) (time.Time, error) {
+	t, ok, err := parseOptionalTime(s)
+	if err != nil {
+		return time.Time{}, err
 	}
-	return time.Now().UTC()
+	if !ok {
+		return time.Now().UTC(), nil
+	}
+	return t, nil
 }
