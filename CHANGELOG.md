@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Tenant single path segment (#27):** when `tenant` is provided (tool input or `-tenant` / `MEMORY_TENANT`), it must be a single path segment (reject `.`, `..`, separators). Invalid tool tenant returns an `IsError` result; invalid default tenant fails process start. Omitted/empty tool tenant still uses the configured default. Same-process path isolation only · dual_write OFF · not Memory GA.
 
 ### Fixed
+- **EDGE_DOGFOOD rates (#36):** drop priced Memory Ops Pack / ~$119 / ~$88 language. Mesh stays optional for pull/retain without a SKU. Gate forbids those needles. dual_write OFF · not Memory GA.
 - **Invalid RFC3339 time fields (#26):** `parseOptionalTime` / `parseTimeOrNow` now return an error on non-empty unparsable input instead of treating it as unset or now. `memory_ingest_turn`, `memory_retrieve`, `memory_list`, `memory_facts_as_of`, `memory_related`, and `memory_supersede_entity` fail closed. Empty still means now / omitted. dual_write OFF · not Memory GA.
 - **Post-flip honesty (#30):** CONTRIBUTING / Makefile help / compose no longer say the repo is private. Docker and `.env.example` no longer present a GitHub token as required (kernel + host are public). Compose publishes `127.0.0.1:8080` for local dogfood. `make tidy` matches public CI (no `GOPRIVATE`). dual_write OFF · not Memory GA.
 
