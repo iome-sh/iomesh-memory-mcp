@@ -96,8 +96,12 @@ func run(args []string, stdout io.Writer) error {
 		return nil
 	}
 
+	defaultTenant, err := host.ResolveTenant("")
+	if err != nil {
+		log.Fatalf("mcphost: %v", err)
+	}
 	log.Printf("%s mode=stdio palace=%s tenant_default=%q embeddings=%s qdrant=off dual_write=off not_memory_ga=true version=%s",
-		mcphost.ServerName, *palaceRoot, host.ResolveTenant(""), host.EmbeddingMode(), mcphost.ServerVersion)
+		mcphost.ServerName, *palaceRoot, defaultTenant, host.EmbeddingMode(), mcphost.ServerVersion)
 	if err := sdk.Run(ctx, &mcp.StdioTransport{}); err != nil && ctx.Err() == nil {
 		return fmt.Errorf("mcp server: %w", err)
 	}

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **CLI `-preflight` (#28):** constructs the host and prints the same honesty JSON as `GET /healthz` (`status`, `service`, `dual_write=off`, `not_memory_ga`, `embeddings`, `qdrant=off`, `version`, `tools`, `tool_names`), then exits without listening or running stdio MCP. Registration ≠ `tools/list` ≠ ingest. No hosted palace probe. dual_write OFF · not Memory GA.
+- **Tenant single path segment (#27):** when `tenant` is provided (tool input or `-tenant` / `MEMORY_TENANT`), it must be a single path segment (reject `.`, `..`, separators). Invalid tool tenant returns an `IsError` result; invalid default tenant fails process start. Omitted/empty tool tenant still uses the configured default. Same-process path isolation only · dual_write OFF · not Memory GA.
 
 ### Fixed
 - **Invalid RFC3339 time fields (#26):** `parseOptionalTime` / `parseTimeOrNow` now return an error on non-empty unparsable input instead of treating it as unset or now. `memory_ingest_turn`, `memory_retrieve`, `memory_list`, `memory_facts_as_of`, `memory_related`, and `memory_supersede_entity` fail closed. Empty still means now / omitted. dual_write OFF · not Memory GA.

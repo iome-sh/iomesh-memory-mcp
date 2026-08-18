@@ -44,8 +44,10 @@ func (h *Host) handleIngestTurn(_ context.Context, _ *mcp.CallToolRequest, in in
 	if role == "" {
 		role = "user"
 	}
-	tenant := h.ResolveTenant(in.Tenant)
-	ps := h.Store(tenant)
+	tenant, ps, err := h.resolveStore(in.Tenant)
+	if err != nil {
+		return toolError(err), ingestTurnOutput{}, err
+	}
 
 	ts, err := parseTimeOrNow(firstNonEmpty(in.EventTime, in.Timestamp))
 	if err != nil {
@@ -140,8 +142,10 @@ func (h *Host) handleWrite(_ context.Context, _ *mcp.CallToolRequest, in writeIn
 		full = summary
 	}
 
-	tenant := h.ResolveTenant(in.Tenant)
-	ps := h.Store(tenant)
+	tenant, ps, err := h.resolveStore(in.Tenant)
+	if err != nil {
+		return toolError(err), writeOutput{}, err
+	}
 	ts := time.Now().UTC()
 	id := strings.TrimSpace(in.MemoryID)
 	if id == "" {
@@ -188,7 +192,6 @@ func (h *Host) handleWrite(_ context.Context, _ *mcp.CallToolRequest, in writeIn
 		doSuper = *in.Supersede && entityKey != ""
 	}
 
-	var err error
 	if doSuper {
 		err = ps.WriteAndSupersede(entry, []string{entityKey})
 	} else {
@@ -254,8 +257,10 @@ func (h *Host) handleRetrieve(_ context.Context, _ *mcp.CallToolRequest, in retr
 		err := fmt.Errorf("query required")
 		return toolError(err), retrieveOutput{}, err
 	}
-	tenant := h.ResolveTenant(in.Tenant)
-	ps := h.Store(tenant)
+	tenant, ps, err := h.resolveStore(in.Tenant)
+	if err != nil {
+		return toolError(err), retrieveOutput{}, err
+	}
 
 	opts := palace.SearchMemoryOptions{
 		SessionID: strings.TrimSpace(in.SessionID),
@@ -330,8 +335,10 @@ type searchSemanticOutput struct {
 }
 
 func (h *Host) handleSearchSemantic(_ context.Context, _ *mcp.CallToolRequest, in searchSemanticInput) (*mcp.CallToolResult, searchSemanticOutput, error) {
-	tenant := h.ResolveTenant(in.Tenant)
-	ps := h.Store(tenant)
+	tenant, ps, err := h.resolveStore(in.Tenant)
+	if err != nil {
+		return toolError(err), searchSemanticOutput{}, err
+	}
 	query := strings.TrimSpace(in.Query)
 	limit := in.Limit
 	if limit <= 0 {
@@ -399,8 +406,10 @@ type listOutput struct {
 }
 
 func (h *Host) handleList(_ context.Context, _ *mcp.CallToolRequest, in listInput) (*mcp.CallToolResult, listOutput, error) {
-	tenant := h.ResolveTenant(in.Tenant)
-	ps := h.Store(tenant)
+	tenant, ps, err := h.resolveStore(in.Tenant)
+	if err != nil {
+		return toolError(err), listOutput{}, err
+	}
 	opts := palace.ListMemoryOptions{
 		SessionID:       strings.TrimSpace(in.SessionID),
 		Query:           strings.TrimSpace(in.Query),
@@ -448,8 +457,10 @@ type compactStatusOutput struct {
 }
 
 func (h *Host) handleCompactStatus(_ context.Context, _ *mcp.CallToolRequest, in compactStatusInput) (*mcp.CallToolResult, compactStatusOutput, error) {
-	tenant := h.ResolveTenant(in.Tenant)
-	ps := h.Store(tenant)
+	tenant, ps, err := h.resolveStore(in.Tenant)
+	if err != nil {
+		return toolError(err), compactStatusOutput{}, err
+	}
 	stats := ps.GetStats()
 	out := compactStatusOutput{
 		Tenant:          tenant,
@@ -486,8 +497,10 @@ type factsAsOfOutput struct {
 }
 
 func (h *Host) handleFactsAsOf(_ context.Context, _ *mcp.CallToolRequest, in factsAsOfInput) (*mcp.CallToolResult, factsAsOfOutput, error) {
-	tenant := h.ResolveTenant(in.Tenant)
-	ps := h.Store(tenant)
+	tenant, ps, err := h.resolveStore(in.Tenant)
+	if err != nil {
+		return toolError(err), factsAsOfOutput{}, err
+	}
 	asOf, err := parseTimeOrNow(in.AsOf)
 	if err != nil {
 		return toolError(err), factsAsOfOutput{}, err
@@ -539,8 +552,10 @@ func (h *Host) handleRelated(_ context.Context, _ *mcp.CallToolRequest, in relat
 		err := fmt.Errorf("seed_entity or seed_query required")
 		return toolError(err), relatedOutput{}, err
 	}
-	tenant := h.ResolveTenant(in.Tenant)
-	ps := h.Store(tenant)
+	tenant, ps, err := h.resolveStore(in.Tenant)
+	if err != nil {
+		return toolError(err), relatedOutput{}, err
+	}
 	opts := palace.MultiHopOptions{
 		SeedEntity:      seedEntity,
 		SeedQuery:       seedQuery,
@@ -602,8 +617,10 @@ func (h *Host) handleSupersedeEntity(_ context.Context, _ *mcp.CallToolRequest, 
 		err := fmt.Errorf("entity_key required")
 		return toolError(err), supersedeEntityOutput{}, err
 	}
-	tenant := h.ResolveTenant(in.Tenant)
-	ps := h.Store(tenant)
+	tenant, ps, err := h.resolveStore(in.Tenant)
+	if err != nil {
+		return toolError(err), supersedeEntityOutput{}, err
+	}
 	asOf, err := parseTimeOrNow(in.AsOf)
 	if err != nil {
 		return toolError(err), supersedeEntityOutput{}, err

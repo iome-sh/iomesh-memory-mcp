@@ -66,6 +66,12 @@ func New(cfg Config) (*Host, error) {
 	if root == "" {
 		return nil, fmt.Errorf("mcphost: palace root required")
 	}
+	defTenant := strings.TrimSpace(cfg.DefaultTenant)
+	if defTenant != "" {
+		if err := validateTenantSegment(defTenant); err != nil {
+			return nil, fmt.Errorf("mcphost: default tenant: %w", err)
+		}
+	}
 	mode := "hash"
 	var embedFn palace.EmbeddingFunc
 	var batchFn palace.BatchEmbeddingFunc
@@ -92,7 +98,7 @@ func New(cfg Config) (*Host, error) {
 	return &Host{
 		cfg: Config{
 			PalaceRoot:    root,
-			DefaultTenant: strings.TrimSpace(cfg.DefaultTenant),
+			DefaultTenant: defTenant,
 			EmbeddingMode: mode,
 		},
 		stores:   make(map[string]*palace.PalaceStore),
@@ -110,29 +116,60 @@ func (h *Host) EmbeddingMode() string {
 	return h.cfg.EmbeddingMode
 }
 
+// validateTenantSegment allows one path segment so TenantDir stays under palace
+// root. Rejects ".", "..", and separators. Path-based isolation only — not
+// hosted multi-tenant security.
+func validateTenantSegment(tenant string) error {
+	if tenant == "" || tenant == "." || tenant == ".." {
+		return fmt.Errorf("tenant %q must be a single path segment", tenant)
+	}
+	if strings.ContainsAny(tenant, `/\`) || strings.IndexByte(tenant, 0) >= 0 {
+		return fmt.Errorf("tenant %q must be a single path segment", tenant)
+	}
+	if !filepath.IsLocal(tenant) || filepath.Base(tenant) != tenant {
+		return fmt.Errorf("tenant %q must be a single path segment", tenant)
+	}
+	return nil
+}
+
 // ResolveTenant returns a non-empty tenant id (input, else default, else "default").
-func (h *Host) ResolveTenant(tenant string) string {
+// A provided tenant must be a single path segment (no separators, not "." or "..").
+// Empty/omitted uses the configured default (already validated in New).
+func (h *Host) ResolveTenant(tenant string) (string, error) {
 	tenant = strings.TrimSpace(tenant)
-	if tenant != "" {
-		return tenant
+	if tenant == "" {
+		if h != nil && h.cfg.DefaultTenant != "" {
+			tenant = h.cfg.DefaultTenant
+		} else {
+			tenant = "default"
+		}
 	}
-	if h.cfg.DefaultTenant != "" {
-		return h.cfg.DefaultTenant
+	if err := validateTenantSegment(tenant); err != nil {
+		return "", err
 	}
-	return "default"
+	return tenant, nil
 }
 
 // TenantDir returns filepath.Join(palaceRoot, tenant) for path-based isolation.
+// Invalid tenant returns "" (do not join traversal / multi-segment values).
 func (h *Host) TenantDir(tenant string) string {
-	return filepath.Join(h.cfg.PalaceRoot, h.ResolveTenant(tenant))
+	key, err := h.ResolveTenant(tenant)
+	if err != nil {
+		return ""
+	}
+	return filepath.Join(h.cfg.PalaceRoot, key)
 }
 
 // Store returns (creating if needed) the PalaceStore for tenant.
 // Multi-tenant isolation is path-based only; this is one process residual-honest.
+// Invalid tenant (not a single path segment) returns nil.
 // Embeddings: hash default · optional ONNX when host was constructed with MEMORY_ONNX_MODEL_PATH.
 // Qdrant is not attached here (lean FS hybrid + EmbeddingFunc re-rank only).
 func (h *Host) Store(tenant string) *palace.PalaceStore {
-	key := h.ResolveTenant(tenant)
+	key, err := h.ResolveTenant(tenant)
+	if err != nil {
+		return nil
+	}
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	if ps, ok := h.stores[key]; ok {
@@ -147,6 +184,16 @@ func (h *Host) Store(tenant string) *palace.PalaceStore {
 	ps := palace.NewPalaceStoreWithConfig(cfg)
 	h.stores[key] = ps
 	return ps
+}
+
+// resolveStore resolves tenant then returns the palace store. Invalid tenant
+// is an error (fail closed; do not join outside palace root).
+func (h *Host) resolveStore(tenant string) (string, *palace.PalaceStore, error) {
+	key, err := h.ResolveTenant(tenant)
+	if err != nil {
+		return "", nil, err
+	}
+	return key, h.Store(key), nil
 }
 
 // leanToolNames is the compile-time registered lean MCP surface.

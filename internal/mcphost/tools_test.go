@@ -554,6 +554,71 @@ func TestTenantPathIsolation(t *testing.T) {
 	}
 }
 
+func TestBadTenantToolIsError(t *testing.T) {
+	h, err := New(Config{PalaceRoot: t.TempDir(), DefaultTenant: "dogfood"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	ctx := context.Background()
+	const bad = ".."
+
+	res, out, err := h.handleList(ctx, nil, listInput{Tenant: bad})
+	if err == nil {
+		t.Fatal("list bad tenant must error")
+	}
+	if res == nil || !res.IsError {
+		t.Fatalf("list want IsError result, got %+v", res)
+	}
+	if out.Tenant != "" {
+		t.Fatalf("list output tenant: %q", out.Tenant)
+	}
+
+	// Omitted/empty tool tenant still uses the configured default.
+	res, out, err = h.handleList(ctx, nil, listInput{})
+	if err != nil {
+		t.Fatalf("empty tenant: %v", err)
+	}
+	if res != nil && res.IsError {
+		t.Fatal("empty tenant must not be IsError")
+	}
+	if out.Tenant != "dogfood" {
+		t.Fatalf("empty tenant: got %q", out.Tenant)
+	}
+
+	if res, _, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{Tenant: bad, SessionID: "s", Role: "user", Content: "n"}); err == nil || res == nil || !res.IsError {
+		t.Fatalf("ingest: err=%v res=%+v", err, res)
+	}
+	if res, _, err := h.handleWrite(ctx, nil, writeInput{Tenant: bad, Summary: "n"}); err == nil || res == nil || !res.IsError {
+		t.Fatalf("write: err=%v res=%+v", err, res)
+	}
+	if res, _, err := h.handleRetrieve(ctx, nil, retrieveInput{Tenant: bad, Query: "n"}); err == nil || res == nil || !res.IsError {
+		t.Fatalf("retrieve: err=%v res=%+v", err, res)
+	}
+	if res, _, err := h.handleSearchSemantic(ctx, nil, searchSemanticInput{Tenant: bad, Query: "n"}); err == nil || res == nil || !res.IsError {
+		t.Fatalf("semantic: err=%v res=%+v", err, res)
+	}
+	if res, _, err := h.handleCompactStatus(ctx, nil, compactStatusInput{Tenant: bad}); err == nil || res == nil || !res.IsError {
+		t.Fatalf("compact: err=%v res=%+v", err, res)
+	}
+	if res, _, err := h.handleFactsAsOf(ctx, nil, factsAsOfInput{Tenant: bad}); err == nil || res == nil || !res.IsError {
+		t.Fatalf("facts: err=%v res=%+v", err, res)
+	}
+	if res, _, err := h.handleRelated(ctx, nil, relatedInput{Tenant: bad, SeedEntity: "e"}); err == nil || res == nil || !res.IsError {
+		t.Fatalf("related: err=%v res=%+v", err, res)
+	}
+	if res, _, err := h.handleSupersedeEntity(ctx, nil, supersedeEntityInput{Tenant: bad, EntityKey: "e"}); err == nil || res == nil || !res.IsError {
+		t.Fatalf("supersede: err=%v res=%+v", err, res)
+	}
+
+	// Separator tenant also fail-closed; default still unused.
+	if res, _, err := h.handleList(ctx, nil, listInput{Tenant: "a/b"}); err == nil || res == nil || !res.IsError {
+		t.Fatalf("list a/b: err=%v res=%+v", err, res)
+	}
+	if res, _, err := h.handleList(ctx, nil, listInput{Tenant: "."}); err == nil || res == nil || !res.IsError {
+		t.Fatalf("list .: err=%v res=%+v", err, res)
+	}
+}
+
 func TestRegisterSDKServer(t *testing.T) {
 	h, err := New(Config{PalaceRoot: t.TempDir()})
 	if err != nil {
