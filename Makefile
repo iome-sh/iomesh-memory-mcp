@@ -20,7 +20,7 @@ help:
 	@echo "  release-snapshot            Local GoReleaser snapshot (no publish; needs goreleaser + syft)"
 	@echo "  clean                       Remove bin/ dist/ and coverage artifacts"
 	@echo ""
-	@echo "Honesty: dual_write OFF · not Memory GA · still private · residual PASS ≠ live dogfood / public flip"
+	@echo "Honesty: dual_write OFF · not Memory GA · public · residual PASS ≠ live dogfood / public flip"
 
 test:
 	go test ./... -count=1
@@ -43,7 +43,7 @@ fmt-check:
 	if [ -n "$$unformatted" ]; then echo "$$unformatted"; exit 1; fi
 
 tidy:
-	GOPRIVATE=github.com/iome-sh/* GONOSUMDB=github.com/iome-sh/* go mod tidy
+	go mod tidy
 	go mod verify
 
 vuln:
@@ -58,7 +58,7 @@ edge-dogfood-gate:
 	@bash scripts/edge_dogfood_gate.sh
 
 # Offline M4 public-flip readiness residual (file greps only — no visibility flip / docker / gcloud).
-# residual PASS ≠ public flip · kernel must be public first · still private on s1474.
+# residual PASS ≠ public flip · host + kernel public · residual ≠ invent Memory GA.
 public-flip-readiness-gate:
 	@bash scripts/public_flip_readiness_gate.sh
 
