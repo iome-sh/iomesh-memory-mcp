@@ -32,7 +32,7 @@ This doc advances **Edge Memory GA candidacy** exit criteria on the public binar
 | **residual PASS ≠ full platform sidecar parity** | Lean extract is not the private aion `aion-memory-mcp` sidecar feature set. |
 | **no aion import** | Builds on `github.com/iome-sh/memory` + MCP SDK only. |
 | **naming honesty** | Product edge = **`iomesh-memory-mcp`** (not product-name `aion-memory-mcp`). |
-| **open boxes stay open** | Still-human APPLY / product gates (E4 live evidence · E10 founder/GTM) remain open; do not close by residual alone. |
+| **open boxes stay open** | Still-human product close / still-open product gates (E4 live evidence · E10 founder/GTM) remain open; do not close by residual alone. |
 | **Palace sunset** | Hosted Palace path remains sunset / residual; local-primary FS is the edge dogfood path. |
 | **mesh optional for pull** | Mesh credentials + platform endpoint are optional for durable pull/retain. Local FS path needs neither mesh nor a priced add-on. Do not invent a priced add-on SKU or a mesh base rate here. |
 | **compose PASS ≠ public registry** | `docker compose up --build` uses **local image** `iomesh-memory-mcp:local` only. |
@@ -252,7 +252,7 @@ Peers (mention only): TUI s1463 dogfood tip · aion residual s1464 · free-floor
 - **Local edge path:** TUI + this MCP host + LLM — local Palace FS; **no** Qdrant / Cloud Run palace required for lean dogfood.
 - **Mesh-backed path (optional):** local stack + mesh credentials + platform endpoint for durable pull/retain. Not required for offline edge dogfood. Do not invent a priced add-on SKU or a mesh base rate on this page.
 - **Hosted Palace sunset:** do not invent always-on hosted Palace GA; local-primary remains the edge default.
-- **Open boxes stay open** until deliberate product APPLY (live E4 evidence · E10 founder/GTM · sales matrix flip).
+- **Open boxes stay open** until a deliberate human product close (live E4 evidence · E10 founder/GTM · sales matrix flip).
 
 ---
 
