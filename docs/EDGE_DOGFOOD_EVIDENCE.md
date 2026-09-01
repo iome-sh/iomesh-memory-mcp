@@ -28,7 +28,7 @@ Parent runbook: [EDGE_DOGFOOD.md](EDGE_DOGFOOD.md).
 | **attach + tools/list ≠ invent forever green full product dogfood** | Client attach + listing six tools is **not** a forever-green full product dogfood (ingest→retrieve→list→as-of→status live RT over the client session is a separate claim; not asserted as forever green here). |
 | **offline gate ≠ this evidence** | `make edge-dogfood-gate` remains offline file greps only; it does not re-run these live steps. |
 
-Open boxes stay open until deliberate product APPLY (full E4 tool RT dogfood closeout · E10 founder/GTM · sales matrix flip).
+Open boxes stay open until a deliberate human product close (full E4 tool RT dogfood closeout · E10 founder/GTM · sales matrix flip).
 
 ---
 

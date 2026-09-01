@@ -144,7 +144,7 @@ then:
 }
 ```
 
-Probe honesty (not a live APPLY):
+Probe honesty (`GET /healthz` 200 is not Connected):
 
 ```bash
 curl -fsS http://127.0.0.1:8080/healthz
