@@ -3,9 +3,14 @@ package mcphost
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 func TestIngestRetrieveListRoundTrip(t *testing.T) {
@@ -16,6 +21,7 @@ func TestIngestRetrieveListRoundTrip(t *testing.T) {
 	ctx := context.Background()
 
 	_, out, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+		Tenant:     "dogfood",
 		SessionID:  "sess-1",
 		Role:       "user",
 		Content:    "alpha project notes for memory kernel",
@@ -37,8 +43,9 @@ func TestIngestRetrieveListRoundTrip(t *testing.T) {
 
 	// IngestTurn also writes semantic facts from extracted atoms — give FS a moment not needed for sync FS.
 	_, ret, err := h.handleRetrieve(ctx, nil, retrieveInput{
-		Query: "alpha project",
-		Limit: 10,
+		Tenant: "dogfood",
+		Query:  "alpha project",
+		Limit:  10,
 	})
 	if err != nil {
 		t.Fatalf("retrieve: %v", err)
@@ -47,7 +54,7 @@ func TestIngestRetrieveListRoundTrip(t *testing.T) {
 		t.Fatal("hash retrieve must keyword-hit ingested turn (do not inject hash QueryVec)")
 	}
 
-	_, status, err := h.handleCompactStatus(ctx, nil, compactStatusInput{})
+	_, status, err := h.handleCompactStatus(ctx, nil, compactStatusInput{Tenant: "dogfood"})
 	if err != nil {
 		t.Fatalf("compact status: %v", err)
 	}
@@ -58,7 +65,7 @@ func TestIngestRetrieveListRoundTrip(t *testing.T) {
 		t.Fatalf("honesty locks: %+v", status)
 	}
 
-	_, sem, err := h.handleSearchSemantic(ctx, nil, searchSemanticInput{Query: "alpha", Limit: 10})
+	_, sem, err := h.handleSearchSemantic(ctx, nil, searchSemanticInput{Tenant: "dogfood", Query: "alpha", Limit: 10})
 	if err != nil {
 		t.Fatalf("semantic: %v", err)
 	}
@@ -67,8 +74,9 @@ func TestIngestRetrieveListRoundTrip(t *testing.T) {
 	}
 
 	_, facts, err := h.handleFactsAsOf(ctx, nil, factsAsOfInput{
-		AsOf:  time.Now().UTC().Format(time.RFC3339),
-		Limit: 10,
+		Tenant: "dogfood",
+		AsOf:   time.Now().UTC().Format(time.RFC3339),
+		Limit:  10,
 	})
 	if err != nil {
 		t.Fatalf("facts as of: %v", err)
@@ -90,6 +98,7 @@ func TestRetrieveHashKeepsHyphenNeedle(t *testing.T) {
 	ctx := context.Background()
 	const needle = "zircon-lantern-4829"
 	if _, _, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+		Tenant:    "dogfood",
 		SessionID: "sess-needle",
 		Role:      "user",
 		Content:   "lab note " + needle + " for retrieve recall",
@@ -98,6 +107,7 @@ func TestRetrieveHashKeepsHyphenNeedle(t *testing.T) {
 	}
 	for i := 0; i < 8; i++ {
 		if _, _, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+			Tenant:    "dogfood",
 			SessionID: "sess-needle",
 			Role:      "user",
 			Content:   "unrelated distractor checklist item " + string(rune('a'+i)),
@@ -105,7 +115,7 @@ func TestRetrieveHashKeepsHyphenNeedle(t *testing.T) {
 			t.Fatalf("ingest distractor: %v", err)
 		}
 	}
-	_, ret, err := h.handleRetrieve(ctx, nil, retrieveInput{Query: needle, Limit: 5})
+	_, ret, err := h.handleRetrieve(ctx, nil, retrieveInput{Tenant: "dogfood", Query: needle, Limit: 5})
 	if err != nil {
 		t.Fatalf("retrieve: %v", err)
 	}
@@ -123,7 +133,7 @@ func TestRetrieveHashKeepsHyphenNeedle(t *testing.T) {
 		t.Fatalf("Limit 5 not applied; n=%d", len(ret.Memories))
 	}
 
-	_, listed, err := h.handleList(ctx, nil, listInput{Query: needle, Limit: 5})
+	_, listed, err := h.handleList(ctx, nil, listInput{Tenant: "dogfood", Query: needle, Limit: 5})
 	if err != nil {
 		t.Fatalf("list: %v", err)
 	}
@@ -148,6 +158,7 @@ func TestWriteFactAndSupersede(t *testing.T) {
 	const key = "lattice:status"
 
 	_, first, err := h.handleWrite(ctx, nil, writeInput{
+		Tenant:    "dogfood",
 		Summary:   "lattice open",
 		Full:      "human-gate lattice is open",
 		EntityKey: key,
@@ -164,6 +175,7 @@ func TestWriteFactAndSupersede(t *testing.T) {
 	}
 
 	_, second, err := h.handleWrite(ctx, nil, writeInput{
+		Tenant:    "dogfood",
 		Summary:   "lattice closed",
 		Full:      "human-gate lattice is closed",
 		EntityKey: key,
@@ -176,6 +188,7 @@ func TestWriteFactAndSupersede(t *testing.T) {
 	}
 
 	_, facts, err := h.handleFactsAsOf(ctx, nil, factsAsOfInput{
+		Tenant: "dogfood",
 		AsOf:   time.Now().UTC().Format(time.RFC3339),
 		Entity: key,
 		Limit:  10,
@@ -198,6 +211,7 @@ func TestWriteFactAndSupersede(t *testing.T) {
 
 	off := false
 	_, plain, err := h.handleWrite(ctx, nil, writeInput{
+		Tenant:    "dogfood",
 		Summary:   "catalog honesty pin",
 		Tags:      []string{"honesty:catalog"},
 		EntityKey: "catalog:honesty",
@@ -228,6 +242,7 @@ func TestRelatedAndSupersedeEntity(t *testing.T) {
 	const key = "person:alice"
 
 	_, wrote, err := h.handleWrite(ctx, nil, writeInput{
+		Tenant:    "dogfood",
 		Summary:   "alice prefers dark mode",
 		EntityKey: key,
 		Supersede: boolPtr(false),
@@ -236,7 +251,7 @@ func TestRelatedAndSupersedeEntity(t *testing.T) {
 		t.Fatalf("write: %v", err)
 	}
 
-	_, rel, err := h.handleRelated(ctx, nil, relatedInput{SeedEntity: key, Limit: 10})
+	_, rel, err := h.handleRelated(ctx, nil, relatedInput{Tenant: "dogfood", SeedEntity: key, Limit: 10})
 	if err != nil {
 		t.Fatalf("related: %v", err)
 	}
@@ -260,7 +275,7 @@ func TestRelatedAndSupersedeEntity(t *testing.T) {
 	}
 	_ = empty
 
-	_, sup, err := h.handleSupersedeEntity(ctx, nil, supersedeEntityInput{EntityKey: key})
+	_, sup, err := h.handleSupersedeEntity(ctx, nil, supersedeEntityInput{Tenant: "dogfood", EntityKey: key})
 	if err != nil {
 		t.Fatalf("supersede: %v", err)
 	}
@@ -272,6 +287,7 @@ func TestRelatedAndSupersedeEntity(t *testing.T) {
 	}
 
 	_, facts, err := h.handleFactsAsOf(ctx, nil, factsAsOfInput{
+		Tenant: "dogfood",
 		AsOf:   time.Now().UTC().Format(time.RFC3339),
 		Entity: key,
 	})
@@ -303,6 +319,7 @@ func TestSessionIsolationSameTenantToken(t *testing.T) {
 		sessB = "sess-bravo"
 	)
 	if _, _, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+		Tenant:    "dogfood",
 		SessionID: sessA,
 		Role:      "user",
 		Content:   "alpha vault note " + token + " for isolation",
@@ -310,6 +327,7 @@ func TestSessionIsolationSameTenantToken(t *testing.T) {
 		t.Fatalf("ingest A: %v", err)
 	}
 	if _, _, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+		Tenant:    "dogfood",
 		SessionID: sessB,
 		Role:      "user",
 		Content:   "bravo vault note " + token + " for isolation",
@@ -340,31 +358,31 @@ func TestSessionIsolationSameTenantToken(t *testing.T) {
 		}
 	}
 
-	_, retA, err := h.handleRetrieve(ctx, nil, retrieveInput{Query: token, SessionID: sessA, Limit: 20})
+	_, retA, err := h.handleRetrieve(ctx, nil, retrieveInput{Tenant: "dogfood", Query: token, SessionID: sessA, Limit: 20})
 	if err != nil {
 		t.Fatalf("retrieve A: %v", err)
 	}
 	assertSessionHits(t, "retrieve", retA.Memories, sessA, "alpha", "bravo")
 
-	_, retB, err := h.handleRetrieve(ctx, nil, retrieveInput{Query: token, SessionID: sessB, Limit: 20})
+	_, retB, err := h.handleRetrieve(ctx, nil, retrieveInput{Tenant: "dogfood", Query: token, SessionID: sessB, Limit: 20})
 	if err != nil {
 		t.Fatalf("retrieve B: %v", err)
 	}
 	assertSessionHits(t, "retrieve", retB.Memories, sessB, "bravo", "alpha")
 
-	_, listA, err := h.handleList(ctx, nil, listInput{Query: token, SessionID: sessA, Limit: 50})
+	_, listA, err := h.handleList(ctx, nil, listInput{Tenant: "dogfood", Query: token, SessionID: sessA, Limit: 50})
 	if err != nil {
 		t.Fatalf("list A: %v", err)
 	}
 	assertSessionHits(t, "list", listA.Entries, sessA, "alpha", "bravo")
 
-	_, listB, err := h.handleList(ctx, nil, listInput{Query: token, SessionID: sessB, Limit: 50})
+	_, listB, err := h.handleList(ctx, nil, listInput{Tenant: "dogfood", Query: token, SessionID: sessB, Limit: 50})
 	if err != nil {
 		t.Fatalf("list B: %v", err)
 	}
 	assertSessionHits(t, "list", listB.Entries, sessB, "bravo", "alpha")
 
-	_, retAll, err := h.handleRetrieve(ctx, nil, retrieveInput{Query: token, Limit: 20})
+	_, retAll, err := h.handleRetrieve(ctx, nil, retrieveInput{Tenant: "dogfood", Query: token, Limit: 20})
 	if err != nil {
 		t.Fatalf("retrieve unfiltered: %v", err)
 	}
@@ -372,7 +390,7 @@ func TestSessionIsolationSameTenantToken(t *testing.T) {
 		t.Fatalf("empty-session retrieve must be unfiltered; got %+v", retAll.Memories)
 	}
 
-	_, listAll, err := h.handleList(ctx, nil, listInput{Query: token, Limit: 50})
+	_, listAll, err := h.handleList(ctx, nil, listInput{Tenant: "dogfood", Query: token, Limit: 50})
 	if err != nil {
 		t.Fatalf("list unfiltered: %v", err)
 	}
@@ -389,6 +407,7 @@ func TestFactsAsOfSeesIngestFactChildren(t *testing.T) {
 	}
 	ctx := context.Background()
 	if _, _, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+		Tenant:    "dogfood",
 		SessionID: "sess-facts",
 		Role:      "user",
 		Content:   "My name is Alice. I live in Seattle. I graduated from MIT last year.",
@@ -396,13 +415,14 @@ func TestFactsAsOfSeesIngestFactChildren(t *testing.T) {
 		t.Fatalf("ingest: %v", err)
 	}
 
-	_, status, err := h.handleCompactStatus(ctx, nil, compactStatusInput{})
+	_, status, err := h.handleCompactStatus(ctx, nil, compactStatusInput{Tenant: "dogfood"})
 	if err != nil {
 		t.Fatalf("compact status: %v", err)
 	}
 	_, facts, err := h.handleFactsAsOf(ctx, nil, factsAsOfInput{
-		AsOf:  time.Now().UTC().Format(time.RFC3339),
-		Limit: 20,
+		Tenant: "dogfood",
+		AsOf:   time.Now().UTC().Format(time.RFC3339),
+		Limit:  20,
 	})
 	if err != nil {
 		t.Fatalf("facts as of: %v", err)
@@ -437,13 +457,14 @@ func TestListAfterNewSamePalaceRoot(t *testing.T) {
 	ctx := context.Background()
 	const needle = "zircon-durable-snap-9041"
 	if _, _, err := h1.handleIngestTurn(ctx, nil, ingestTurnInput{
+		Tenant:    "dogfood",
 		SessionID: "sess-durable",
 		Role:      "user",
 		Content:   "lab note " + needle + " for durable list",
 	}); err != nil {
 		t.Fatalf("ingest: %v", err)
 	}
-	_, listed, err := h1.handleList(ctx, nil, listInput{Query: needle, Limit: 5})
+	_, listed, err := h1.handleList(ctx, nil, listInput{Tenant: "dogfood", Query: needle, Limit: 5})
 	if err != nil {
 		t.Fatalf("list seed: %v", err)
 	}
@@ -458,7 +479,7 @@ func TestListAfterNewSamePalaceRoot(t *testing.T) {
 	if h2.EmbeddingMode() != "hash" {
 		t.Fatalf("reopen embedding mode = %q, want hash", h2.EmbeddingMode())
 	}
-	_, again, err := h2.handleList(ctx, nil, listInput{Query: needle, Limit: 5})
+	_, again, err := h2.handleList(ctx, nil, listInput{Tenant: "dogfood", Query: needle, Limit: 5})
 	if err != nil {
 		t.Fatalf("list reopen: %v", err)
 	}
@@ -573,16 +594,16 @@ func TestBadTenantToolIsError(t *testing.T) {
 		t.Fatalf("list output tenant: %q", out.Tenant)
 	}
 
-	// Omitted/empty tool tenant still uses the configured default.
+	// Omitted/empty tool tenant fail-closes (does not use DefaultTenant / "default").
 	res, out, err = h.handleList(ctx, nil, listInput{})
-	if err != nil {
-		t.Fatalf("empty tenant: %v", err)
+	if err == nil {
+		t.Fatal("empty tenant must error")
 	}
-	if res != nil && res.IsError {
-		t.Fatal("empty tenant must not be IsError")
+	if res == nil || !res.IsError {
+		t.Fatalf("empty tenant want IsError result, got %+v", res)
 	}
-	if out.Tenant != "dogfood" {
-		t.Fatalf("empty tenant: got %q", out.Tenant)
+	if out.Tenant != "" {
+		t.Fatalf("empty tenant output: %q", out.Tenant)
 	}
 
 	if res, _, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{Tenant: bad, SessionID: "s", Role: "user", Content: "n"}); err == nil || res == nil || !res.IsError {
@@ -610,12 +631,82 @@ func TestBadTenantToolIsError(t *testing.T) {
 		t.Fatalf("supersede: err=%v res=%+v", err, res)
 	}
 
-	// Separator tenant also fail-closed; default still unused.
+	// Separator tenant also fail-closed; configured default still unused.
 	if res, _, err := h.handleList(ctx, nil, listInput{Tenant: "a/b"}); err == nil || res == nil || !res.IsError {
 		t.Fatalf("list a/b: err=%v res=%+v", err, res)
 	}
 	if res, _, err := h.handleList(ctx, nil, listInput{Tenant: "."}); err == nil || res == nil || !res.IsError {
 		t.Fatalf("list .: err=%v res=%+v", err, res)
+	}
+}
+
+func TestOmittedTenantWritesDoNotSharePalace(t *testing.T) {
+	root := t.TempDir()
+	h, err := New(Config{PalaceRoot: root, DefaultTenant: "dogfood"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	ctx := context.Background()
+
+	assertOmitWriteClosed := func(t *testing.T, label string, res *mcp.CallToolResult, err error) {
+		t.Helper()
+		if err == nil || !errors.Is(err, ErrTenantRequired) {
+			t.Fatalf("%s: err=%v want ErrTenantRequired", label, err)
+		}
+		if res == nil || !res.IsError {
+			t.Fatalf("%s: want IsError result, got %+v", label, res)
+		}
+	}
+
+	// Two omit-tenant writes on one host (same process as one MCP HTTP) must not
+	// create PALACE_ROOT/default or the configured DefaultTenant palace.
+	res, _, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+		SessionID: "s-a", Role: "user", Content: "org A secret omit",
+	})
+	assertOmitWriteClosed(t, "ingest omit 1", res, err)
+	res, _, err = h.handleIngestTurn(ctx, nil, ingestTurnInput{
+		SessionID: "s-b", Role: "user", Content: "org B secret omit",
+	})
+	assertOmitWriteClosed(t, "ingest omit 2", res, err)
+	res, _, err = h.handleWrite(ctx, nil, writeInput{Summary: "org A fact omit"})
+	assertOmitWriteClosed(t, "write omit 1", res, err)
+	res, _, err = h.handleWrite(ctx, nil, writeInput{Summary: "org B fact omit"})
+	assertOmitWriteClosed(t, "write omit 2", res, err)
+
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 0 {
+		t.Fatalf("omit writes must not create a shared palace, got %v", names(entries))
+	}
+	for _, leak := range []string{"default", "dogfood"} {
+		if _, err := os.Stat(filepath.Join(root, leak)); !os.IsNotExist(err) {
+			t.Fatalf("palace %s must not exist after omit writes: %v", leak, err)
+		}
+	}
+
+	// Invalid tenant still fail-closed.
+	if res, _, err := h.handleWrite(ctx, nil, writeInput{Tenant: "..", Summary: "n"}); err == nil || res == nil || !res.IsError {
+		t.Fatalf("invalid tenant: err=%v res=%+v", err, res)
+	}
+
+	// Named tenant still isolates under PALACE_ROOT/<tenant>/.
+	if _, _, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+		Tenant: "t-a", SessionID: "s", Role: "user", Content: "named A only",
+	}); err != nil {
+		t.Fatalf("named A: %v", err)
+	}
+	if _, _, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+		Tenant: "t-b", SessionID: "s", Role: "user", Content: "named B only",
+	}); err != nil {
+		t.Fatalf("named B: %v", err)
+	}
+	if h.TenantDir("t-a") == h.TenantDir("t-b") {
+		t.Fatal("named tenant dirs must differ")
+	}
+	if filepath.Base(h.TenantDir("t-a")) != "t-a" || !strings.HasPrefix(h.TenantDir("t-a"), root) {
+		t.Fatalf("named dir: %s", h.TenantDir("t-a"))
 	}
 }
 
@@ -683,6 +774,7 @@ func TestInvalidTimeFieldsFailClosed(t *testing.T) {
 	const bad = "last-week"
 
 	if _, _, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+		Tenant:    "dogfood",
 		SessionID: "s",
 		Role:      "user",
 		Content:   "note",
@@ -690,19 +782,19 @@ func TestInvalidTimeFieldsFailClosed(t *testing.T) {
 	}); err == nil {
 		t.Fatal("ingest event_time invalid must error")
 	}
-	if _, _, err := h.handleRetrieve(ctx, nil, retrieveInput{Query: "note", Since: bad}); err == nil {
+	if _, _, err := h.handleRetrieve(ctx, nil, retrieveInput{Tenant: "dogfood", Query: "note", Since: bad}); err == nil {
 		t.Fatal("retrieve since invalid must error")
 	}
-	if _, _, err := h.handleList(ctx, nil, listInput{Until: bad}); err == nil {
+	if _, _, err := h.handleList(ctx, nil, listInput{Tenant: "dogfood", Until: bad}); err == nil {
 		t.Fatal("list until invalid must error")
 	}
-	if _, _, err := h.handleFactsAsOf(ctx, nil, factsAsOfInput{AsOf: bad}); err == nil {
+	if _, _, err := h.handleFactsAsOf(ctx, nil, factsAsOfInput{Tenant: "dogfood", AsOf: bad}); err == nil {
 		t.Fatal("facts_as_of invalid must error")
 	}
-	if _, _, err := h.handleRelated(ctx, nil, relatedInput{SeedEntity: "e", AsOf: bad}); err == nil {
+	if _, _, err := h.handleRelated(ctx, nil, relatedInput{Tenant: "dogfood", SeedEntity: "e", AsOf: bad}); err == nil {
 		t.Fatal("related as_of invalid must error")
 	}
-	if _, _, err := h.handleSupersedeEntity(ctx, nil, supersedeEntityInput{EntityKey: "e", AsOf: bad}); err == nil {
+	if _, _, err := h.handleSupersedeEntity(ctx, nil, supersedeEntityInput{Tenant: "dogfood", EntityKey: "e", AsOf: bad}); err == nil {
 		t.Fatal("supersede as_of invalid must error")
 	}
 }

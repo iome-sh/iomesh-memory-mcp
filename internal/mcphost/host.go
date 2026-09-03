@@ -12,6 +12,7 @@
 package mcphost
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -22,6 +23,10 @@ import (
 	palace "github.com/iome-sh/memory"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
+
+// ErrTenantRequired is returned when a tool or HTTP call omits tenant.
+// Fail-closed: do not write PALACE_ROOT/default or DefaultTenant.
+var ErrTenantRequired = errors.New("tenant required")
 
 const (
 	// ServerName is the MCP implementation name (product edge honesty).
@@ -40,7 +45,8 @@ var ServerVersion = "v0.1.0"
 type Config struct {
 	// PalaceRoot is the base directory; each tenant is a subdirectory.
 	PalaceRoot string
-	// DefaultTenant used when tool input omits tenant.
+	// DefaultTenant is the process -tenant / MEMORY_TENANT label (validated if set).
+	// Tool and HTTP calls must pass tenant; omitted tenant does not fall back here.
 	DefaultTenant string
 	// EmbeddingMode is residual-honest: "hash" (default) or "onnx" when MEMORY_ONNX_MODEL_PATH loads.
 	// Qdrant is NOT wired into lean host search (kernel VectorStore residual only).
@@ -132,17 +138,22 @@ func validateTenantSegment(tenant string) error {
 	return nil
 }
 
-// ResolveTenant returns a non-empty tenant id (input, else default, else "default").
+// ConfiguredTenant returns the process -tenant / MEMORY_TENANT value (may be empty).
+// Omitted tool tenant does not fall back to this value (FR-MEMORY-MCP-FAIL-CLOSED-OMIT).
+func (h *Host) ConfiguredTenant() string {
+	if h == nil {
+		return ""
+	}
+	return h.cfg.DefaultTenant
+}
+
+// ResolveTenant returns a single-segment tenant id.
+// Empty/omitted tenant fail-closes (ErrTenantRequired): no DefaultTenant and no "default".
 // A provided tenant must be a single path segment (no separators, not "." or "..").
-// Empty/omitted uses the configured default (already validated in New).
 func (h *Host) ResolveTenant(tenant string) (string, error) {
 	tenant = strings.TrimSpace(tenant)
 	if tenant == "" {
-		if h != nil && h.cfg.DefaultTenant != "" {
-			tenant = h.cfg.DefaultTenant
-		} else {
-			tenant = "default"
-		}
+		return "", ErrTenantRequired
 	}
 	if err := validateTenantSegment(tenant); err != nil {
 		return "", err
@@ -186,8 +197,8 @@ func (h *Host) Store(tenant string) *palace.PalaceStore {
 	return ps
 }
 
-// resolveStore resolves tenant then returns the palace store. Invalid tenant
-// is an error (fail closed; do not join outside palace root).
+// resolveStore resolves tenant then returns the palace store. Omitted or
+// invalid tenant is an error (fail closed; do not write PALACE_ROOT/default).
 func (h *Host) resolveStore(tenant string) (string, *palace.PalaceStore, error) {
 	key, err := h.ResolveTenant(tenant)
 	if err != nil {
