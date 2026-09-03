@@ -7,9 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Omitted tenant fail-closed (#40):** tool/HTTP calls that omit `tenant` return an error (`IsError` / tenant required). They do not fall back to `-tenant` / `MEMORY_TENANT` or `"default"`, so two callers on one MCP HTTP process cannot mix in `PALACE_ROOT/default`. Invalid tenant still fail-closed. Path isolation `PALACE_ROOT/<tenant>/` unchanged. `GET /healthz` stays honest (no tenant/org leak; `dual_write=off`; `not_memory_ga=true`). dual_write OFF · not Memory GA.
+- **govulncheck:** pin indirect `golang.org/x/crypto` `v0.54.0` → `v0.56.0` (GO-2026-6354 / GO-2026-6355 via optional ONNX/`ssh.Dial` residual). Kernel pin unchanged. dual_write OFF · not Memory GA.
+
 ### Added
 - **CLI `-preflight` (#28):** constructs the host and prints the same honesty JSON as `GET /healthz` (`status`, `service`, `dual_write=off`, `not_memory_ga`, `embeddings`, `qdrant=off`, `version`, `tools`, `tool_names`), then exits without listening or running stdio MCP. Registration ≠ `tools/list` ≠ ingest. No hosted palace probe. dual_write OFF · not Memory GA.
-- **Tenant single path segment (#27):** when `tenant` is provided (tool input or `-tenant` / `MEMORY_TENANT`), it must be a single path segment (reject `.`, `..`, separators). Invalid tool tenant returns an `IsError` result; invalid default tenant fails process start. Omitted/empty tool tenant still uses the configured default. Same-process path isolation only · dual_write OFF · not Memory GA.
+- **Tenant single path segment (#27):** when `tenant` is provided (tool input or `-tenant` / `MEMORY_TENANT`), it must be a single path segment (reject `.`, `..`, separators). Invalid tool tenant returns an `IsError` result; invalid default tenant fails process start. (#40 later fail-closes omitted/empty tool tenant.) Same-process path isolation only · dual_write OFF · not Memory GA.
 
 ### Fixed
 - **Docs close-token (#38):** README and EDGE_DOGFOOD no longer use the internal workflow close-token. Operator language is human product close / still-open product gates. `GET /healthz` 200 is not Connected. dual_write OFF · not Memory GA.

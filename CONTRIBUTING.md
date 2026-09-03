@@ -48,7 +48,7 @@ make release-snapshot           # local GoReleaser snapshot (needs goreleaser + 
 - **Lean host** — tools and HTTP surface stay small; prefer kernel APIs over re-implementing Palace  
 - **No aion imports** — do not pull `github.com/iome-sh/aion/**` into this tree  
 - **Honesty locks** — dual_write OFF by default; do not invent Memory GA; product name is **iomesh-memory-mcp**  
-- **Fail closed** on empty palace root and bad paths; tenant isolation is path-based only (document residuals)  
+- **Fail closed** on empty palace root, omitted tool tenant, and bad paths; tenant isolation is path-based only (document residuals)  
 - Prefer small, focused PRs with tests for new tool/HTTP behavior  
 - Run `gofmt` (or `make fmt`) before commit  
 

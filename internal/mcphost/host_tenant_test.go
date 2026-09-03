@@ -1,6 +1,7 @@
 package mcphost
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,12 +15,18 @@ func TestResolveTenantSingleSegment(t *testing.T) {
 	}
 
 	got, err := h.ResolveTenant("")
-	if err != nil || got != "dogfood" {
-		t.Fatalf("empty: got %q err=%v want dogfood", got, err)
+	if !errors.Is(err, ErrTenantRequired) || got != "" {
+		t.Fatalf("empty: got %q err=%v want ErrTenantRequired", got, err)
 	}
 	got, err = h.ResolveTenant("  ")
-	if err != nil || got != "dogfood" {
-		t.Fatalf("whitespace: got %q err=%v want dogfood", got, err)
+	if !errors.Is(err, ErrTenantRequired) || got != "" {
+		t.Fatalf("whitespace: got %q err=%v want ErrTenantRequired", got, err)
+	}
+	if h.ConfiguredTenant() != "dogfood" {
+		t.Fatalf("ConfiguredTenant: %q", h.ConfiguredTenant())
+	}
+	if h.TenantDir("") != "" || h.Store("") != nil {
+		t.Fatal("omitted tenant must not join or open a store")
 	}
 	got, err = h.ResolveTenant("t-a")
 	if err != nil || got != "t-a" {
@@ -51,8 +58,11 @@ func TestNewRejectsBadDefaultTenant(t *testing.T) {
 		t.Fatalf("empty default: %v", err)
 	}
 	got, err := h.ResolveTenant("")
-	if err != nil || got != "default" {
-		t.Fatalf("implicit default: got %q err=%v", got, err)
+	if !errors.Is(err, ErrTenantRequired) || got != "" {
+		t.Fatalf("implicit omit: got %q err=%v want ErrTenantRequired", got, err)
+	}
+	if h.ConfiguredTenant() != "" {
+		t.Fatalf("empty ConfiguredTenant: %q", h.ConfiguredTenant())
 	}
 }
 

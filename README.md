@@ -192,7 +192,7 @@ MEMORY_ONNX_MODEL_PATH=/absolute/path/to/model docker compose up --build
 | Flag | Environment | Default | Notes |
 |------|-------------|---------|--------|
 | `-palace-root` | `PALACE_ROOT` | `./data/memory-palaces` (or `/data/memory-palaces` in image) | Base directory for tenants |
-| `-tenant` | `MEMORY_TENANT` | `default` when empty | Tenant subdirectory |
+| `-tenant` | `MEMORY_TENANT` | empty | Process label only (validated if set). Tool `tenant` is required; omit fail-closes (does not write `PALACE_ROOT/default`) |
 | `-http-addr` | `MEMORY_MCP_HTTP_ADDR` | empty = **stdio** | e.g. `:8080` |
 | `-http-path` | `MEMORY_MCP_HTTP_PATH` | `/mcp` | Streamable MCP path (`/healthz` is fixed) |
 | `-preflight` | — | false | Print the same honesty JSON as `GET /healthz` and exit (no listen, no stdio MCP; `tool_names` = registration, not ingest) |
@@ -232,7 +232,7 @@ $PALACE_ROOT/
     …
 ```
 
-Isolation is path-based within a single process.
+Isolation is path-based within a single process (`PALACE_ROOT/<tenant>/`). Tool and HTTP calls must pass `tenant`; omit fail-closes and does not write `PALACE_ROOT/default`. Invalid segments (`.`, `..`, separators) stay fail-closed. Not cloud multi-tenant security. dual_write **OFF** · **not** Memory GA.
 
 ## Development
 

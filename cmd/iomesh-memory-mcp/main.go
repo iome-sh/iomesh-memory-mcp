@@ -45,7 +45,7 @@ func run(args []string, stdout io.Writer) error {
 
 	defaultPalace := envOr("PALACE_ROOT", defaultPalaceRoot())
 	palaceRoot := fs.String("palace-root", defaultPalace, "tenant palace root base directory")
-	tenant := fs.String("tenant", envOr("MEMORY_TENANT", ""), "default tenant subdirectory under palace root")
+	tenant := fs.String("tenant", envOr("MEMORY_TENANT", ""), "process tenant label (validated if set; tool tenant is required — omit fail-closes)")
 	httpAddr := fs.String("http-addr", firstEnvPrefer(
 		"MEMORY_MCP_HTTP_ADDR",
 		"AION_MEMORY_MCP_HTTP_ADDR",
@@ -96,12 +96,8 @@ func run(args []string, stdout io.Writer) error {
 		return nil
 	}
 
-	defaultTenant, err := host.ResolveTenant("")
-	if err != nil {
-		log.Fatalf("mcphost: %v", err)
-	}
-	log.Printf("%s mode=stdio palace=%s tenant_default=%q embeddings=%s qdrant=off dual_write=off not_memory_ga=true version=%s",
-		mcphost.ServerName, *palaceRoot, defaultTenant, host.EmbeddingMode(), mcphost.ServerVersion)
+	log.Printf("%s mode=stdio palace=%s tenant_process=%q embeddings=%s qdrant=off dual_write=off not_memory_ga=true version=%s",
+		mcphost.ServerName, *palaceRoot, host.ConfiguredTenant(), host.EmbeddingMode(), mcphost.ServerVersion)
 	if err := sdk.Run(ctx, &mcp.StdioTransport{}); err != nil && ctx.Err() == nil {
 		return fmt.Errorf("mcp server: %w", err)
 	}

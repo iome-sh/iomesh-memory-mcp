@@ -14,7 +14,7 @@ import (
 // --- memory_ingest_turn ---
 
 type ingestTurnInput struct {
-	Tenant     string `json:"tenant,omitempty" jsonschema:"tenant subdirectory under palace root"`
+	Tenant     string `json:"tenant" jsonschema:"required tenant subdirectory under palace root; omit fail-closes"`
 	SessionID  string `json:"session_id" jsonschema:"conversation session id"`
 	Role       string `json:"role" jsonschema:"user|assistant|tool"`
 	Content    string `json:"content" jsonschema:"turn text content"`
@@ -108,7 +108,7 @@ func (h *Host) handleIngestTurn(_ context.Context, _ *mcp.CallToolRequest, in in
 // --- memory_write (durable fact; kernel Write / WriteAndSupersede) ---
 
 type writeInput struct {
-	Tenant    string   `json:"tenant,omitempty" jsonschema:"tenant subdirectory under palace root"`
+	Tenant    string   `json:"tenant" jsonschema:"required tenant subdirectory under palace root; omit fail-closes"`
 	Summary   string   `json:"summary,omitempty" jsonschema:"short fact summary"`
 	Full      string   `json:"full,omitempty" jsonschema:"full fact text (defaults to summary)"`
 	Tags      []string `json:"tags,omitempty"`
@@ -226,7 +226,7 @@ func entityTag(key string) string {
 // --- memory_retrieve ---
 
 type retrieveInput struct {
-	Tenant    string `json:"tenant,omitempty" jsonschema:"tenant subdirectory under palace root"`
+	Tenant    string `json:"tenant" jsonschema:"required tenant subdirectory under palace root; omit fail-closes"`
 	Query     string `json:"query" jsonschema:"recall query text"`
 	Limit     int    `json:"limit,omitempty"`
 	SessionID string `json:"session_id,omitempty"`
@@ -322,7 +322,7 @@ func (h *Host) searchQueryVec(ps *palace.PalaceStore, query string) []float32 {
 // --- memory_search_semantic ---
 
 type searchSemanticInput struct {
-	Tenant string `json:"tenant,omitempty"`
+	Tenant string `json:"tenant" jsonschema:"required tenant subdirectory under palace root; omit fail-closes"`
 	Query  string `json:"query" jsonschema:"filter or hybrid query over semantic tier"`
 	Limit  int    `json:"limit,omitempty"`
 }
@@ -388,7 +388,7 @@ func (h *Host) handleSearchSemantic(_ context.Context, _ *mcp.CallToolRequest, i
 // --- memory_list ---
 
 type listInput struct {
-	Tenant          string `json:"tenant,omitempty"`
+	Tenant          string `json:"tenant" jsonschema:"required tenant subdirectory under palace root; omit fail-closes"`
 	SessionID       string `json:"session_id,omitempty"`
 	Query           string `json:"query,omitempty" jsonschema:"optional substring filter"`
 	Since           string `json:"since,omitempty" jsonschema:"RFC3339 inclusive lower bound"`
@@ -441,7 +441,7 @@ func (h *Host) handleList(_ context.Context, _ *mcp.CallToolRequest, in listInpu
 // --- memory_compact_status ---
 
 type compactStatusInput struct {
-	Tenant string `json:"tenant,omitempty"`
+	Tenant string `json:"tenant" jsonschema:"required tenant subdirectory under palace root; omit fail-closes"`
 }
 
 type compactStatusOutput struct {
@@ -481,7 +481,7 @@ func (h *Host) handleCompactStatus(_ context.Context, _ *mcp.CallToolRequest, in
 // --- memory_facts_as_of ---
 
 type factsAsOfInput struct {
-	Tenant    string `json:"tenant,omitempty"`
+	Tenant    string `json:"tenant" jsonschema:"required tenant subdirectory under palace root; omit fail-closes"`
 	AsOf      string `json:"as_of,omitempty" jsonschema:"RFC3339 validity instant (default now)"`
 	Query     string `json:"query,omitempty"`
 	SessionID string `json:"session_id,omitempty"`
@@ -529,7 +529,7 @@ func (h *Host) handleFactsAsOf(_ context.Context, _ *mcp.CallToolRequest, in fac
 // --- memory_related (MultiHopRetrieve) ---
 
 type relatedInput struct {
-	Tenant          string `json:"tenant,omitempty"`
+	Tenant          string `json:"tenant" jsonschema:"required tenant subdirectory under palace root; omit fail-closes"`
 	SeedEntity      string `json:"seed_entity,omitempty" jsonschema:"starting entity key"`
 	SeedQuery       string `json:"seed_query,omitempty" jsonschema:"optional search text to derive entity seeds"`
 	MaxHops         int    `json:"max_hops,omitempty" jsonschema:"default 2, clamped 1..4"`
@@ -596,7 +596,7 @@ func (h *Host) handleRelated(_ context.Context, _ *mcp.CallToolRequest, in relat
 // --- memory_supersede_entity (SupersedeEntityFacts) ---
 
 type supersedeEntityInput struct {
-	Tenant    string `json:"tenant,omitempty"`
+	Tenant    string `json:"tenant" jsonschema:"required tenant subdirectory under palace root; omit fail-closes"`
 	EntityKey string `json:"entity_key" jsonschema:"entity key to close (valid_until=as_of)"`
 	AsOf      string `json:"as_of,omitempty" jsonschema:"RFC3339 exclusive end (default now)"`
 }

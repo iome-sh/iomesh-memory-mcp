@@ -6,9 +6,42 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
+
+func TestHealthzDoesNotLeakTenantOrOrg(t *testing.T) {
+	h, err := New(Config{PalaceRoot: t.TempDir(), DefaultTenant: "secret-tenant"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
+	rr := httptest.NewRecorder()
+	HealthzHandler(h).ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status: %d body=%s", rr.Code, rr.Body.String())
+	}
+	raw := rr.Body.String()
+	if strings.Contains(raw, "secret-tenant") {
+		t.Fatalf("healthz leaked process tenant: %s", raw)
+	}
+	var body map[string]any
+	if err := json.Unmarshal(rr.Body.Bytes(), &body); err != nil {
+		t.Fatalf("json: %v", err)
+	}
+	for _, leak := range []string{"tenant", "org", "organization"} {
+		if _, ok := body[leak]; ok {
+			t.Fatalf("healthz must not include %q: %s", leak, raw)
+		}
+	}
+	if body["dual_write"] != "off" {
+		t.Fatalf("dual_write: %v", body["dual_write"])
+	}
+	if body["not_memory_ga"] != true {
+		t.Fatalf("not_memory_ga: %v", body["not_memory_ga"])
+	}
+}
 
 func TestHealthzHandler(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
