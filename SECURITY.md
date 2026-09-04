@@ -4,7 +4,8 @@
 
 | Version | Supported |
 |---------|-----------|
-| `v0.1.x` / `main` (lean scaffold) | ✅ security fixes |
+| `v0.1.0` / `v0.1.x` (first public annotated tag) | ✅ security fixes |
+| `main` | development tip |
 | pre-release pseudo-versions | development tip |
 
 ## Reporting a vulnerability

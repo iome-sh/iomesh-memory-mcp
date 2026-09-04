@@ -31,14 +31,15 @@ local filesystem under PALACE_ROOT/<tenant>/…
 
 ### From source
 
-There is **no** annotated `v*` GitHub Release yet (`/releases/latest` is 404).
-`@latest` therefore resolves to a **pseudo-version**, and `ServerVersion` in a
-`go install` binary stays the default `v0.1.0` ldflag unless you `make build`.
-Pin `@main` (or an exact pseudo-version) until maintainers cut the first tag
-per [RELEASING.md](RELEASING.md). Do not invent forever-green cosign or Memory GA.
+Pin the first annotated `v*` GitHub Release:
+[`v0.1.0`](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.1.0).
+`@latest` / floating `main` are not production pins. Default `ServerVersion` is
+`v0.1.0` (GoReleaser ldflags override on tagged assets). **Not** Memory GA.
+Path isolation `PALACE_ROOT/<tenant>/` ≠ cloud multi-tenant. `X-IOMesh-Org` is
+a mesh-client header; this host does not implement it.
 
 ```bash
-go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main
+go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.1.0
 ```
 
 ### Build from a clone
@@ -53,7 +54,10 @@ Requires the Go version in [`go.mod`](go.mod). The kernel dependency is public: 
 
 ### Tagged releases
 
-Push an annotated `v*` tag to run [`.github/workflows/release.yml`](.github/workflows/release.yml). See [RELEASING.md](RELEASING.md) for the release checklist and signing matrix.
+[`v0.1.0`](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.1.0) is
+the first annotated `v*` GitHub Release. Later annotated `v*` tags run
+[`.github/workflows/release.yml`](.github/workflows/release.yml). See
+[RELEASING.md](RELEASING.md) for the checklist and signing matrix.
 
 Local dry-run (needs `goreleaser` + `syft` on `PATH`):
 
