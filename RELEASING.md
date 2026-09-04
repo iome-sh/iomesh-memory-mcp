@@ -2,10 +2,11 @@
 
 Ship from `main` via PR; cut annotated semver tags for binary/image consumers.
 
-**Current honesty (#19):** no annotated `v*` tag / GitHub Release exists yet
-(`/releases/latest` is 404). `go install …@latest` is a pseudo-version, not a
-signed/SBOM pin. Public install pin is `@main` until a maintainer cuts the first
-tag below. Do **not** auto-tag. Do not invent forever-green cosign or Memory GA.
+**Current honesty:** `v0.1.0` is the first public annotated `v*` tag / GitHub
+Release. Pin
+`go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.1.0`
+(or a later published tag). `@latest` / floating `main` are not production pins.
+Do **not** auto-tag. Do not invent forever-green cosign or Memory GA.
 
 ## When to bump and tag
 
@@ -90,7 +91,8 @@ cosign verify-blob \
 ## M5 signing / matrix (post-public residual)
 
 Packaging and verify docs for the public binary host **`iomesh-memory-mcp`**.
-**Does not** invent a successful public tag release already shipped or forever-green signed CI.
+`v0.1.0` is the first public tag. **Does not** invent forever-green signed CI
+or Memory GA. Later tags still need a deliberate maintainer cut.
 
 ### Release matrix
 
@@ -119,7 +121,7 @@ Snapshot CI path: Actions **workflow_dispatch** with `snapshot: true` →
 
 ### M5 honesty locks (non-claims)
 
-- This tip **≠ invent a successful public tag release already shipped**
+- A published tag **≠ invent forever-green signed releases**
 - residual PASS **≠ invent forever-green signed releases** · residual PASS **≠ invent M5 complete**
 - dual_write **OFF** · **not Memory GA** · no invent GA
 - Product binary name **`iomesh-memory-mcp`**
@@ -171,8 +173,8 @@ Full stage table: [M5 signing / matrix](#m5-signing--matrix-post-public-residual
 - Kernel pin: consumers should also pin `github.com/iome-sh/memory` to a known module version when building from source for production.
 
 ```bash
-# Production-shaped install (example pin — replace with a real published tag)
-go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@vX.Y.Z
+# Production-shaped install (first public tag; later tags may supersede)
+go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.1.0
 
 # Local snapshot dry-run (NOT a production release)
 make release-snapshot   # → dist/ · no GitHub publish · no cosign
@@ -208,6 +210,6 @@ go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@vX.Y.Z
 - dual_write **OFF** · not product Memory GA  
 - Product name **iomesh-memory-mcp**  
 - Kernel public prerequisite **met** · host is public  
-- residual PASS ≠ invent signed release forever green · tip ≠ invent tag release shipped  
+- residual PASS ≠ invent signed release forever-green · published tag ≠ invent forever-green signed CI  
 - M5 packaging residual present ≠ invent M5 complete · release packaging present ≠ invent GHCR green  
 - **no auto-tag**  
