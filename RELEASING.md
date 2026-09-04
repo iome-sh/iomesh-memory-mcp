@@ -32,7 +32,7 @@ Checklist items that must move with the tag:
 2. [ ] GitHub Actions **ci-success** green on the release commit  
 3. [ ] [CHANGELOG.md](CHANGELOG.md) updated (move Unreleased → version section)  
 4. [ ] No secrets or palace data in tree  
-5. [ ] Honesty locks intact: dual_write OFF · not Memory GA · no aion import · naming **iomesh-memory-mcp**  
+5. [ ] Honesty locks intact: dual_write OFF · not Memory GA · naming **iomesh-memory-mcp**  
 6. [ ] **Kernel public prerequisite met:** `github.com/iome-sh/memory` is public — no `GOPRIVATE` / PAT for consumers or release CI  
 7. [ ] Default `ServerVersion` string matches the tag family (GoReleaser ldflags set `v{{.Version}}`)  
 8. [ ] Annotated tag `vX.Y.Z` pushed (GoReleaser **release** workflow green; assets on GitHub Release) — **no auto-tag**; maintainers cut tags deliberately
@@ -89,9 +89,8 @@ cosign verify-blob \
 
 ## M5 signing / matrix (post-public residual)
 
-**Serial stamp:** free eng **s1492** — residual-honest M5 signing/matrix tip for the public
-binary host **`iomesh-memory-mcp`**. Packaging and verify docs only; **does not** invent a
-successful public tag release already shipped or forever-green signed CI.
+Packaging and verify docs for the public binary host **`iomesh-memory-mcp`**.
+**Does not** invent a successful public tag release already shipped or forever-green signed CI.
 
 ### Release matrix
 
@@ -123,15 +122,14 @@ Snapshot CI path: Actions **workflow_dispatch** with `snapshot: true` →
 - This tip **≠ invent a successful public tag release already shipped**
 - residual PASS **≠ invent forever-green signed releases** · residual PASS **≠ invent M5 complete**
 - dual_write **OFF** · **not Memory GA** · no invent GA
-- Product binary name **`iomesh-memory-mcp`** (not `aion-memory-mcp`)
+- Product binary name **`iomesh-memory-mcp`**
 - **Kernel public prerequisite met** (`github.com/iome-sh/memory` public; no release PAT)
-- **aion stays private** · **no auto-tag releases**
+- **no auto-tag releases**
 
 ## Image name honesty
 
 Product edge image (when published — **optional**, do not invent green):
 **`ghcr.io/iome-sh/iomesh-memory-mcp`**  
-Do **not** publish product edge as `aion-memory-mcp`.  
 Local dogfood image remains `iomesh-memory-mcp:local` (compose PASS ≠ public registry).
 
 ## Versioning policy
@@ -140,11 +138,11 @@ Local dogfood image remains `iomesh-memory-mcp:local` (compose PASS ≠ public r
 - **1.0+** — SemVer; breaking tool/CLI changes require major bump  
 - Module path: `github.com/iome-sh/iomesh-memory-mcp`  
 
-## Support / version policy (E5)
+## Support / version policy
 
-**Serial stamp:** free eng **s1500** — residual-honest support + version policy for the public binary host **`iomesh-memory-mcp`**. Docs only; **does not** invent forever-green signed releases, a successful production tag already shipped for all consumers, or **Edge Memory GA**.
+Support + version policy for the public binary host **`iomesh-memory-mcp`**. Docs only; **does not** invent forever-green signed releases, a successful production tag already shipped for all consumers, or **Edge Memory GA**.
 
-This section closes the host-side packaging of Edge Memory GA candidacy exit criterion **E5** (version / support policy). Kernel semver remains owned by [`github.com/iome-sh/memory`](https://github.com/iome-sh/memory) (library · tag + `go get`; no GoReleaser there).
+Kernel semver remains owned by [`github.com/iome-sh/memory`](https://github.com/iome-sh/memory) (library · tag + `go get`; no GoReleaser there).
 
 ### What is supported
 
@@ -180,15 +178,15 @@ go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@vX.Y.Z
 make release-snapshot   # → dist/ · no GitHub publish · no cosign
 ```
 
-### E5 honesty locks (non-claims)
+### Honesty locks (non-claims)
 
 - residual PASS **≠ invent forever-green signed releases**
 - residual PASS **≠ invent Edge Memory GA** · residual PASS ≠ invent bare Memory GA · residual PASS ≠ invent hosted Memory GA
 - Support policy present **≠** invent Edge Memory GA declared
 - dual_write **OFF** · **not Memory GA** · product name **`iomesh-memory-mcp`**
-- **no auto-tag** · **aion stays private** · compose/local image ≠ public registry invent green
+- **no auto-tag** · compose/local image ≠ public registry invent green
 
-See also [SUPPORT.md](SUPPORT.md) (issues · security · scope) and [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) (E3 install matrix · E4 operator runbook).
+See also [SUPPORT.md](SUPPORT.md) (issues · security · scope) and [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) (install matrix · operator runbook).
 
 ## Artifacts
 
@@ -207,9 +205,9 @@ go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@vX.Y.Z
 
 ## Honesty locks (non-claims)
 
-- dual_write **OFF** · not product Memory GA · no aion import  
-- Product name **iomesh-memory-mcp** (not `aion-memory-mcp`)  
-- Kernel public prerequisite **met** · host public after deliberate flip  
+- dual_write **OFF** · not product Memory GA  
+- Product name **iomesh-memory-mcp**  
+- Kernel public prerequisite **met** · host is public  
 - residual PASS ≠ invent signed release forever green · tip ≠ invent tag release shipped  
 - M5 packaging residual present ≠ invent M5 complete · release packaging present ≠ invent GHCR green  
-- **aion stays private** · **no auto-tag**  
+- **no auto-tag**  

@@ -1,21 +1,18 @@
 # Public-flip readiness / post-flip SSOT (iomesh-memory-mcp)
 
 **Status: FLIP COMPLETE (public)** — `github.com/iome-sh/memory` is **public**; this host is **public**.  
-CI no longer requires `GOPRIVATE` / `IOMESH_CI_PAT`. **dual_write OFF** · **not Memory GA** · **aion stays private**.
+CI no longer requires `GOPRIVATE` / `IOMESH_CI_PAT`. **dual_write OFF** · **not Memory GA**.
 
-**Serial stamps (historical continuum):** s1468 M4 readiness · s1474 final TUI-parity audit · free eng concurrent **s1467+** after free-floor **s1465** · lag **s1466** · peers memory **s1467** · TUI **s1469** · aion residual **s1470** · free-floor peer **s1471** · free eng **s1473+**.
+> **Hard non-claims:** Public OSS ≠ invent Memory GA · dual_write OFF · residual PASS ≠ live dogfood invent · residual PASS ≠ full platform sidecar parity · compose PASS ≠ public registry · offline dogfood tip ≠ invent live dogfood green · readiness residual history ≠ invent GA.
 
-> **Hard non-claims:** Public OSS ≠ invent Memory GA · dual_write OFF · residual PASS ≠ live dogfood invent · residual PASS ≠ full platform sidecar parity · compose PASS ≠ public registry · offline dogfood tip ≠ invent live dogfood green · readiness residual history ≠ invent GA · **aion stays private**.
-
-## Flip order (Option A — completed)
+## Flip order (completed)
 
 | Order | Module | Status |
 |-------|--------|--------|
 | **1. First** | `github.com/iome-sh/memory` | **Public** |
 | **2. Then** | `github.com/iome-sh/iomesh-memory-mcp` (this host) | **Public** |
-| Stay private | aion broker / CP | **aion stays private** |
 
-Kernel first, then this host — **completed deliberately**.
+Kernel first, then this host — **completed deliberately**. This page does **not** flip visibility (already public).
 
 ## Public import (no private env)
 
@@ -43,7 +40,7 @@ Gate is offline greps only · residual PASS ≠ invent Memory GA · does not fli
 2. CONTRIBUTING **Public repository policy**  
 3. GoReleaser + `.github/workflows/release.yml`  
 4. Branch protection **ci-success** · Private vulnerability reporting · homepage/topics/delete-branch-on-merge  
-5. dual_write OFF · not Memory GA · no aion import · naming **iomesh-memory-mcp**  
+5. dual_write OFF · not Memory GA · naming **iomesh-memory-mcp**  
 6. edge-dogfood-gate offline dogfood SSOT  
 7. GHCR `ghcr.io/iome-sh/iomesh-memory-mcp` optional · **not invent green** until publish  
 
@@ -63,8 +60,6 @@ Gate is offline greps only · residual PASS ≠ invent Memory GA · does not fli
 | not Memory GA | Pass |
 | public (host + kernel) | Pass |
 | residual PASS ≠ public flip (historical residual) | Pass as process honesty |
-| no aion import | Pass |
-| aion stays private | Pass |
 | compose PASS ≠ public registry | Pass |
 | offline dogfood ≠ live invent | Pass |
 | full platform sidecar parity | Not claimed |
@@ -73,4 +68,3 @@ Gate is offline greps only · residual PASS ≠ invent Memory GA · does not fli
 
 - [OPEN_SOURCE_AUDIT.md](OPEN_SOURCE_AUDIT.md)  
 - [EDGE_DOGFOOD.md](EDGE_DOGFOOD.md)  
-- aion org checklist `docs/operations/github-private-to-public-checklist.md` (private monorepo)  

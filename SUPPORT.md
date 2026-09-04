@@ -7,7 +7,7 @@
 | Usage questions / bugs | [GitHub Issues](https://github.com/iome-sh/iomesh-memory-mcp/issues) (use the templates when open to contributors) |
 | Security vulnerability | Private [Security Advisory](https://github.com/iome-sh/iomesh-memory-mcp/security/advisories/new) or **security@iome.sh** — see [SECURITY.md](SECURITY.md) |
 | Kernel API / library | [github.com/iome-sh/memory](https://github.com/iome-sh/memory) (related **memory kernel**) |
-| Release / version policy | [RELEASING.md](RELEASING.md) — **Support / version policy (E5)** |
+| Release / version policy | [RELEASING.md](RELEASING.md) — **Support / version policy** |
 | Edge dogfood / install matrix | [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) — E3 matrix · E4 operator runbook |
 | Contributing | [CONTRIBUTING.md](CONTRIBUTING.md) |
 
@@ -27,7 +27,7 @@ residual PASS ≠ invent forever-green signed releases · residual PASS ≠ inve
 - Hosted Palace / multitenant cloud Memory onboarding  
 - Product **Memory GA** install guarantees (this host is edge-only; **not Memory GA**)  
 - **Edge Memory GA** declaration (candidacy docs only — residual PASS ≠ invent Edge Memory GA declared)  
-- Private monorepo (`aion`) broker / control-plane support via this binary  
+- Mesh control-plane / broker support via this binary  
 - Default dual_write / audit mesh side effects  
 
 ## Before filing an issue

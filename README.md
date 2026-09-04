@@ -150,7 +150,7 @@ Probe honesty (`GET /healthz` 200 is not Connected):
 curl -fsS http://127.0.0.1:8080/healthz
 # expect dual_write=off · not_memory_ga=true · embeddings=hash|onnx · qdrant=off
 #   + residual-honest "tools" (compile-time lean count, >=9) and "tool_names"
-#   healthz.tools ≠ live MCP tools/list stamp · s1509 TUI attach tools=6 is historical
+#   healthz.tools is compile-time registration, not a live MCP tools/list stamp
 ```
 
 Tools exposed after `tools/list` (lean kernel maps; dual_write OFF):
@@ -232,7 +232,7 @@ $PALACE_ROOT/
     …
 ```
 
-Isolation is path-based within a single process (`PALACE_ROOT/<tenant>/`). Tool and HTTP calls must pass `tenant`; omit fail-closes and does not write `PALACE_ROOT/default`. Invalid segments (`.`, `..`, separators) stay fail-closed. Not cloud multi-tenant security. dual_write **OFF** · **not** Memory GA.
+Isolation is path-based within a single process (`PALACE_ROOT/<tenant>/`). Tool and HTTP calls must pass `tenant`; omit fail-closes and does not write `PALACE_ROOT/default`. Invalid segments (`.`, `..`, separators) stay fail-closed. Path isolation ≠ cloud multi-tenant security. Organization isolation for the I/O Mesh broker is a separate HTTP header (`X-IOMesh-Org`) on mesh clients; this host does not implement that. dual_write **OFF** · **not** Memory GA.
 
 ## Development
 
@@ -256,13 +256,13 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 | Document | Description |
 |----------|-------------|
 | [CHANGELOG.md](CHANGELOG.md) | Release notes |
-| [RELEASING.md](RELEASING.md) | Tags, GoReleaser, SBOM, cosign · support / version policy (E5) |
+| [RELEASING.md](RELEASING.md) | Tags, GoReleaser, SBOM, cosign · support / version policy |
 | [SECURITY.md](SECURITY.md) | Security policy |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contributor guide |
 | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community standards |
 | [SUPPORT.md](SUPPORT.md) | Issues, security, support scope |
 | [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) | E3 install matrix · E4 operator dogfood runbook |
-| [docs/PUBLIC_FLIP_READINESS.md](docs/PUBLIC_FLIP_READINESS.md) | M4 public-flip readiness residual |
+| [docs/PUBLIC_FLIP_READINESS.md](docs/PUBLIC_FLIP_READINESS.md) | Public OSS / visibility (flip complete) |
 | [docs/OPEN_SOURCE_AUDIT.md](docs/OPEN_SOURCE_AUDIT.md) | OSS process checklist |
 
 ## Related projects
