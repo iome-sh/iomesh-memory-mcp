@@ -1,6 +1,6 @@
 # Lean multi-stage build for iomesh-memory-mcp (edge Memory MCP host).
-# Image name honesty: ghcr.io/iome-sh/iomesh-memory-mcp (not aion-memory-mcp).
-# dual_write OFF · not Memory GA · no aion import.
+# Image name honesty: ghcr.io/iome-sh/iomesh-memory-mcp.
+# dual_write OFF · not Memory GA · does not import private control-plane/broker packages.
 
 FROM golang:1.26-bookworm AS build
 WORKDIR /src

@@ -22,5 +22,5 @@
 ## Security checklist (if touching FS roots, HTTP, transports)
 
 - [ ] Residual risks still accurate in `SECURITY.md`
-- [ ] No aion broker / dual_write default ON
+- [ ] No private control plane / broker / dual_write default ON
 - [ ] Errors/logs do not dump user palace contents in tests

@@ -6,10 +6,10 @@ Please treat quality, security, honesty locks, and tests as first-class.
 ## What this repo is
 
 - **Edge MCP host** — stdio or streamable HTTP tools over `github.com/iome-sh/memory` Palace FS  
-- **Naming honesty** — binary/image **`iomesh-memory-mcp`** (not product-name `aion-memory-mcp`)  
+- **Naming honesty** — binary/image **`iomesh-memory-mcp`**  
 - **dual_write OFF** by default · **not product Memory GA**  
-- **Does not import** `github.com/iome-sh/aion/**`  
-- Private aion broker / CP / INSTALL_STORE / billing stay out of this tree  
+- **Does not import** private control-plane / broker packages  
+- Private control plane / broker / INSTALL_STORE / billing stay out of this tree  
 
 This repository is **public** (MIT). The kernel (`github.com/iome-sh/memory`) is
 also public. `GOPRIVATE` / a GitHub token are **not** required to clone, test, or
@@ -46,7 +46,7 @@ make release-snapshot           # local GoReleaser snapshot (needs goreleaser + 
 ## Coding standards
 
 - **Lean host** — tools and HTTP surface stay small; prefer kernel APIs over re-implementing Palace  
-- **No aion imports** — do not pull `github.com/iome-sh/aion/**` into this tree  
+- **Does not import private control-plane / broker packages** — do not pull private control-plane or broker modules into this tree  
 - **Honesty locks** — dual_write OFF by default; do not invent Memory GA; product name is **iomesh-memory-mcp**  
 - **Fail closed** on empty palace root, omitted tool tenant, and bad paths; tenant isolation is path-based only (document residuals)  
 - Prefer small, focused PRs with tests for new tool/HTTP behavior  
@@ -83,12 +83,12 @@ Report vulnerabilities privately — see [SECURITY.md](SECURITY.md). **Do not op
 
 **This repository is public.** Keep private program material out of the tree and PR surface:
 
-- Do **not** put private monorepo paths (`aion/**` clone/build instructions), internal pending-todos, or unpublished stage URLs in PRs, docs, or CHANGELOG  
-- Do **not** invent **Memory GA**, dual_write ON by default, or full platform sidecar parity with private `aion-memory-mcp`  
+- Do **not** put private monorepo paths (private control-plane clone/build instructions), internal pending-todos, or unpublished stage URLs in PRs, docs, or CHANGELOG  
+- Do **not** invent **Memory GA**, dual_write ON by default, or full platform sidecar parity with a private control-plane sidecar  
 - After public flip, **strip private ledger serials** (`s###`) from PR titles, commit subjects, and CHANGELOG user-facing notes (internal continuum stamps stay in private process only)  
-- Prefer **I/O Mesh / edge Memory MCP** product language over private aion codenames in new docs  
+- Prefer **I/O Mesh / edge Memory MCP** product language over private control-plane / broker codenames in new docs  
 - Binary/image names operators run (**`iomesh-memory-mcp`**, `ghcr.io/iome-sh/iomesh-memory-mcp`) may appear when documenting install/wire-up  
-- Do **not** document “clone the private aion monorepo” as the product edge build path  
+- Do **not** document “clone the private control-plane monorepo” as the product edge build path  
 
 Historical readiness residuals may still mention serial stamps; they are not a public claim. The repo is public.
 
@@ -99,8 +99,8 @@ Historical readiness residuals may still mention serial stamps; they are not a p
 - Ensure CI is green  
 - Do not commit API keys, `.env`, or palace data  
 - Update [CHANGELOG.md](CHANGELOG.md) **Unreleased** for user-visible changes  
-- Keep honesty locks intact (`dual_write=off`, `not_memory_ga`, naming **iomesh-memory-mcp**, no aion import)  
-- Follow **Public repository policy** above (no private aion build paths; no invent Memory GA)  
+- Keep honesty locks intact (`dual_write=off`, `not_memory_ga`, naming **iomesh-memory-mcp**, does not import private control-plane/broker packages)  
+- Follow **Public repository policy** above (no private control-plane build paths; no invent Memory GA)  
 
 ### CI on PR and merge
 
@@ -150,10 +150,10 @@ Tenant layout: `filepath.Join(palaceRoot, tenant)` as Palace `BaseDir`.
 
 ## Out of scope here
 
-- Enabling dual_write / aion audit by default  
+- Enabling dual_write / private control-plane audit by default  
 - Inventing Memory GA  
 - Requiring Qdrant/ONNX for default path  
-- Importing private aion packages  
+- Importing private control-plane / broker packages  
 - Inventing a GitHub token / `GOPRIVATE` requirement for this public host + kernel  
 
 ## License

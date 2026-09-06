@@ -5,9 +5,9 @@
 //	stdio or streamable HTTP → MCP tools → github.com/iome-sh/memory PalaceStore
 //
 // Honesty locks:
-//   - dual_write OFF (no aion audit publish in lean v1)
+//   - dual_write OFF (no private control-plane audit publish in lean v1)
 //   - not product Memory GA
-//   - does not import github.com/iome-sh/aion/**
+//   - does not import private control-plane/broker packages
 //   - path-based multi-tenant FS isolation only (same process residual)
 package mcphost
 

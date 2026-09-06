@@ -87,7 +87,7 @@ need_needle "docs/EDGE_DOGFOOD.md" "public|still private" "public (or historical
 need_needle "docs/EDGE_DOGFOOD.md" "residual PASS ≠ live dogfood|residual PASS != live dogfood" "residual ≠ live dogfood"
 need_needle "docs/EDGE_DOGFOOD.md" "residual PASS ≠ public flip|residual PASS != public flip" "residual ≠ public flip"
 need_needle "docs/EDGE_DOGFOOD.md" "full platform sidecar parity|platform sidecar parity" "no full platform sidecar parity"
-need_needle "docs/EDGE_DOGFOOD.md" "no aion import" "no aion import"
+need_needle "docs/EDGE_DOGFOOD.md" "does not import private control-plane/broker packages|private control-plane / broker" "no private control-plane/broker import"
 need_needle "docs/EDGE_DOGFOOD.md" "iomesh-memory-mcp" "naming iomesh-memory-mcp"
 forbid_needle "docs/EDGE_DOGFOOD.md" 'Memory Ops Pack' "no Memory Ops Pack SKU"
 forbid_needle "docs/EDGE_DOGFOOD.md" '\$88|~\$88' "no ~\$88 mesh rate"
@@ -108,7 +108,7 @@ need_needle "docs/EDGE_DOGFOOD.md" "memory_list|list" "list tool honesty"
 need_needle "docs/EDGE_DOGFOOD.md" "memory_compact_status|compact_status" "compact_status honesty"
 need_needle "docs/EDGE_DOGFOOD.md" "M4" "M4 later"
 need_needle "docs/EDGE_DOGFOOD.md" "s1463|TUI" "peer TUI s1463 mention"
-need_needle "docs/EDGE_DOGFOOD.md" "s1464|aion residual" "peer aion residual s1464"
+need_needle "docs/EDGE_DOGFOOD.md" "s1464" "peer private-plane residual s1464"
 need_needle "docs/EDGE_DOGFOOD.md" "edge-dogfood-gate|edge_dogfood_gate" "gate target"
 
 echo
@@ -142,6 +142,35 @@ need_needle "internal/mcphost/host.go" "iomesh-memory-mcp" "ServerName iomesh-me
 need_needle "internal/mcphost/http.go" "healthz|/healthz" "HTTP healthz"
 need_needle "internal/mcphost/http.go" "dual_write" "HTTP dual_write field"
 need_needle "internal/mcphost/tools.go" "dual_write" "tools dual_write"
+
+echo
+echo "-- product-codename residual forbid --"
+# Character-class pattern so this script is not itself a \\b token hit.
+codename_pat='[Aa][Ii][Oo][Nn]'
+user_facing=(
+  CONTRIBUTING.md
+  NOTICE
+  docs/EDGE_DOGFOOD.md
+  docs/EDGE_DOGFOOD_EVIDENCE.md
+  CHANGELOG.md
+  Dockerfile
+  docker-compose.yml
+  .github/pull_request_template.md
+  .github/ISSUE_TEMPLATE/feature_request.yml
+  .github/workflows/ci.yml
+  cmd/iomesh-memory-mcp/main.go
+  internal/mcphost/host.go
+)
+for f in "${user_facing[@]}"; do
+  forbid_needle "$f" "$codename_pat" "no product-codename residual"
+done
+# Tree-wide: no leftover product-codename token (pattern is split above).
+if git grep -I -n -E -- "$codename_pat" -- . >/dev/null; then
+  git grep -I -n -E -- "$codename_pat" -- . || true
+  fail_msg "product-codename residual (git grep)"
+else
+  pass "tree has no product-codename residual"
+fi
 
 # Self-check: this gate is offline greps only — no docker/gcloud invocations as commands.
 # (Mentions of "docker" in comments/strings are fine; bare command lines are not.)
