@@ -14,7 +14,6 @@ import (
 func TestPreflightPrintsHealthzAndExits(t *testing.T) {
 	t.Setenv("MEMORY_ONNX_MODEL_PATH", "")
 	t.Setenv("MEMORY_MCP_HTTP_ADDR", "")
-	t.Setenv("AION_MEMORY_MCP_HTTP_ADDR", "")
 	t.Setenv("PALACE_ROOT", "")
 	t.Setenv("MEMORY_TENANT", "")
 

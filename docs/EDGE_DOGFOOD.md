@@ -208,7 +208,6 @@ http://127.0.0.1:8080/mcp
 ```
 
 Env equivalents: `MEMORY_MCP_HTTP_ADDR=:8080` · `MEMORY_MCP_HTTP_PATH=/mcp`.
-Prefer these over deprecated `AION_MEMORY_MCP_*` aliases.
 
 ### E4.5 Optional Docker Compose (local image only)
 

@@ -46,10 +46,8 @@ func run(args []string, stdout io.Writer) error {
 	defaultPalace := envOr("PALACE_ROOT", defaultPalaceRoot())
 	palaceRoot := fs.String("palace-root", defaultPalace, "tenant palace root base directory")
 	tenant := fs.String("tenant", envOr("MEMORY_TENANT", ""), "process tenant label (validated if set; tool tenant is required — omit fail-closes)")
-	httpAddr := fs.String("http-addr", firstEnvPrefer(
-		"MEMORY_MCP_HTTP_ADDR",
-		"AION_MEMORY_MCP_HTTP_ADDR",
-	), "listen address for streamable HTTP (e.g. :8080); empty = stdio mode")
+	httpAddr := fs.String("http-addr", envOr("MEMORY_MCP_HTTP_ADDR", ""),
+		"listen address for streamable HTTP (e.g. :8080); empty = stdio mode")
 	httpPath := fs.String("http-path", envOr("MEMORY_MCP_HTTP_PATH", "/mcp"),
 		"URL path for the MCP streamable HTTP endpoint (healthz always at /healthz)")
 	preflight := fs.Bool("preflight", false,
@@ -61,8 +59,6 @@ func run(args []string, stdout io.Writer) error {
 		}
 		return fmt.Errorf("%w: %v", errFlag, err)
 	}
-
-	warnDeprecatedEnvAliases()
 
 	host, err := mcphost.New(mcphost.Config{
 		PalaceRoot:    *palaceRoot,
@@ -122,31 +118,4 @@ func envOr(key, fallback string) string {
 		return v
 	}
 	return fallback
-}
-
-// firstEnvPrefer returns the first non-empty among preferred then deprecated keys.
-// Logs once when only the deprecated alias is set.
-func firstEnvPrefer(prefer, deprecated string) string {
-	if v := strings.TrimSpace(os.Getenv(prefer)); v != "" {
-		return v
-	}
-	if v := strings.TrimSpace(os.Getenv(deprecated)); v != "" {
-		log.Printf("deprecated env %s is set; prefer %s (one-time notice)", deprecated, prefer)
-		return v
-	}
-	return ""
-}
-
-func warnDeprecatedEnvAliases() {
-	// Cover additional legacy aliases used in private aion installs.
-	pairs := [][2]string{
-		{"AION_MEMORY_MCP_HTTP_ADDR", "MEMORY_MCP_HTTP_ADDR"},
-		{"AION_MEMORY_MCP_HTTP_PATH", "MEMORY_MCP_HTTP_PATH"},
-		{"AION_PALACE_ROOT", "PALACE_ROOT"},
-	}
-	for _, p := range pairs {
-		if strings.TrimSpace(os.Getenv(p[0])) != "" && strings.TrimSpace(os.Getenv(p[1])) == "" {
-			log.Printf("deprecated env %s is set; prefer %s (one-time notice)", p[0], p[1])
-		}
-	}
 }
