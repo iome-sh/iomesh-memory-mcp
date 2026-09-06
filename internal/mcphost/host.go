@@ -39,7 +39,7 @@ const (
 //	-X github.com/iome-sh/iomesh-memory-mcp/internal/mcphost.ServerVersion=vX.Y.Z
 //
 // Default is a clean semver-ish pre-release stamp (no private ledger serial).
-var ServerVersion = "v0.1.0"
+var ServerVersion = "v0.1.1"
 
 // Config configures the lean edge host.
 type Config struct {
