@@ -8,7 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- **Public OSS env scrub:** drop leftover `AION_*` env alias reads and deprecation helpers (`firstEnvPrefer`, `warnDeprecatedEnvAliases`). Host reads `MEMORY_MCP_*` / `PALACE_ROOT` / `MEMORY_TENANT` only. Operator docs (`.env.example`, EDGE_DOGFOOD) no longer list those aliases. Does not import `github.com/iome-sh/aion/**`. Naming remains **iomesh-memory-mcp**. dual_write OFF · not Memory GA.
+- **Public OSS env scrub:** drop leftover legacy product-plane env alias reads and deprecation helpers (`firstEnvPrefer`, `warnDeprecatedEnvAliases`). Host reads `MEMORY_MCP_*` / `PALACE_ROOT` / `MEMORY_TENANT` only. Operator docs (`.env.example`, EDGE_DOGFOOD) no longer list those aliases. Does not import private control-plane/broker packages. Naming remains **iomesh-memory-mcp**. dual_write OFF · not Memory GA.
+- **Public OSS narrative scrub:** replace leftover product-codename language in docs, comments, templates, and honesty-gate needles with **private control plane / broker** wording. Gates require the new wording and forbid the old codename (they no longer require the old token to appear). Naming remains **iomesh-memory-mcp**. dual_write OFF · not Memory GA.
 
 ## [0.1.0] — 2026-09-04
 
@@ -78,7 +79,7 @@ dual_write OFF · not Memory GA.
   - Honesty: residual PASS ≠ live dogfood green · residual PASS ≠ invent forever-green signed releases · residual PASS ≠ invent Edge Memory GA · dual_write OFF · not Memory GA
 - **s1492 / Option A M5 signing/matrix tip** (public binary host residual-honest):
   - [RELEASING.md](RELEASING.md) **M5 signing / matrix** section: tag → release.yml → GoReleaser → archives + checksums + SBOM + cosign keyless · `make release-snapshot` dry-run
-  - Honesty: tip ≠ invent successful public tag release shipped · residual PASS ≠ invent forever-green signed releases · dual_write OFF · not Memory GA · naming **iomesh-memory-mcp** · kernel public prerequisite met · no auto-tag · aion private
+  - Honesty: tip ≠ invent successful public tag release shipped · residual PASS ≠ invent forever-green signed releases · dual_write OFF · not Memory GA · naming **iomesh-memory-mcp** · kernel public prerequisite met · no auto-tag · private control plane / broker stays out of this tree
   - Gate needles lightly updated for public release-path honesty
 - **s1474 / final private→public flip audit closeout (TUI binary parity)** (still private · residual PASS ≠ public flip):
   - CONTRIBUTING expanded to TUI parity: development setup (GOPRIVATE residual), coding standards, tests, security-sensitive changes, Issues, **Public repository policy**, PR + CI table + branch protection `ci-success`, MIT contribution clause
@@ -101,20 +102,20 @@ dual_write OFF · not Memory GA.
 
 ### Honesty
 
-- dual_write **OFF** · not product Memory GA · host + kernel public · residual PASS ≠ live dogfood / invent forever-green signed releases · residual PASS ≠ invent Edge Memory GA · readiness ≠ invent flip · tip ≠ invent tag release shipped · no aion import · naming **iomesh-memory-mcp** · kernel public prerequisite met · M5 packaging residual (s1492) ≠ invent M5 complete · s1500 E3–E5 docs ≠ invent Edge Memory GA declared · s1504 local evidence ≠ invent Edge Memory GA / forever product green · s1509 client attach ≠ invent Edge Memory GA / forever green full product dogfood · healthz `tools` / `tool_names` = compile-time lean surface ≠ invent live TUI attach restamp / forever-green `tools=N` · no auto-tag
+- dual_write **OFF** · not product Memory GA · host + kernel public · residual PASS ≠ live dogfood / invent forever-green signed releases · residual PASS ≠ invent Edge Memory GA · readiness ≠ invent flip · tip ≠ invent tag release shipped · does not import private control-plane/broker packages · naming **iomesh-memory-mcp** · kernel public prerequisite met · M5 packaging residual (s1492) ≠ invent M5 complete · s1500 E3–E5 docs ≠ invent Edge Memory GA declared · s1504 local evidence ≠ invent Edge Memory GA / forever product green · s1509 client attach ≠ invent Edge Memory GA / forever green full product dogfood · healthz `tools` / `tool_names` = compile-time lean surface ≠ invent live TUI attach restamp / forever-green `tools=N` · no auto-tag
 
 ## [0.1.0-s1457] — 2026-08-08
 
 ### Added
 
 - Lean edge MCP host scaffold (**s1457** / Option A M2):
-  - Binary **`iomesh-memory-mcp`** (not product-name `aion-memory-mcp`)
+  - Binary **`iomesh-memory-mcp`**
   - stdio + streamable HTTP (`MEMORY_MCP_HTTP_ADDR`) with `GET /healthz`
   - Tools: `memory_ingest_turn`, `memory_retrieve`, `memory_search_semantic`,
     `memory_list`, `memory_compact_status`, `memory_facts_as_of`
   - Path-based tenant layout: `filepath.Join(palaceRoot, tenant)`
-  - Depends on `github.com/iome-sh/memory` + `modelcontextprotocol/go-sdk` only (no aion)
+  - Depends on `github.com/iome-sh/memory` + `modelcontextprotocol/go-sdk` only (does not import private control-plane/broker packages)
   - TUI-grade OSS process bar: LICENSE, NOTICE, SECURITY, community docs,
     RELEASING, CHANGELOG, OPEN_SOURCE_AUDIT, Makefile, CI, Dependabot, Dockerfile, compose
   - **Repository remains private** until a deliberate visibility flip
-  - dual_write **OFF** · not product Memory GA · aion broker stays private · no default Qdrant/ONNX requirement
+  - dual_write **OFF** · not product Memory GA · private control plane / broker stays out of this tree · no default Qdrant/ONNX requirement

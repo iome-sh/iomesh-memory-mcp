@@ -37,6 +37,22 @@ need_needle() {
   fi
 }
 
+# file must exist and must NOT contain pattern
+forbid_needle() {
+  local f="$1"
+  local pat="$2"
+  local label="${3:-$pat}"
+  if [[ ! -f "$f" ]]; then
+    fail_msg "forbid skip (missing file): $f ($label)"
+    return
+  fi
+  if grep -E -q -- "$pat" "$f"; then
+    fail_msg "forbid hit: $f ← $label"
+  else
+    pass "forbid: $f ↛ $label"
+  fi
+}
+
 echo "== public_flip_readiness_gate (s1474 M4 final TUI-parity) offline — $ROOT =="
 echo "   dual_write OFF · not Memory GA · public · kernel first · residual PASS ≠ public flip"
 echo
@@ -107,7 +123,8 @@ need_needle "CONTRIBUTING.md" "ci-success" "CONTRIBUTING ci-success"
 need_needle "CONTRIBUTING.md" "dual_write" "CONTRIBUTING dual_write"
 need_needle "CONTRIBUTING.md" "not product Memory GA|not Memory GA|Memory GA" "CONTRIBUTING not Memory GA"
 need_needle "CONTRIBUTING.md" "iomesh-memory-mcp" "CONTRIBUTING naming"
-need_needle "CONTRIBUTING.md" "no aion import|Does not import|aion/\*\*" "CONTRIBUTING no aion"
+need_needle "CONTRIBUTING.md" "does not import private control-plane|Does not import private control-plane|private control-plane / broker" "CONTRIBUTING no private control-plane import"
+forbid_needle "CONTRIBUTING.md" '[Aa][Ii][Oo][Nn]' "CONTRIBUTING no product-codename residual"
 need_needle "CONTRIBUTING.md" "GOPRIVATE" "CONTRIBUTING GOPRIVATE note"
 need_needle "CONTRIBUTING.md" "MIT License|licensed under the MIT" "CONTRIBUTING MIT clause"
 

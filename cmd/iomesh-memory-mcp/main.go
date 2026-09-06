@@ -2,7 +2,7 @@
 //
 // Default transport is stdio; set -http-addr (or MEMORY_MCP_HTTP_ADDR) for
 // streamable HTTP. -preflight prints the same honesty JSON as GET /healthz
-// and exits (no listen, no stdio MCP). Does not import aion.
+// and exits (no listen, no stdio MCP). Does not import private control-plane/broker packages.
 // dual_write OFF · not Memory GA.
 package main
 

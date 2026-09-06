@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         Keep scope lean: FS Palace MCP host. Do **not** invent product Memory GA,
-        default dual_write, or private aion broker features here.
+        default dual_write, or private control-plane / broker features here.
   - type: textarea
     id: problem
     attributes:

@@ -5,7 +5,7 @@ Contemporaneous **local residual dogfood evidence** for **E4** progress on
 
 **Serial stamp:** **s1509** · free eng after **s1504** (local E4 unit + healthz evidence) ·
 **s1500** (E3/E4 runbook · E5 support) · prior M3 offline SSOT **s1462** · Edge Memory GA
-candidacy residual (aion **s1496**, mention only).
+candidacy residual (private control-plane **s1496**, mention only).
 
 This file records **observed** local runs only. It does **not** declare product GA.
 Parent runbook: [EDGE_DOGFOOD.md](EDGE_DOGFOOD.md).

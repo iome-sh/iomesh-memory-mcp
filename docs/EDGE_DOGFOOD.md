@@ -11,7 +11,7 @@ This doc advances **Edge Memory GA candidacy** exit criteria on the public binar
 | **E3** | Install matrix clarity (stdio · HTTP · Docker Compose · TUI attach example) |
 | **E4** | Operator dogfood **runbook** (ingest → retrieve → list → as-of → status) |
 
-**Serial stamp:** **s1500** · free eng **s1504** (local E4 unit + healthz evidence) · free eng **s1509** (TUI client attach evidence) · free eng after free-floor **s1499+** · prior M3 offline SSOT **s1462** · peers TUI **s1463** · aion residual **s1464** (mention only) · free-floor peer **s1465** · free eng after **s1467+** · M4 public flip residual **s1468+** · M5 signing **s1492** · Edge Memory GA candidacy residual (aion **s1496**, mention only).
+**Serial stamp:** **s1500** · free eng **s1504** (local E4 unit + healthz evidence) · free eng **s1509** (TUI client attach evidence) · free eng after free-floor **s1499+** · prior M3 offline SSOT **s1462** · peers TUI **s1463** · private control-plane residual **s1464** (mention only) · free-floor peer **s1465** · free eng after **s1467+** · M4 public flip residual **s1468+** · M5 signing **s1492** · Edge Memory GA candidacy residual (private control-plane **s1496**, mention only).
 
 **Modules are public:** host + kernel (`github.com/iome-sh/memory`) are public MIT. Historical “still private” language on pre-flip residuals is **retired** for install paths (no `GOPRIVATE` / PAT for consumers).
 
@@ -29,9 +29,9 @@ This doc advances **Edge Memory GA candidacy** exit criteria on the public binar
 | **public** | Repo is public MIT · dual_write OFF · not Memory GA · still private was pre-flip residual language retired. |
 | **residual PASS ≠ live dogfood** | Offline gate / checklist PASS does **not** invent a live green dogfood run. **PASS ≠ live dogfood green.** |
 | **residual PASS ≠ public flip** | Process bar + docs do not flip GH visibility or invent GHCR publish green (flip already deliberate elsewhere). |
-| **residual PASS ≠ full platform sidecar parity** | Lean extract is not the private aion `aion-memory-mcp` sidecar feature set. |
-| **no aion import** | Builds on `github.com/iome-sh/memory` + MCP SDK only. |
-| **naming honesty** | Product edge = **`iomesh-memory-mcp`** (not product-name `aion-memory-mcp`). |
+| **residual PASS ≠ full platform sidecar parity** | Lean extract is not the private control-plane / broker sidecar feature set. |
+| **does not import private control-plane/broker packages** | Builds on `github.com/iome-sh/memory` + MCP SDK only. |
+| **naming honesty** | Product edge = **`iomesh-memory-mcp`**. |
 | **open boxes stay open** | Still-human product close / still-open product gates (E4 live evidence · E10 founder/GTM) remain open; do not close by residual alone. |
 | **Palace sunset** | Hosted Palace path remains sunset / residual; local-primary FS is the edge dogfood path. |
 | **mesh optional for pull** | Mesh credentials + platform endpoint are optional for durable pull/retain. Local FS path needs neither mesh nor a priced add-on. Do not invent a priced add-on SKU or a mesh base rate here. |
@@ -172,7 +172,7 @@ Operator expectations when dogfooding against a client:
 1. Ingest a user/assistant turn under a tenant.
 2. Retrieve then list and confirm FS-backed hits under `$PALACE_ROOT/<tenant>/…`.
 3. Call `memory_facts_as_of`, then `memory_compact_status` — status payload should reflect dual_write **off** / not Memory GA residual.
-4. Do **not** expect aion audit dual_write publish, mesh pull, or platform sidecar parity.
+4. Do **not** expect private control-plane audit dual_write publish, mesh pull, or platform sidecar parity.
 
 **residual PASS ≠ live dogfood** — this section is the honesty SSOT for a human or client round-trip; CI does not run a live MCP session. **PASS ≠ live dogfood green.**
 
@@ -242,7 +242,7 @@ curl -fsS http://127.0.0.1:8080/healthz
 | **E5** support / version policy | [RELEASING.md](../RELEASING.md) · [SUPPORT.md](../SUPPORT.md) |
 | **Edge Memory GA declared** | **Not this serial** — residual PASS ≠ invent Edge Memory GA |
 
-Peers (mention only): TUI s1463 dogfood tip · aion residual s1464 · free-floor peer s1465 · free eng after s1467+ · Edge Memory GA candidacy residual aion s1496.
+Peers (mention only): TUI s1463 dogfood tip · private control-plane residual s1464 · free-floor peer s1465 · free eng after s1467+ · Edge Memory GA candidacy residual private control-plane s1496.
 
 ---
 
