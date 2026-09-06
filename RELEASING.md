@@ -4,7 +4,7 @@ Ship from `main` via PR; cut annotated semver tags for binary/image consumers.
 
 **Current honesty:** `v0.1.0` is the first public annotated `v*` tag / GitHub
 Release. Pin
-`go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.1.0`
+`go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.1.1`
 (or a later published tag). `@latest` / floating `main` are not production pins.
 Do **not** auto-tag. Do not invent forever-green cosign or Memory GA.
 
@@ -173,8 +173,8 @@ Full stage table: [M5 signing / matrix](#m5-signing--matrix-post-public-residual
 - Kernel pin: consumers should also pin `github.com/iome-sh/memory` to a known module version when building from source for production.
 
 ```bash
-# Production-shaped install (first public tag; later tags may supersede)
-go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.1.0
+# Production-shaped install (latest published tag; later tags may supersede)
+go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.1.1
 
 # Local snapshot dry-run (NOT a production release)
 make release-snapshot   # → dist/ · no GitHub publish · no cosign

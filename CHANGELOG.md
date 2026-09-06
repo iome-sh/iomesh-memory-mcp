@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] — 2026-09-06
+
+Patch: leftover product-plane env alias reads (#45) and public OSS narrative
+scrub (#46). Not a new MCP tool surface. dual_write OFF · not Memory GA.
+
 ### Changed
 - **Public OSS env scrub:** drop leftover legacy product-plane env alias reads and deprecation helpers (`firstEnvPrefer`, `warnDeprecatedEnvAliases`). Host reads `MEMORY_MCP_*` / `PALACE_ROOT` / `MEMORY_TENANT` only. Operator docs (`.env.example`, EDGE_DOGFOOD) no longer list those aliases. Does not import private control-plane/broker packages. Naming remains **iomesh-memory-mcp**. dual_write OFF · not Memory GA.
 - **Public OSS narrative scrub:** replace leftover product-codename language in docs, comments, templates, and honesty-gate needles with **private control plane / broker** wording. Gates require the new wording and forbid the old codename (they no longer require the old token to appear). Naming remains **iomesh-memory-mcp**. dual_write OFF · not Memory GA.
