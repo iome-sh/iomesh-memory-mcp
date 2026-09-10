@@ -89,7 +89,7 @@ export MEMORY_TENANT=default
 # :8080 is forced to 127.0.0.1:8080. 0.0.0.0 requires -allow-non-loopback.
 
 curl -fsS http://127.0.0.1:8080/healthz
-# expect dual_write=off · not_memory_ga=true · qdrant=off · tools>=9 (compile-time)
+# expect dual_write=off · not_memory_ga=true · qdrant=off · tools>=10 (compile-time)
 # healthz stays open even if MEMORY_MCP_HTTP_SECRET is set
 ```
 
@@ -158,21 +158,21 @@ Probe honesty (`GET /healthz` 200 is not Connected):
 ```bash
 curl -fsS http://127.0.0.1:8080/healthz
 # expect dual_write=off · not_memory_ga=true · embeddings=hash|onnx · qdrant=off
-#   + residual-honest "tools" (compile-time lean count, >=9) and "tool_names"
+#   + residual-honest "tools" (compile-time lean count, >=10) and "tool_names"
 #   healthz.tools is compile-time registration, not a live MCP tools/list stamp
 ```
 
 Tools exposed after `tools/list` (lean kernel maps; dual_write OFF):
 `memory_ingest_turn`, `memory_write`, `memory_retrieve`, `memory_search_semantic`,
 `memory_list`, `memory_compact_status`, `memory_facts_as_of`, `memory_related`,
-`memory_supersede_entity`.
+`memory_supersede_entity`, `ops_digest_export`.
 
 ### Docker Compose
 
 ```bash
 docker compose up --build
 curl -fsS http://127.0.0.1:8080/healthz
-# expect dual_write=off · not_memory_ga=true · embeddings=hash|onnx · qdrant=off · tools>=9
+# expect dual_write=off · not_memory_ga=true · embeddings=hash|onnx · qdrant=off · tools>=10
 ```
 
 ### Advanced: better semantic recall (optional ONNX)
@@ -230,6 +230,7 @@ Local palace FS on the operator machine. `tools/list` and `healthz.tool_names` a
 | `memory_facts_as_of` | `ListFactsAsOf` | List local FS; does not ingest |
 | `memory_related` | `MultiHopRetrieve` (entity BFS lite; not full graph RAG) | Read local FS; does not ingest |
 | `memory_supersede_entity` | `SupersedeEntityFacts` (mutating; HITL stays at the client) | Write local FS (close facts) |
+| `ops_digest_export` | Local `ListMemoryWithOptions` window → receipts (TUI `/memory digest` MCP fallback) | Read/list local FS; does not ingest. Patterns stay empty (insufficient-signal OK). `source_hint=palace_timeline` for local entries — never invent mesh. dual_write OFF · not Memory GA · catalog ≠ connected |
 
 Server name: **`iomesh-memory-mcp`**. Default version stamp: **`v0.2.1`** (overridden by `make build` / GoReleaser ldflags).
 
