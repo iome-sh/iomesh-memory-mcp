@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-09-10
+
 ### Added
 - **`ops_digest_export` (#55):** lean MCP tool for TUI `/memory digest` when sync `POST /v1|/v5/memory/ops_digest` is unavailable. Args: `window` (day|week, default day), `horizon` (ops|knowledge|analytical|all, default ops), `limit` (default 20, cap 50), optional `tenant` / `as_of`. Returns TUI `MemoryOpsDigestResult` JSON: window/horizon/as_of/since, honesty (`dual_write_default=off`, `never_invent_ga`, knowledge/analytical Beta, book_demo off), empty `patterns` (insufficient-signal OK — do not invent GA), local palace `receipts` with `source_hint=palace_timeline` (TUI-classifiable private; mesh* only when the entry is mesh-sourced — never invented), empty `decision_stub`. Advertised in `leanToolNames` / `GET /healthz` `tool_names` / `-preflight`. dual_write OFF · not Memory GA · catalog ≠ connected.
 
