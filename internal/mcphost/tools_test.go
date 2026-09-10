@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	palace "github.com/iome-sh/memory"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -157,6 +158,131 @@ func TestIngestTurnStampsSourceHintPrivate(t *testing.T) {
 	}
 	if !diskHit {
 		t.Fatal("palace disk JSON missing observable source_hint=private")
+	}
+}
+
+func TestIngestTurnStampsSourceHintMesh(t *testing.T) {
+	t.Setenv("MEMORY_ONNX_MODEL_PATH", "")
+	root := t.TempDir()
+	h, err := New(Config{PalaceRoot: root, DefaultTenant: "dogfood"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	ctx := context.Background()
+	const needle = "source-hint-mesh-durable-pull"
+	_, out, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+		Tenant:     "dogfood",
+		SessionID:  "dept.engineering.events.github",
+		Role:       "user",
+		Content:    "durable mesh pull " + needle,
+		SourceHint: "mesh",
+	})
+	if err != nil {
+		t.Fatalf("ingest: %v", err)
+	}
+	if out.DualWrite != "off" || out.Audited {
+		t.Fatalf("dual_write must be off; do not invent Connected/Memory GA: %+v", out)
+	}
+	if out.MemoryID == "" {
+		t.Fatal("expected memory_id")
+	}
+
+	_, listed, err := h.handleList(ctx, nil, listInput{Tenant: "dogfood", Query: needle, Limit: 10})
+	if err != nil {
+		t.Fatalf("list: %v", err)
+	}
+	if len(listed.Entries) == 0 {
+		t.Fatal("list missed mesh-hinted turn")
+	}
+	found := false
+	for _, e := range listed.Entries {
+		if e.ID != out.MemoryID && !hitHasToken(e, needle) {
+			continue
+		}
+		found = true
+		if !hitHasTag(e, palace.FormatSourceHintTag("mesh")) {
+			t.Fatalf("list entry missing source_hint:mesh: %+v", e)
+		}
+		if hitHasTag(e, palace.FormatSourceHintTag(palace.SourceHintPrivate)) {
+			t.Fatalf("mesh ingest must not also stamp source_hint:private: %+v", e)
+		}
+		if !hitHasTag(e, "source:iomesh-memory-mcp") {
+			t.Fatalf("host process tag source:iomesh-memory-mcp missing: %+v", e)
+		}
+	}
+	if !found {
+		t.Fatalf("mesh-hinted turn missing from list: %+v", listed.Entries)
+	}
+
+	if !palaceDiskHasSourceHint(t, root, out.MemoryID, needle, "mesh") {
+		t.Fatal("palace disk JSON missing observable source_hint=mesh")
+	}
+	if palaceDiskHasSourceHint(t, root, out.MemoryID, needle, "private") {
+		t.Fatal("palace disk JSON must not stamp private beside explicit mesh")
+	}
+}
+
+func TestIngestTurnMeshSessionWithoutHintStaysPrivate(t *testing.T) {
+	t.Setenv("MEMORY_ONNX_MODEL_PATH", "")
+	root := t.TempDir()
+	h, err := New(Config{PalaceRoot: root, DefaultTenant: "dogfood"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	ctx := context.Background()
+	const needle = "source-hint-omit-no-invent-mesh"
+	_, out, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+		Tenant:    "dogfood",
+		SessionID: "dept.engineering.events.github",
+		Role:      "user",
+		Content:   "local overlay turn " + needle,
+	})
+	if err != nil {
+		t.Fatalf("ingest: %v", err)
+	}
+	if out.DualWrite != "off" || out.Audited {
+		t.Fatalf("dual_write must be off; do not invent Connected/Memory GA: %+v", out)
+	}
+
+	_, listed, err := h.handleList(ctx, nil, listInput{Tenant: "dogfood", Query: needle, Limit: 10})
+	if err != nil {
+		t.Fatalf("list: %v", err)
+	}
+	found := false
+	for _, e := range listed.Entries {
+		if e.ID != out.MemoryID && !hitHasToken(e, needle) {
+			continue
+		}
+		found = true
+		if !hitHasTag(e, palace.FormatSourceHintTag(palace.SourceHintPrivate)) {
+			t.Fatalf("omit source_hint must keep kernel private default: %+v", e)
+		}
+		if hitHasTag(e, palace.FormatSourceHintTag("mesh")) {
+			t.Fatalf("must not invent mesh from session_id: %+v", e)
+		}
+	}
+	if !found {
+		t.Fatalf("omitted-hint turn missing from list: %+v", listed.Entries)
+	}
+	if !palaceDiskHasSourceHint(t, root, out.MemoryID, needle, "private") {
+		t.Fatal("palace disk JSON missing observable source_hint=private")
+	}
+	if palaceDiskHasSourceHint(t, root, out.MemoryID, needle, "mesh") {
+		t.Fatal("must not invent mesh on disk from session_id")
+	}
+
+	_, blank, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+		Tenant:     "dogfood",
+		SessionID:  "sess-blank-hint",
+		Role:       "user",
+		Content:    "whitespace source_hint " + needle + "-blank",
+		SourceHint: "   ",
+	})
+	if err != nil {
+		t.Fatalf("ingest blank hint: %v", err)
+	}
+	if !palaceDiskHasSourceHint(t, root, blank.MemoryID, needle+"-blank", "private") {
+		t.Fatal("whitespace source_hint must keep private default")
 	}
 }
 
@@ -560,6 +686,61 @@ func TestListAfterNewSamePalaceRoot(t *testing.T) {
 	if !hitsContainToken(again.Entries, needle) {
 		t.Fatalf("kernel #47: list after New() on same palace root missed %q: %+v", needle, again.Entries)
 	}
+}
+
+func TestApplyIngestSourceHint(t *testing.T) {
+	var empty palace.MemoryEntry
+	applyIngestSourceHint(&empty, "")
+	if empty.Provenance.SourceHint != "" || len(empty.Content.Tags) != 0 {
+		t.Fatalf("empty hint must not stamp: %+v", empty)
+	}
+	applyIngestSourceHint(&empty, "   ")
+	if empty.Provenance.SourceHint != "" {
+		t.Fatalf("whitespace hint must not stamp: %+v", empty)
+	}
+
+	var mesh palace.MemoryEntry
+	applyIngestSourceHint(&mesh, "mesh")
+	if mesh.Provenance.SourceHint != "mesh" {
+		t.Fatalf("SourceHint=%q want mesh", mesh.Provenance.SourceHint)
+	}
+	if !hitHasTag(memoryHit{Tags: mesh.Content.Tags}, palace.FormatSourceHintTag("mesh")) {
+		t.Fatalf("missing FormatSourceHintTag(mesh): %v", mesh.Content.Tags)
+	}
+	if palace.ClassifyIngestSourceHint(mesh.Provenance.SourceHint) != "mesh" {
+		t.Fatalf("ClassifyIngestSourceHint(%q) want mesh", mesh.Provenance.SourceHint)
+	}
+
+	applyIngestSourceHint(nil, "mesh") // must not panic
+}
+
+func palaceDiskHasSourceHint(t *testing.T, root, memoryID, needle, hint string) bool {
+	t.Helper()
+	tag := "source_hint:" + hint
+	quoted := `"source_hint":"` + hint + `"`
+	quotedSpace := `"source_hint": "` + hint + `"`
+	hit := false
+	err := filepath.WalkDir(root, func(path string, d os.DirEntry, walkErr error) error {
+		if walkErr != nil || d.IsDir() || !strings.HasSuffix(path, ".json") {
+			return walkErr
+		}
+		b, readErr := os.ReadFile(path)
+		if readErr != nil {
+			return readErr
+		}
+		s := string(b)
+		if !strings.Contains(s, needle) && !strings.Contains(s, memoryID) {
+			return nil
+		}
+		if strings.Contains(s, quoted) || strings.Contains(s, quotedSpace) || strings.Contains(s, tag) {
+			hit = true
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("walk palace: %v", err)
+	}
+	return hit
 }
 
 func hitHasToken(h memoryHit, token string) bool {

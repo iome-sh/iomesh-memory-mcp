@@ -172,6 +172,49 @@ func TestOpsDigestExportPrivateTaggedReceipt(t *testing.T) {
 	}
 }
 
+func TestOpsDigestExportHonorsMeshSourceHint(t *testing.T) {
+	h, err := New(Config{PalaceRoot: t.TempDir()})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	ctx := context.Background()
+	_, wrote, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+		Tenant:     "dogfood",
+		SessionID:  "dept.engineering.events.github",
+		Role:       "user",
+		Content:    "durable mesh consume for digest cite",
+		SourceHint: "mesh",
+	})
+	if err != nil {
+		t.Fatalf("ingest mesh: %v", err)
+	}
+	if wrote.DualWrite != "off" || wrote.Audited {
+		t.Fatalf("dual_write must be off; do not invent Connected/Memory GA: %+v", wrote)
+	}
+
+	_, out, err := h.handleOpsDigestExport(ctx, nil, opsDigestExportInput{Tenant: "dogfood"})
+	if err != nil {
+		t.Fatalf("digest: %v", err)
+	}
+	assertOpsDigestHonesty(t, out.Honesty)
+	if len(out.Patterns) != 0 {
+		t.Fatalf("must not invent patterns: %+v", out.Patterns)
+	}
+	found := false
+	for _, r := range out.Receipts {
+		if r.ID != wrote.MemoryID && !strings.Contains(r.Summary, "durable mesh consume") {
+			continue
+		}
+		found = true
+		if classifyTestSourceHint(r.SourceHint) != "mesh" {
+			t.Fatalf("explicit mesh ingest must surface mesh on digest receipt: %+v", r)
+		}
+	}
+	if !found {
+		t.Fatalf("mesh-hinted entry missing from receipts: %+v", out.Receipts)
+	}
+}
+
 func TestOpsDigestExportNeverInventsMesh(t *testing.T) {
 	h, err := New(Config{PalaceRoot: t.TempDir()})
 	if err != nil {
@@ -315,6 +358,21 @@ func assertOpsDigestHonesty(t *testing.T, h opsDigestHonesty) {
 	note := strings.ToLower(h.Note)
 	if strings.Contains(note, "memory ga") && !strings.Contains(note, "not memory ga") {
 		t.Fatalf("must not invent Memory GA: %q", h.Note)
+	}
+}
+
+func TestClassifyDigestTagSourceHintPrefix(t *testing.T) {
+	if got := classifyDigestTag("source_hint:mesh"); got != "mesh" {
+		t.Fatalf("source_hint:mesh → %q, want mesh", got)
+	}
+	if got := classifyDigestTag("source_hint:private"); got != "private" {
+		t.Fatalf("source_hint:private → %q, want private", got)
+	}
+	if got := classifyDigestTag("source:iomesh-memory-mcp"); got != "" {
+		t.Fatalf("host process label must not be a class: %q", got)
+	}
+	if got := classifyDigestTag("mcp_memory_ingest_turn"); got != "" {
+		t.Fatalf("source_step must not be a class: %q", got)
 	}
 }
 
