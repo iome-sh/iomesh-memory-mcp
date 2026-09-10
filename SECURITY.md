@@ -4,7 +4,8 @@
 
 | Version | Supported |
 |---------|-----------|
-| `v0.1.1` / `v0.1.x` | ✅ security fixes |
+| `v0.2.x` | ✅ security fixes |
+| `v0.1.x` | best-effort |
 | `main` | development tip |
 | pre-release pseudo-versions | development tip |
 
