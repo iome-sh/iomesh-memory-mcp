@@ -32,14 +32,14 @@ local filesystem under PALACE_ROOT/<tenant>/…
 ### From source
 
 Pin the latest annotated `v*` GitHub Release:
-[`v0.2.1`](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.2.1).
+[`v0.3.0`](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.3.0).
 `@latest` / floating `main` are not production pins. Default `ServerVersion` is
-`v0.2.1` (GoReleaser ldflags override on tagged assets). **Not** Memory GA.
+`v0.3.0` (GoReleaser ldflags override on tagged assets). **Not** Memory GA.
 Path isolation `PALACE_ROOT/<tenant>/` ≠ cloud multi-tenant. `X-IOMesh-Org` is
 a mesh-client header; this host does not implement it.
 
 ```bash
-go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.2.1
+go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.3.0
 ```
 
 ### Build from a clone
@@ -232,7 +232,7 @@ Local palace FS on the operator machine. `tools/list` and `healthz.tool_names` a
 | `memory_supersede_entity` | `SupersedeEntityFacts` (mutating; HITL stays at the client) | Write local FS (close facts) |
 | `ops_digest_export` | Local `ListMemoryWithOptions` window → receipts (TUI `/memory digest` MCP fallback) | Read/list local FS; does not ingest. Patterns stay empty (insufficient-signal OK). `source_hint=palace_timeline` for local entries — never invent mesh. dual_write OFF · not Memory GA · catalog ≠ connected |
 
-Server name: **`iomesh-memory-mcp`**. Default version stamp: **`v0.2.1`** (overridden by `make build` / GoReleaser ldflags).
+Server name: **`iomesh-memory-mcp`**. Default version stamp: **`v0.3.0`** (overridden by `make build` / GoReleaser ldflags).
 
 ## Tenant layout
 
