@@ -1,8 +1,10 @@
 // Command iomesh-memory-mcp is the lean edge Memory MCP host (Option A M2 / s1457).
 //
 // Default transport is stdio; set -http-addr (or MEMORY_MCP_HTTP_ADDR) for
-// streamable HTTP. -preflight prints the same honesty JSON as GET /healthz
-// and exits (no listen, no stdio MCP). Does not import private control-plane/broker packages.
+// streamable HTTP. :port binds 127.0.0.1 unless -allow-non-loopback.
+// Optional MEMORY_MCP_HTTP_SECRET fail-closes MCP HTTP when set (/healthz stays open).
+// -preflight prints the same honesty JSON as GET /healthz and exits
+// (no listen, no stdio MCP). Does not import private control-plane/broker packages.
 // dual_write OFF · not Memory GA.
 package main
 
@@ -47,9 +49,13 @@ func run(args []string, stdout io.Writer) error {
 	palaceRoot := fs.String("palace-root", defaultPalace, "tenant palace root base directory")
 	tenant := fs.String("tenant", envOr("MEMORY_TENANT", ""), "process tenant label (validated if set; tool tenant is required — omit fail-closes)")
 	httpAddr := fs.String("http-addr", envOr("MEMORY_MCP_HTTP_ADDR", ""),
-		"listen address for streamable HTTP (e.g. :8080); empty = stdio mode")
+		"listen address for streamable HTTP (e.g. :8080 → 127.0.0.1:8080); empty = stdio mode")
 	httpPath := fs.String("http-path", envOr("MEMORY_MCP_HTTP_PATH", "/mcp"),
 		"URL path for the MCP streamable HTTP endpoint (healthz always at /healthz)")
+	allowNonLoopback := fs.Bool("allow-non-loopback", envTruthy("MEMORY_MCP_HTTP_ALLOW_NON_LOOPBACK"),
+		"allow HTTP bind on 0.0.0.0 / :: / non-loopback (required for container publish). Default: :port is forced to 127.0.0.1; 0.0.0.0 is refused")
+	httpSecret := fs.String("http-secret", envOr("MEMORY_MCP_HTTP_SECRET", ""),
+		"optional shared secret for streamable HTTP MCP (X-Memory-MCP-Secret or Authorization: Bearer). Empty = off. Fail-closed when set. /healthz stays open. stdio unchanged")
 	preflight := fs.Bool("preflight", false,
 		"print the same honesty JSON as GET /healthz and exit (no listen, no stdio MCP; not tools/list, not ingest)")
 
@@ -82,10 +88,16 @@ func run(args []string, stdout io.Writer) error {
 	sdk := host.NewSDKServer()
 	addr := strings.TrimSpace(*httpAddr)
 	if addr != "" {
+		resolved, err := mcphost.NormalizeListenAddr(addr, *allowNonLoopback)
+		if err != nil {
+			return fmt.Errorf("http: %w", err)
+		}
 		if err := mcphost.RunHTTP(ctx, sdk, mcphost.HTTPConfig{
-			Addr: addr,
-			Path: *httpPath,
-			Host: host,
+			Addr:             resolved,
+			Path:             *httpPath,
+			Host:             host,
+			SharedSecret:     strings.TrimSpace(*httpSecret),
+			AllowNonLoopback: *allowNonLoopback,
 		}); err != nil {
 			return fmt.Errorf("http: %w", err)
 		}
@@ -118,4 +130,13 @@ func envOr(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+func envTruthy(key string) bool {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv(key))) {
+	case "1", "true", "yes", "on":
+		return true
+	default:
+		return false
+	}
 }

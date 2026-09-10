@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+P0 host polish (TTFH): ingest DLP, HTTP loopback + optional secret, memory
+`v1.5.8` pin. dual_write OFF · not Memory GA · Catalog ≠ Connected.
+
+### Added
+- **Host-side DLP on ingest (#48):** `memory_ingest_turn` and `memory_write` redact common secret-shaped tokens (`ghp_` / `sk-` / AWS `AKIA` / Slack `xox*` / PEM / JWT-shaped) to `[REDACTED]` before palace write. Residual heuristics — not commercial DLP, not hardware-bound keys, not default envelope encryption. `GET /healthz` honesty unchanged. dual_write OFF · not Memory GA.
+- **HTTP loopback default + optional shared secret (#49):** `:8080` is forced to `127.0.0.1:8080`. `0.0.0.0` / non-loopback requires `-allow-non-loopback` / `MEMORY_MCP_HTTP_ALLOW_NON_LOOPBACK`. Optional `MEMORY_MCP_HTTP_SECRET` (`X-Memory-MCP-Secret` or `Authorization: Bearer`) fail-closes MCP HTTP when set. `/healthz` stays open. stdio remains default when `-http-addr` is empty. Compose/image set the allow flag so host publish `127.0.0.1:8080` can reach the container. dual_write OFF · not Memory GA.
+
+### Changed
+- **Kernel pin (#50):** `github.com/iome-sh/memory` `v1.5.8-0.20260816062432-e1ffb9db873e` → annotated **`v1.5.8`**. Current kernel main tip `f834699` is docs-only after the tag; kernel #85/#86 (mode bits / writeMu) were still open so this hop does not wait on them. dual_write OFF · not Memory GA.
+
 ## [0.1.1] — 2026-09-06
 
 Patch: leftover product-plane env alias reads (#45) and public OSS narrative

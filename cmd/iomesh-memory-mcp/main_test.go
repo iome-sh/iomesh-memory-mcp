@@ -88,6 +88,34 @@ func TestPreflightPrintsHealthzAndExits(t *testing.T) {
 	}
 }
 
+func TestHTTPAllInterfacesRefusedWithoutAllow(t *testing.T) {
+	t.Setenv("MEMORY_MCP_HTTP_ALLOW_NON_LOOPBACK", "")
+	t.Setenv("MEMORY_MCP_HTTP_SECRET", "")
+	err := run([]string{
+		"-palace-root", t.TempDir(),
+		"-http-addr", "0.0.0.0:8080",
+	}, &bytes.Buffer{})
+	if err == nil {
+		t.Fatal("expected refuse 0.0.0.0 without allow-non-loopback")
+	}
+	if !strings.Contains(err.Error(), "loopback") {
+		t.Fatalf("want loopback refuse, got %v", err)
+	}
+}
+
+func TestHTTPPortOnlyForcedLoopbackDoesNotUseAllInterfaces(t *testing.T) {
+	got, err := mcphost.NormalizeListenAddr(":8080", false)
+	if err != nil {
+		t.Fatalf("normalize: %v", err)
+	}
+	if got != "127.0.0.1:8080" {
+		t.Fatalf("got %q want 127.0.0.1:8080", got)
+	}
+	if _, err := mcphost.NormalizeListenAddr("0.0.0.0:8080", false); err == nil {
+		t.Fatal("0.0.0.0 must error without allow")
+	}
+}
+
 func TestUnknownFlagDoesNotStart(t *testing.T) {
 	err := run([]string{"-not-a-real-flag"}, &bytes.Buffer{})
 	if err == nil {

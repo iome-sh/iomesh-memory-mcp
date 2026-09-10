@@ -25,7 +25,7 @@ each major release.
 | No committed API keys / private keys / `.env` secrets | Pass (`.env.example` only) |
 | Local Palace FS treated as user data in SECURITY.md | Pass |
 | Path-based tenant **not** claimed as cloud multi-tenant isolation | Pass |
-| HTTP mode auth residual documented (lean v1: none) | Pass |
+| HTTP mode auth residual documented (lean v1: loopback default + optional secret; unauthenticated when secret unset) | Pass |
 | dual_write OFF residual documented | Pass |
 | govulncheck in CI | Pass |
 | Residual: private dep on `github.com/iome-sh/memory` until kernel public flip | **Resolved** — kernel is public; module fetch is public; no PAT required |
@@ -72,7 +72,7 @@ each major release.
 | Visibility public | **Pass** (deliberate flip complete) | Audit does **not** flip public |
 | Private kernel dependency | **Resolved** (kernel public) | **kernel first**, then this host — both public |
 | CI token residual while kernel private | **Resolved** | No `IOMESH_CI_PAT` / `GO_MODULE_TOKEN` required for this host; do not invent a token requirement |
-| HTTP unauthenticated lean v1 | Residual | Documented; bind localhost / proxy |
+| HTTP unauthenticated lean v1 | Residual | Loopback default + optional shared secret; still unauthenticated when secret unset; bind localhost / proxy |
 | Path tenancy same-process | Residual | Documented |
 | dual_write optional later | Residual | Interface not wired; default OFF |
 | GHCR publish green | **Not claimed** | Optional deliberate act; do not invent |

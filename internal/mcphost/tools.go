@@ -35,7 +35,7 @@ type ingestTurnOutput struct {
 }
 
 func (h *Host) handleIngestTurn(_ context.Context, _ *mcp.CallToolRequest, in ingestTurnInput) (*mcp.CallToolResult, ingestTurnOutput, error) {
-	content := strings.TrimSpace(in.Content)
+	content := RedactSecrets(strings.TrimSpace(in.Content))
 	if content == "" {
 		err := fmt.Errorf("content required")
 		return toolError(err), ingestTurnOutput{}, err
@@ -129,8 +129,8 @@ type writeOutput struct {
 }
 
 func (h *Host) handleWrite(_ context.Context, _ *mcp.CallToolRequest, in writeInput) (*mcp.CallToolResult, writeOutput, error) {
-	summary := strings.TrimSpace(in.Summary)
-	full := strings.TrimSpace(in.Full)
+	summary := RedactSecrets(strings.TrimSpace(in.Summary))
+	full := RedactSecrets(strings.TrimSpace(in.Full))
 	if summary == "" && full == "" {
 		err := fmt.Errorf("summary or full required")
 		return toolError(err), writeOutput{}, err
