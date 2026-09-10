@@ -32,14 +32,14 @@ local filesystem under PALACE_ROOT/<tenant>/…
 ### From source
 
 Pin the latest annotated `v*` GitHub Release:
-[`v0.2.0`](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.2.0).
+[`v0.2.1`](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.2.1).
 `@latest` / floating `main` are not production pins. Default `ServerVersion` is
-`v0.2.0` (GoReleaser ldflags override on tagged assets). **Not** Memory GA.
+`v0.2.1` (GoReleaser ldflags override on tagged assets). **Not** Memory GA.
 Path isolation `PALACE_ROOT/<tenant>/` ≠ cloud multi-tenant. `X-IOMesh-Org` is
 a mesh-client header; this host does not implement it.
 
 ```bash
-go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.2.0
+go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.2.1
 ```
 
 ### Build from a clone
@@ -231,7 +231,7 @@ Local palace FS on the operator machine. `tools/list` and `healthz.tool_names` a
 | `memory_related` | `MultiHopRetrieve` (entity BFS lite; not full graph RAG) | Read local FS; does not ingest |
 | `memory_supersede_entity` | `SupersedeEntityFacts` (mutating; HITL stays at the client) | Write local FS (close facts) |
 
-Server name: **`iomesh-memory-mcp`**. Default version stamp: **`v0.2.0`** (overridden by `make build` / GoReleaser ldflags).
+Server name: **`iomesh-memory-mcp`**. Default version stamp: **`v0.2.1`** (overridden by `make build` / GoReleaser ldflags).
 
 ## Tenant layout
 
