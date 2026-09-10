@@ -86,6 +86,80 @@ func TestIngestRetrieveListRoundTrip(t *testing.T) {
 	}
 }
 
+func TestIngestTurnStampsSourceHintPrivate(t *testing.T) {
+	t.Setenv("MEMORY_ONNX_MODEL_PATH", "")
+	root := t.TempDir()
+	h, err := New(Config{PalaceRoot: root, DefaultTenant: "dogfood"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	ctx := context.Background()
+	const needle = "source-hint-private-pin-1510"
+	_, out, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+		Tenant:    "dogfood",
+		SessionID: "sess-source-hint",
+		Role:      "user",
+		Content:   "local palace note " + needle,
+	})
+	if err != nil {
+		t.Fatalf("ingest: %v", err)
+	}
+	if out.DualWrite != "off" || out.Audited {
+		t.Fatalf("dual_write must be off: %+v", out)
+	}
+
+	_, listed, err := h.handleList(ctx, nil, listInput{Tenant: "dogfood", Query: needle, Limit: 10})
+	if err != nil {
+		t.Fatalf("list: %v", err)
+	}
+	if len(listed.Entries) == 0 {
+		t.Fatal("list missed ingested turn")
+	}
+	found := false
+	for _, e := range listed.Entries {
+		if e.ID != out.MemoryID && !hitHasToken(e, needle) {
+			continue
+		}
+		found = true
+		if !hitHasTag(e, "source_hint:private") {
+			t.Fatalf("list entry missing source_hint:private (kernel v1.5.10 / memory #91): %+v", e)
+		}
+		if !hitHasTag(e, "source:iomesh-memory-mcp") {
+			t.Fatalf("host process tag source:iomesh-memory-mcp missing: %+v", e)
+		}
+	}
+	if !found {
+		t.Fatalf("ingested turn missing from list: %+v", listed.Entries)
+	}
+
+	diskHit := false
+	err = filepath.WalkDir(root, func(path string, d os.DirEntry, walkErr error) error {
+		if walkErr != nil || d.IsDir() || !strings.HasSuffix(path, ".json") {
+			return walkErr
+		}
+		b, readErr := os.ReadFile(path)
+		if readErr != nil {
+			return readErr
+		}
+		s := string(b)
+		if !strings.Contains(s, needle) && !strings.Contains(s, out.MemoryID) {
+			return nil
+		}
+		if strings.Contains(s, `"source_hint":"private"`) ||
+			strings.Contains(s, `"source_hint": "private"`) ||
+			strings.Contains(s, "source_hint:private") {
+			diskHit = true
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("walk palace: %v", err)
+	}
+	if !diskHit {
+		t.Fatal("palace disk JSON missing observable source_hint=private")
+	}
+}
+
 func TestRetrieveHashKeepsHyphenNeedle(t *testing.T) {
 	t.Setenv("MEMORY_ONNX_MODEL_PATH", "")
 	h, err := New(Config{PalaceRoot: t.TempDir(), DefaultTenant: "dogfood"})
