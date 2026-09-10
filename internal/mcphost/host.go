@@ -245,7 +245,7 @@ func (h *Host) NewSDKServer() *mcp.Server {
 func (h *Host) Register(sdkServer *mcp.Server) {
 	mcp.AddTool(sdkServer, &mcp.Tool{
 		Name:        "memory_ingest_turn",
-		Description: "Ingest a conversation turn into the local tenant palace FS (role=user|assistant|tool). dual_write OFF · not Memory GA",
+		Description: "Ingest a conversation turn into the local tenant palace FS (role=user|assistant|tool). Optional source_hint (mesh|private or kernel-classifiable alias); omit keeps private. dual_write OFF · not Memory GA",
 	}, h.handleIngestTurn)
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
@@ -292,7 +292,7 @@ func (h *Host) Register(sdkServer *mcp.Server) {
 		Name: "ops_digest_export",
 		Description: "Export an ops digest pack from the local palace FS (window day|week; horizon ops|knowledge|analytical|all). " +
 			"Receipts from memory_list; patterns stay empty (insufficient-signal OK). " +
-			"source_hint is palace_timeline for local entries — never invent mesh. " +
+			"source_hint is palace_timeline for local/private entries; mesh only when the entry is mesh-sourced — never invented. " +
 			"Does not ingest. dual_write OFF · not Memory GA · catalog ≠ connected",
 	}, h.handleOpsDigestExport)
 

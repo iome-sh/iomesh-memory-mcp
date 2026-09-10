@@ -24,6 +24,10 @@ type ingestTurnInput struct {
 	TurnID     string `json:"turn_id,omitempty"`
 	MemoryID   string `json:"memory_id,omitempty"`
 	Tier       int    `json:"tier,omitempty" jsonschema:"optional MemoryTier 1..4 (default working=1)"`
+	// SourceHint is optional (mesh, private, or a kernel-classifiable alias).
+	// When omitted or empty, kernel IngestTurn stamps private. Do not invent mesh
+	// from session_id. dual_write OFF · not Memory GA.
+	SourceHint string `json:"source_hint,omitempty" jsonschema:"optional mesh|private or kernel-classifiable alias; omit keeps private default — do not invent mesh"`
 }
 
 type ingestTurnOutput struct {
@@ -90,6 +94,7 @@ func (h *Host) handleIngestTurn(_ context.Context, _ *mcp.CallToolRequest, in in
 			UsageCount: 1,
 		},
 	}
+	applyIngestSourceHint(&entry, in.SourceHint)
 
 	if err := ps.IngestTurn(entry); err != nil {
 		return toolError(err), ingestTurnOutput{}, err
@@ -210,6 +215,23 @@ func (h *Host) handleWrite(_ context.Context, _ *mcp.CallToolRequest, in writeIn
 		DualWrite:  "off",
 	}
 	return toolJSON(out), out, nil
+}
+
+// applyIngestSourceHint stamps a caller-supplied source class before IngestTurn.
+// Empty / whitespace keeps the kernel private default (ensurePrivateIngestSource).
+// Aligns with memory.FormatSourceHintTag / ClassifyIngestSourceHint.
+func applyIngestSourceHint(entry *palace.MemoryEntry, hint string) {
+	if entry == nil {
+		return
+	}
+	hint = strings.TrimSpace(hint)
+	if hint == "" {
+		return
+	}
+	entry.Provenance.SourceHint = hint
+	if tag := palace.FormatSourceHintTag(hint); tag != "" {
+		entry.Content.Tags = append(entry.Content.Tags, tag)
+	}
 }
 
 func entityTag(key string) string {

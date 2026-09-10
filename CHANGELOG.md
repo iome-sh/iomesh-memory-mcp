@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **`memory_ingest_turn` optional `source_hint` (#64):** callers (durable mesh pull) can pass `mesh`, `private`, or a kernel-classifiable alias. When non-empty, the host stamps `provenance.source_hint` and tag `source_hint:<hint>` before `IngestTurn` (`FormatSourceHintTag`). When omitted or blank, kernel `ensurePrivateIngestSource` keeps today’s private default — session ids such as `dept.*.events.*` do not invent mesh. `ops_digest_export` honors a stamped mesh/private class on the entry (never invents mesh). dual_write OFF · not Memory GA · catalog ≠ connected.
+
 ### Changed
 - **Kernel pin (#58):** `github.com/iome-sh/memory` annotated **`v1.5.9`** → annotated **`v1.5.10`** (memory #90 / PR #91: `IngestTurn` stamps observable `provenance.source_hint=private` and tag `source_hint:private` when the caller does not already supply a classifiable mesh or private source). Host process labels (`mcp_memory_ingest_turn`, `source:iomesh-memory-mcp`) are not a cite-both class. dual_write OFF · not Memory GA · Catalog ≠ Connected.
 

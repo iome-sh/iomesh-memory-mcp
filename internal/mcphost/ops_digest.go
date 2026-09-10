@@ -190,7 +190,11 @@ func leanOpsDigestHonesty(horizon string) opsDigestHonesty {
 // Local palace entries default to palace_timeline (private).
 // mesh* is used only when the entry itself is mesh-sourced — never invented.
 func digestSourceHint(e palace.MemoryEntry) string {
-	tags := append([]string{}, e.Content.Tags...)
+	tags := make([]string, 0, 2+len(e.Content.Tags))
+	if hint := strings.TrimSpace(e.Provenance.SourceHint); hint != "" {
+		tags = append(tags, hint)
+	}
+	tags = append(tags, e.Content.Tags...)
 	if step := strings.TrimSpace(e.Provenance.SourceStep); step != "" {
 		tags = append(tags, step)
 	}
@@ -216,7 +220,7 @@ func classifyDigestTag(raw string) string {
 	if i := strings.IndexByte(h, ':'); i >= 0 {
 		// source:mesh / source:private / role:user — use the value side too.
 		head, tail := h[:i], h[i+1:]
-		if head == "source" || head == "origin" {
+		if head == "source" || head == "origin" || head == "source_hint" {
 			h = tail
 		}
 	}
