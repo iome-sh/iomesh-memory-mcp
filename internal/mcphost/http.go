@@ -110,7 +110,7 @@ func RunHTTP(ctx context.Context, sdk *mcp.Server, cfg HTTPConfig) error {
 		return err
 	}
 	path := NormalizeMCPPath(cfg.Path)
-	handler := mcp.NewStreamableHTTPHandler(func(r *http.Request) *mcp.Server {
+	mcpHandler := mcp.NewStreamableHTTPHandler(func(r *http.Request) *mcp.Server {
 		return sdk
 	}, &mcp.StreamableHTTPOptions{
 		JSONResponse: true,
@@ -118,7 +118,7 @@ func RunHTTP(ctx context.Context, sdk *mcp.Server, cfg HTTPConfig) error {
 		// Keep true so new clients can discover; legacy initialize still works.
 		Stateless: true,
 	})
-	handler = WithOptionalSharedSecret(cfg.SharedSecret, handler)
+	handler := WithOptionalSharedSecret(cfg.SharedSecret, mcpHandler)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", HealthzHandler(cfg.Host))
