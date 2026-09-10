@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-09-10
+
 P0 host polish (TTFH): ingest DLP, HTTP loopback + optional secret, memory
 `v1.5.8` pin. dual_write OFF · not Memory GA · Catalog ≠ Connected.
 
