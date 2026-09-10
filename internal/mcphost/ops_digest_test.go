@@ -214,12 +214,43 @@ func TestOpsDigestExportHonorsMeshSourceHint(t *testing.T) {
 			continue
 		}
 		found = true
-		if classifyTestSourceHint(r.SourceHint) != "mesh" {
-			t.Fatalf("explicit mesh ingest must surface mesh on digest receipt: %+v", r)
-		}
+		assertReceiptCarriesMeshClass(t, r)
 	}
 	if !found {
 		t.Fatalf("mesh-hinted entry missing from receipts: %+v", out.Receipts)
+	}
+
+	raw := toolJSON(out)
+	if raw == nil || raw.IsError || len(raw.Content) == 0 {
+		t.Fatalf("tool JSON: %+v", raw)
+	}
+	tc, ok := raw.Content[0].(*mcp.TextContent)
+	if !ok {
+		t.Fatalf("content type %T", raw.Content[0])
+	}
+	if !strings.Contains(tc.Text, `"provenance"`) {
+		t.Fatalf("marshaled receipt must include provenance object: %s", tc.Text)
+	}
+	if !strings.Contains(tc.Text, `"source_hint": "mesh"`) {
+		t.Fatalf("marshaled receipt source_hint must be mesh when palace is mesh-sourced: %s", tc.Text)
+	}
+	if !strings.Contains(tc.Text, "source_hint:mesh") {
+		t.Fatalf("marshaled receipt must include tag source_hint:mesh: %s", tc.Text)
+	}
+	var decoded opsDigestExportOutput
+	if err := json.Unmarshal([]byte(tc.Text), &decoded); err != nil {
+		t.Fatalf("round-trip json: %v body=%s", err, tc.Text)
+	}
+	wired := false
+	for _, r := range decoded.Receipts {
+		if r.ID != wrote.MemoryID && !strings.Contains(r.Summary, "durable mesh consume") {
+			continue
+		}
+		wired = true
+		assertReceiptCarriesMeshClass(t, r)
+	}
+	if !wired {
+		t.Fatalf("round-trip missed mesh receipt: %+v", decoded.Receipts)
 	}
 }
 
@@ -282,16 +313,17 @@ func TestOpsDigestExportMeshAndPrivateWhenBothExist(t *testing.T) {
 	haveMesh, havePrivate := false, false
 	foundMeshID := false
 	for _, r := range out.Receipts {
-		switch classifyTestSourceHint(r.SourceHint) {
+		switch classifyTestReceipt(r) {
 		case "mesh":
 			haveMesh = true
 			if r.ID == meshWrote.MemoryID || strings.Contains(r.Summary, "durable mesh consume") {
 				foundMeshID = true
+				assertReceiptCarriesMeshClass(t, r)
 			}
 		case "private":
 			havePrivate = true
 		default:
-			t.Fatalf("unclassifiable source_hint: %+v", r)
+			t.Fatalf("unclassifiable receipt (source_hint/provenance/tags): %+v", r)
 		}
 	}
 	if !haveMesh || !havePrivate {
@@ -312,6 +344,31 @@ func TestOpsDigestExportMeshAndPrivateWhenBothExist(t *testing.T) {
 	}
 	if strings.Contains(strings.ToLower(out.Honesty.Note), "cite-both") {
 		t.Fatalf("must not invent cite-both: %q", out.Honesty.Note)
+	}
+
+	// Sticky TUI default is 20 — mesh-visible fields must still survive.
+	_, sticky, err := h.handleOpsDigestExport(ctx, nil, opsDigestExportInput{
+		Tenant: "dogfood",
+		Window: "day",
+		AsOf:   asOf.Format(time.RFC3339),
+		Limit:  20,
+	})
+	if err != nil {
+		t.Fatalf("sticky digest: %v", err)
+	}
+	stickyMesh, stickyPriv := false, false
+	for _, r := range sticky.Receipts {
+		switch classifyTestReceipt(r) {
+		case "mesh":
+			stickyMesh = true
+			assertReceiptCarriesMeshClass(t, r)
+		case "private":
+			stickyPriv = true
+		}
+	}
+	if !stickyMesh || !stickyPriv {
+		t.Fatalf("sticky limit=20 must keep mesh+private with wired fields: mesh=%v private=%v receipts=%+v",
+			stickyMesh, stickyPriv, sticky.Receipts)
 	}
 }
 
@@ -346,12 +403,13 @@ func TestSelectDigestReceiptsPrefersSourceClassDiversity(t *testing.T) {
 	}
 	haveMesh, havePrivate := false, false
 	for _, r := range got {
-		switch classifyTestSourceHint(r.SourceHint) {
+		switch classifyTestReceipt(r) {
 		case "mesh":
 			haveMesh = true
 			if r.ID != "mesh-1" {
 				t.Fatalf("unexpected mesh id: %+v", r)
 			}
+			assertReceiptCarriesMeshClass(t, r)
 		case "private":
 			havePrivate = true
 		default:
@@ -406,8 +464,16 @@ func TestOpsDigestExportNeverInventsMesh(t *testing.T) {
 		t.Fatal("expected local palace receipts")
 	}
 	for _, r := range out.Receipts {
-		if classifyTestSourceHint(r.SourceHint) != "private" {
-			t.Fatalf("local palace receipt source_hint=%q want private class: %+v", r.SourceHint, r)
+		if classifyTestReceipt(r) != "private" {
+			t.Fatalf("local palace receipt must stay private class: %+v", r)
+		}
+		if classifyTestSourceHint(r.SourceHint) == "mesh" || classifyDigestTag(r.Provenance.SourceHint) == "mesh" {
+			t.Fatalf("must not invent mesh on receipt wire: %+v", r)
+		}
+		for _, tag := range r.Tags {
+			if classifyDigestTag(tag) == "mesh" {
+				t.Fatalf("must not invent mesh tag: %+v", r)
+			}
 		}
 	}
 	if out.ReceiptSelection.MeshInWindow || out.ReceiptSelection.MeshInReceipts {
@@ -533,6 +599,104 @@ func assertOpsDigestHonesty(t *testing.T, h opsDigestHonesty) {
 	}
 }
 
+func TestOpsDigestReceiptWiresPalaceMeshWithoutInventing(t *testing.T) {
+	now := time.Date(2026, 9, 10, 16, 10, 0, 0, time.UTC)
+	meshAt := time.Date(2026, 9, 10, 6, 46, 0, 0, time.UTC)
+
+	// Live palace shape: provenance.source_hint=mesh + tag source_hint:mesh,
+	// no raw "mesh" tag. Receipt must surface class on source_hint AND wire.
+	palaceMesh := palace.MemoryEntry{
+		ID:        "mesh-palace",
+		Timestamp: meshAt,
+		Content: palace.MemoryContent{
+			Summary: "dept pull morning",
+			Tags:    []string{"source_hint:mesh", "role:user"},
+		},
+		Provenance: palace.MemoryProvenance{
+			SourceHint: "mesh",
+			SourceStep: "mcp_memory_ingest_turn",
+		},
+	}
+	priv := palace.MemoryEntry{
+		ID:        "priv-palace",
+		Timestamp: now,
+		Content: palace.MemoryContent{
+			Summary: "private RCA",
+			Tags:    []string{"source_hint:private", "private_rca"},
+		},
+		Provenance: palace.MemoryProvenance{SourceHint: "private"},
+	}
+	got, sel := selectDigestReceipts([]palace.MemoryEntry{priv, palaceMesh}, 20)
+	if len(got) != 2 {
+		t.Fatalf("len=%d want 2: %+v", len(got), got)
+	}
+	if !sel.MeshInWindow || !sel.PrivateInWindow || !sel.MeshInReceipts || !sel.PrivateInReceipts {
+		t.Fatalf("diversity flags: %+v", sel)
+	}
+	var meshR, privR *opsDigestReceipt
+	for i := range got {
+		switch classifyTestReceipt(got[i]) {
+		case "mesh":
+			meshR = &got[i]
+		case "private":
+			privR = &got[i]
+		default:
+			t.Fatalf("unclassifiable: %+v", got[i])
+		}
+	}
+	if meshR == nil || privR == nil {
+		t.Fatalf("sticky default must keep both classes: %+v", got)
+	}
+	assertReceiptCarriesMeshClass(t, *meshR)
+	if classifyTestSourceHint(privR.SourceHint) != "private" {
+		t.Fatalf("private receipt source_hint: %+v", privR)
+	}
+	if classifyDigestTag(privR.Provenance.SourceHint) == "mesh" {
+		t.Fatalf("private must not invent mesh provenance: %+v", privR)
+	}
+
+	// TemporalTags-only mesh (kernel EntryHasTag path) must still classify.
+	temporalOnly := palace.MemoryEntry{
+		ID:           "mesh-temporal",
+		Timestamp:    meshAt,
+		TemporalTags: []string{"source_hint:mesh"},
+		Content:      palace.MemoryContent{Summary: "temporal mesh stamp"},
+	}
+	c, ok := digestCandidateFromEntry(temporalOnly)
+	if !ok {
+		t.Fatal("temporal mesh candidate")
+	}
+	assertReceiptCarriesMeshClass(t, c.receipt)
+	if c.class != "mesh" {
+		t.Fatalf("temporal tags class=%q", c.class)
+	}
+
+	// Bare local entry: palace_timeline, no invented mesh wire.
+	bare := palace.MemoryEntry{
+		ID:        "local-1",
+		Timestamp: now,
+		Content:   palace.MemoryContent{Summary: "local note"},
+	}
+	bareC, ok := digestCandidateFromEntry(bare)
+	if !ok {
+		t.Fatal("bare candidate")
+	}
+	if classifyTestReceipt(bareC.receipt) != "private" {
+		t.Fatalf("bare class: %+v", bareC.receipt)
+	}
+	if classifyTestSourceHint(bareC.receipt.SourceHint) != "private" {
+		t.Fatalf("bare source_hint: %+v", bareC.receipt)
+	}
+	if classifyDigestTag(bareC.receipt.Provenance.SourceHint) == "mesh" {
+		t.Fatalf("bare must not invent mesh provenance: %+v", bareC.receipt)
+	}
+	for _, tag := range bareC.receipt.Tags {
+		if classifyDigestTag(tag) == "mesh" {
+			t.Fatalf("bare must not invent mesh tag: %+v", bareC.receipt)
+		}
+	}
+}
+
 func TestClassifyDigestTagSourceHintPrefix(t *testing.T) {
 	if got := classifyDigestTag("source_hint:mesh"); got != "mesh" {
 		t.Fatalf("source_hint:mesh → %q, want mesh", got)
@@ -546,6 +710,50 @@ func TestClassifyDigestTagSourceHintPrefix(t *testing.T) {
 	if got := classifyDigestTag("mcp_memory_ingest_turn"); got != "" {
 		t.Fatalf("source_step must not be a class: %q", got)
 	}
+}
+
+// assertReceiptCarriesMeshClass checks TUI ClassifyDigestReceipt can see mesh
+// from source_hint and from provenance.source_hint / tags (the #66 residual).
+func assertReceiptCarriesMeshClass(t *testing.T, r opsDigestReceipt) {
+	t.Helper()
+	if classifyTestReceipt(r) != "mesh" {
+		t.Fatalf("TUI-shaped classify missed mesh: %+v", r)
+	}
+	if classifyTestSourceHint(r.SourceHint) != "mesh" {
+		t.Fatalf("receipt source_hint=%q want mesh (not only palace_timeline): %+v", r.SourceHint, r)
+	}
+	if classifyDigestTag(r.Provenance.SourceHint) != "mesh" && !receiptHasMeshTag(r) {
+		t.Fatalf("receipt must wire provenance.source_hint or source_hint:mesh tag: %+v", r)
+	}
+}
+
+func receiptHasMeshTag(r opsDigestReceipt) bool {
+	for _, tag := range r.Tags {
+		if classifyDigestTag(tag) == "mesh" {
+			return true
+		}
+	}
+	return false
+}
+
+// classifyTestReceipt mirrors TUI ClassifyDigestReceipt (mesh|private only):
+// provenance.source_hint and tags win over export-origin palace_timeline.
+func classifyTestReceipt(r opsDigestReceipt) string {
+	cands := make([]string, 0, 3+len(r.Tags))
+	cands = append(cands, r.SourceHint, r.Provenance.SourceHint, r.Provenance.SourceStep)
+	cands = append(cands, r.Tags...)
+	fallback := ""
+	for _, raw := range cands {
+		switch classifyDigestTag(raw) {
+		case "mesh":
+			return "mesh"
+		case "private":
+			if fallback == "" {
+				fallback = "private"
+			}
+		}
+	}
+	return fallback
 }
 
 // classifyTestSourceHint mirrors TUI ClassifyDigestSourceHint (mesh|private only).

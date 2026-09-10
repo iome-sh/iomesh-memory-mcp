@@ -49,15 +49,25 @@ type opsDigestHonesty struct {
 	Note             string `json:"note,omitempty"`
 }
 
+// opsDigestReceiptProvenance is optional palace provenance on a receipt.
+// TUI ClassifyDigestReceipt reads source_hint here when the export-origin
+// receipt.source_hint is palace_timeline. Never invent mesh.
+type opsDigestReceiptProvenance struct {
+	SourceHint string `json:"source_hint,omitempty"`
+	SourceStep string `json:"source_step,omitempty"`
+}
+
 // opsDigestReceipt is one local palace timeline receipt.
-// Field names match TUI MemoryOpsDigestReceipt.
+// Field names match TUI MemoryOpsDigestReceipt (including tags / provenance).
 type opsDigestReceipt struct {
-	ID          string `json:"id,omitempty"`
-	EventTime   string `json:"event_time,omitempty"`
-	Summary     string `json:"summary,omitempty"`
-	SourceHint  string `json:"source_hint,omitempty"`
-	Pointer     string `json:"pointer,omitempty"`
-	AccountHash string `json:"account_hash,omitempty"`
+	ID          string                     `json:"id,omitempty"`
+	EventTime   string                     `json:"event_time,omitempty"`
+	Summary     string                     `json:"summary,omitempty"`
+	SourceHint  string                     `json:"source_hint,omitempty"`
+	Pointer     string                     `json:"pointer,omitempty"`
+	AccountHash string                     `json:"account_hash,omitempty"`
+	Tags        []string                   `json:"tags,omitempty"`
+	Provenance  opsDigestReceiptProvenance `json:"provenance,omitempty"`
 }
 
 // opsDigestDecisionStub is a human-owned scaffold (not auto-apply).
@@ -211,25 +221,58 @@ func leanOpsDigestHonesty(horizon string) opsDigestHonesty {
 // Local palace entries default to palace_timeline (private).
 // mesh* is used only when the entry itself is mesh-sourced — never invented.
 func digestSourceHint(e palace.MemoryEntry) string {
-	tags := make([]string, 0, 2+len(e.Content.Tags))
-	if hint := strings.TrimSpace(e.Provenance.SourceHint); hint != "" {
-		tags = append(tags, hint)
-	}
-	tags = append(tags, e.Content.Tags...)
-	if step := strings.TrimSpace(e.Provenance.SourceStep); step != "" {
-		tags = append(tags, step)
-	}
-	for _, raw := range tags {
+	cands := digestHintCandidates(e)
+	for _, raw := range cands {
 		if hint := classifyDigestTag(raw); hint == "mesh" {
 			return "mesh"
 		}
 	}
-	for _, raw := range tags {
+	for _, raw := range cands {
 		if hint := classifyDigestTag(raw); hint == "private" {
 			return palaceTimelineHint
 		}
 	}
 	return palaceTimelineHint
+}
+
+// digestHintCandidates is the palace class wire TUI ClassifyDigestReceipt
+// reads: provenance.source_hint, tags (Content + Temporal), source_step.
+func digestHintCandidates(e palace.MemoryEntry) []string {
+	out := make([]string, 0, 2+len(e.Content.Tags)+len(e.TemporalTags))
+	if hint := strings.TrimSpace(e.Provenance.SourceHint); hint != "" {
+		out = append(out, hint)
+	}
+	out = append(out, e.Content.Tags...)
+	out = append(out, e.TemporalTags...)
+	if step := strings.TrimSpace(e.Provenance.SourceStep); step != "" {
+		out = append(out, step)
+	}
+	return out
+}
+
+// digestReceiptTags copies palace tags TUI can classify (never invented).
+func digestReceiptTags(e palace.MemoryEntry) []string {
+	seen := make(map[string]struct{}, len(e.Content.Tags)+len(e.TemporalTags))
+	out := make([]string, 0, len(e.Content.Tags)+len(e.TemporalTags))
+	for _, raw := range append(append([]string{}, e.Content.Tags...), e.TemporalTags...) {
+		t := strings.TrimSpace(raw)
+		if t == "" {
+			continue
+		}
+		if _, ok := seen[t]; ok {
+			continue
+		}
+		seen[t] = struct{}{}
+		out = append(out, t)
+	}
+	return out
+}
+
+func digestReceiptProvenance(e palace.MemoryEntry) opsDigestReceiptProvenance {
+	return opsDigestReceiptProvenance{
+		SourceHint: strings.TrimSpace(e.Provenance.SourceHint),
+		SourceStep: strings.TrimSpace(e.Provenance.SourceStep),
+	}
 }
 
 // classifyDigestTag maps one tag/provenance token the same way TUI
@@ -323,6 +366,8 @@ func digestCandidateFromEntry(e palace.MemoryEntry) (digestCandidate, bool) {
 			Summary:    summary,
 			SourceHint: hint,
 			Pointer:    id,
+			Tags:       digestReceiptTags(e),
+			Provenance: digestReceiptProvenance(e),
 		},
 		class: class,
 		t:     digestEntryTime(e),
