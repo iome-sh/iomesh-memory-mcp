@@ -230,7 +230,7 @@ Local palace FS on the operator machine. `tools/list` and `healthz.tool_names` a
 | `memory_facts_as_of` | `ListFactsAsOf` | List local FS; does not ingest |
 | `memory_related` | `MultiHopRetrieve` (entity BFS lite; not full graph RAG) | Read local FS; does not ingest |
 | `memory_supersede_entity` | `SupersedeEntityFacts` (mutating; HITL stays at the client) | Write local FS (close facts) |
-| `ops_digest_export` | Local `ListMemoryWithOptions` window → receipts (TUI `/memory digest` MCP fallback) | Read/list local FS; does not ingest. Patterns stay empty (insufficient-signal OK). `source_hint=palace_timeline` for local/private entries; mesh only when the entry is mesh-sourced (e.g. ingest `source_hint=mesh`) — never invented. dual_write OFF · not Memory GA · catalog ≠ connected |
+| `ops_digest_export` | Local `ListMemoryWithOptions` window → receipts (TUI `/memory digest` MCP fallback) | Read/list local FS; does not ingest. Patterns stay empty (insufficient-signal OK). Receipt selection prefers mesh+private diversity when both exist in-window (not newest-`event_time` only); `source_hint=palace_timeline` for local/private; mesh only when the entry is mesh-sourced — never invented. dual_write OFF · not Memory GA · catalog ≠ connected |
 
 Server name: **`iomesh-memory-mcp`**. Default version stamp: **`v0.3.0`** (overridden by `make build` / GoReleaser ldflags).
 

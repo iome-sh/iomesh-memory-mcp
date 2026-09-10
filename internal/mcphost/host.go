@@ -291,7 +291,7 @@ func (h *Host) Register(sdkServer *mcp.Server) {
 	mcp.AddTool(sdkServer, &mcp.Tool{
 		Name: "ops_digest_export",
 		Description: "Export an ops digest pack from the local palace FS (window day|week; horizon ops|knowledge|analytical|all). " +
-			"Receipts from memory_list; patterns stay empty (insufficient-signal OK). " +
+			"Receipts from memory_list with source-class diversity when mesh and private both exist in-window; patterns stay empty (insufficient-signal OK). " +
 			"source_hint is palace_timeline for local/private entries; mesh only when the entry is mesh-sourced — never invented. " +
 			"Does not ingest. dual_write OFF · not Memory GA · catalog ≠ connected",
 	}, h.handleOpsDigestExport)

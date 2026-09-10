@@ -3,6 +3,7 @@ package mcphost
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -15,6 +16,12 @@ const (
 	opsDigestWindowWeek = "week"
 	opsDigestLimitDef   = 20
 	opsDigestLimitMax   = 50
+	// opsDigestScanCap is how many in-window entries we list before selecting
+	// receipts. Kernel ListMemoryWithOptions defaults Limit<=0 to 50 and sorts
+	// newest event_time first, so a receipt Limit of 20 can drop older mesh
+	// turns when newer private RCA fills the window (#66). Scan wider, then
+	// prefer source-class diversity. Never invent mesh.
+	opsDigestScanCap = 200
 	// palaceTimelineHint is a TUI-classifiable private source_hint
 	// (private / palace / palace_timeline). Never invent mesh.
 	palaceTimelineHint = "palace_timeline"
@@ -70,16 +77,33 @@ type opsDigestPattern struct {
 	Summary string `json:"summary,omitempty"`
 }
 
+// opsDigestReceiptSelection documents how the receipt set was chosen.
+// TUI MemoryOpsDigestResult ignores unknown JSON keys; since/as_of remain
+// the printed window bounds. Do not treat this as cite-both / Connected.
+type opsDigestReceiptSelection struct {
+	Mode              string `json:"mode"`
+	Limit             int    `json:"limit"`
+	Scanned           int    `json:"scanned"`
+	ScanCap           int    `json:"scan_cap"`
+	ScanTruncated     bool   `json:"scan_truncated"`
+	MeshInWindow      bool   `json:"mesh_in_window"`
+	PrivateInWindow   bool   `json:"private_in_window"`
+	MeshInReceipts    bool   `json:"mesh_in_receipts"`
+	PrivateInReceipts bool   `json:"private_in_receipts"`
+	Note              string `json:"note,omitempty"`
+}
+
 // opsDigestExportOutput matches TUI MemoryOpsDigestResult JSON.
 type opsDigestExportOutput struct {
-	Window       string                `json:"window"`
-	Horizon      string                `json:"horizon"`
-	AsOf         string                `json:"as_of"`
-	Since        string                `json:"since,omitempty"`
-	Honesty      opsDigestHonesty      `json:"honesty"`
-	Patterns     []opsDigestPattern    `json:"patterns"`
-	Receipts     []opsDigestReceipt    `json:"receipts"`
-	DecisionStub opsDigestDecisionStub `json:"decision_stub"`
+	Window           string                    `json:"window"`
+	Horizon          string                    `json:"horizon"`
+	AsOf             string                    `json:"as_of"`
+	Since            string                    `json:"since,omitempty"`
+	Honesty          opsDigestHonesty          `json:"honesty"`
+	Patterns         []opsDigestPattern        `json:"patterns"`
+	Receipts         []opsDigestReceipt        `json:"receipts"`
+	DecisionStub     opsDigestDecisionStub     `json:"decision_stub"`
+	ReceiptSelection opsDigestReceiptSelection `json:"receipt_selection"`
 }
 
 func (h *Host) handleOpsDigestExport(_ context.Context, _ *mcp.CallToolRequest, in opsDigestExportInput) (*mcp.CallToolResult, opsDigestExportOutput, error) {
@@ -126,46 +150,43 @@ func (h *Host) handleOpsDigestExport(_ context.Context, _ *mcp.CallToolRequest, 
 		return toolError(err), opsDigestExportOutput{}, err
 	}
 
-	opts := palace.ListMemoryOptions{
-		Limit:     limit,
+	windowOpts := palace.ListMemoryOptions{
 		TimeFrom:  &since,
 		TimeTo:    &asOf,
 		Ascending: false,
 	}
-	entries := ps.ListMemoryWithOptions(opts)
+	scanOpts := windowOpts
+	scanOpts.Limit = opsDigestScanCap
+	scanned := ps.ListMemoryWithOptions(scanOpts)
 
-	receipts := make([]opsDigestReceipt, 0, len(entries))
-	for _, e := range entries {
-		id := strings.TrimSpace(e.ID)
-		if id == "" {
-			continue
-		}
-		hit := hitFromEntry(e)
-		summary := strings.TrimSpace(hit.Summary)
-		if summary == "" {
-			summary = strings.TrimSpace(hit.Full)
-		}
-		if len(summary) > 240 {
-			summary = summary[:240] + "…"
-		}
-		receipts = append(receipts, opsDigestReceipt{
-			ID:         id,
-			EventTime:  hit.Timestamp,
-			Summary:    summary,
-			SourceHint: digestSourceHint(e),
-			Pointer:    id,
-		})
+	// Supplemental mesh-tag list so older source_hint:mesh turns survive when
+	// newer private RCA fills the newest-N scan (#66). Do not invent mesh.
+	meshOpts := windowOpts
+	meshOpts.Limit = opsDigestScanCap
+	if tag := palace.FormatSourceHintTag("mesh"); tag != "" {
+		meshOpts.Tag = tag
+	} else {
+		meshOpts.Tag = "source_hint:mesh"
 	}
+	meshTagged := ps.ListMemoryWithOptions(meshOpts)
+
+	merged := mergeMemoryEntries(scanned, meshTagged)
+	receipts, sel := selectDigestReceipts(merged, limit)
+	sel.Scanned = len(scanned)
+	sel.ScanCap = opsDigestScanCap
+	sel.ScanTruncated = len(scanned) >= opsDigestScanCap
+	sel.Note = digestReceiptSelectionNote(sel)
 
 	out := opsDigestExportOutput{
-		Window:       window,
-		Horizon:      horizon,
-		AsOf:         asOf.Format(time.RFC3339),
-		Since:        since.Format(time.RFC3339),
-		Honesty:      leanOpsDigestHonesty(horizon),
-		Patterns:     []opsDigestPattern{},
-		Receipts:     receipts,
-		DecisionStub: opsDigestDecisionStub{},
+		Window:           window,
+		Horizon:          horizon,
+		AsOf:             asOf.Format(time.RFC3339),
+		Since:            since.Format(time.RFC3339),
+		Honesty:          leanOpsDigestHonesty(horizon),
+		Patterns:         []opsDigestPattern{},
+		Receipts:         receipts,
+		DecisionStub:     opsDigestDecisionStub{},
+		ReceiptSelection: sel,
 	}
 	return toolJSON(out), out, nil
 }
@@ -178,10 +199,10 @@ func leanOpsDigestHonesty(horizon string) opsDigestHonesty {
 		NeverInventGA:    true,
 		DualWriteDefault: "off",
 		BookDemo:         "off",
-		Note:             "Local palace listing only (memory_list window). Patterns empty — insufficient-signal OK; do not invent GA or mesh. dual_write OFF · not Memory GA · catalog ≠ connected. No mesh bind required.",
+		Note:             "Local palace listing only (memory_list window). Receipt selection prefers source-class diversity when mesh and private both exist in-window — never invents mesh. Patterns empty — insufficient-signal OK; do not invent GA. dual_write OFF · not Memory GA · catalog ≠ connected. No mesh bind required.",
 	}
 	if horizon == "knowledge" || horizon == "analytical" {
-		h.Note = "Horizon " + horizon + " is Beta. Local palace listing only; patterns empty — insufficient-signal OK. dual_write OFF · not Memory GA · catalog ≠ connected."
+		h.Note = "Horizon " + horizon + " is Beta. Local palace listing only; receipt selection prefers source-class diversity when both classes exist in-window — never invents mesh. Patterns empty — insufficient-signal OK. dual_write OFF · not Memory GA · catalog ≠ connected."
 	}
 	return h
 }
@@ -242,4 +263,164 @@ func classifyDigestTag(raw string) string {
 		return "private"
 	}
 	return ""
+}
+
+func mergeMemoryEntries(groups ...[]palace.MemoryEntry) []palace.MemoryEntry {
+	seen := make(map[string]struct{})
+	out := make([]palace.MemoryEntry, 0)
+	for _, g := range groups {
+		for _, e := range g {
+			id := strings.TrimSpace(e.ID)
+			if id == "" {
+				continue
+			}
+			if _, ok := seen[id]; ok {
+				continue
+			}
+			seen[id] = struct{}{}
+			out = append(out, e)
+		}
+	}
+	return out
+}
+
+type digestCandidate struct {
+	receipt opsDigestReceipt
+	class   string // mesh | private
+	t       time.Time
+}
+
+func digestEntryTime(e palace.MemoryEntry) time.Time {
+	ts := e.Timestamp
+	if ts.IsZero() {
+		ts = e.CreatedAt
+	}
+	return ts.UTC()
+}
+
+func digestCandidateFromEntry(e palace.MemoryEntry) (digestCandidate, bool) {
+	id := strings.TrimSpace(e.ID)
+	if id == "" {
+		return digestCandidate{}, false
+	}
+	hit := hitFromEntry(e)
+	summary := strings.TrimSpace(hit.Summary)
+	if summary == "" {
+		summary = strings.TrimSpace(hit.Full)
+	}
+	if len(summary) > 240 {
+		summary = summary[:240] + "…"
+	}
+	hint := digestSourceHint(e)
+	class := classifyDigestTag(hint)
+	if class == "" {
+		class = "private"
+	}
+	return digestCandidate{
+		receipt: opsDigestReceipt{
+			ID:         id,
+			EventTime:  hit.Timestamp,
+			Summary:    summary,
+			SourceHint: hint,
+			Pointer:    id,
+		},
+		class: class,
+		t:     digestEntryTime(e),
+	}, true
+}
+
+func sortDigestCandidatesNewest(cands []digestCandidate) {
+	sort.SliceStable(cands, func(i, j int) bool {
+		if cands[i].t.Equal(cands[j].t) {
+			return cands[i].receipt.ID > cands[j].receipt.ID
+		}
+		return cands[i].t.After(cands[j].t)
+	})
+}
+
+// selectDigestReceipts picks up to limit receipts. When both mesh and private
+// exist in the candidate set and limit >= 2, newest mesh and newest private
+// are reserved first; remaining slots fill newest-event_time. Never invents
+// a class that is not present.
+func selectDigestReceipts(entries []palace.MemoryEntry, limit int) ([]opsDigestReceipt, opsDigestReceiptSelection) {
+	if limit <= 0 {
+		limit = opsDigestLimitDef
+	}
+	cands := make([]digestCandidate, 0, len(entries))
+	for _, e := range entries {
+		c, ok := digestCandidateFromEntry(e)
+		if ok {
+			cands = append(cands, c)
+		}
+	}
+	sortDigestCandidatesNewest(cands)
+
+	var mesh, priv []digestCandidate
+	for _, c := range cands {
+		if c.class == "mesh" {
+			mesh = append(mesh, c)
+		} else {
+			priv = append(priv, c)
+		}
+	}
+
+	picked := make([]digestCandidate, 0, limit)
+	used := make(map[string]struct{}, limit)
+	pick := func(c digestCandidate) {
+		if len(picked) >= limit {
+			return
+		}
+		id := c.receipt.ID
+		if _, ok := used[id]; ok {
+			return
+		}
+		used[id] = struct{}{}
+		picked = append(picked, c)
+	}
+	if limit >= 2 && len(mesh) > 0 && len(priv) > 0 {
+		pick(mesh[0])
+		pick(priv[0])
+	}
+	for _, c := range cands {
+		if len(picked) >= limit {
+			break
+		}
+		pick(c)
+	}
+	sortDigestCandidatesNewest(picked)
+
+	receipts := make([]opsDigestReceipt, 0, len(picked))
+	meshInReceipts := false
+	privInReceipts := false
+	for _, c := range picked {
+		receipts = append(receipts, c.receipt)
+		if c.class == "mesh" {
+			meshInReceipts = true
+		} else {
+			privInReceipts = true
+		}
+	}
+
+	sel := opsDigestReceiptSelection{
+		Mode:              "source_class_diversity",
+		Limit:             limit,
+		MeshInWindow:      len(mesh) > 0,
+		PrivateInWindow:   len(priv) > 0,
+		MeshInReceipts:    meshInReceipts,
+		PrivateInReceipts: privInReceipts,
+	}
+	return receipts, sel
+}
+
+func digestReceiptSelectionNote(sel opsDigestReceiptSelection) string {
+	switch {
+	case sel.MeshInWindow && sel.PrivateInWindow && sel.MeshInReceipts && sel.PrivateInReceipts:
+		return "In-window mesh and private both represented. Window bounds are since/as_of. Never invents mesh."
+	case sel.MeshInWindow && !sel.MeshInReceipts:
+		return "Mesh exists in the scanned window but is not in this receipt set (limit too small or scan truncated). Window bounds are since/as_of. Never invents mesh."
+	case sel.ScanTruncated && !sel.MeshInWindow:
+		return "Newest-event_time scan hit cap; older in-window entries may exist. Window bounds are since/as_of. Never invents mesh."
+	default:
+		return "Receipts from in-window palace listing. Window bounds are since/as_of. Never invents mesh."
+	}
 }

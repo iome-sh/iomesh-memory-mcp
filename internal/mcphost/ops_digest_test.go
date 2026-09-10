@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
 
+	palace "github.com/iome-sh/memory"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -109,6 +111,12 @@ func TestOpsDigestExportEmptyPalaceHonesty(t *testing.T) {
 	}
 	if decoded.Patterns == nil || decoded.Receipts == nil {
 		t.Fatalf("marshaled slices must be arrays: patterns=%v receipts=%v", decoded.Patterns, decoded.Receipts)
+	}
+	if decoded.ReceiptSelection.MeshInWindow || decoded.ReceiptSelection.MeshInReceipts {
+		t.Fatalf("empty palace must not invent mesh: %+v", decoded.ReceiptSelection)
+	}
+	if decoded.ReceiptSelection.Mode != "source_class_diversity" {
+		t.Fatalf("receipt_selection.mode: %q", decoded.ReceiptSelection.Mode)
 	}
 }
 
@@ -215,6 +223,167 @@ func TestOpsDigestExportHonorsMeshSourceHint(t *testing.T) {
 	}
 }
 
+func TestOpsDigestExportMeshAndPrivateWhenBothExist(t *testing.T) {
+	h, err := New(Config{PalaceRoot: t.TempDir()})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	ctx := context.Background()
+	asOf := time.Now().UTC().Add(time.Second)
+	// Older mesh event_time (GitHub created ~morning) vs newer private RCA.
+	meshAt := asOf.Add(-10 * time.Hour).Format(time.RFC3339)
+	_, meshWrote, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+		Tenant:     "dogfood",
+		SessionID:  "dept.engineering.events.github",
+		Role:       "user",
+		Content:    "durable mesh consume morning pull for digest diversity",
+		EventTime:  meshAt,
+		SourceHint: "mesh",
+	})
+	if err != nil {
+		t.Fatalf("ingest mesh: %v", err)
+	}
+	if meshWrote.DualWrite != "off" || meshWrote.Audited {
+		t.Fatalf("dual_write must be off; do not invent Connected/Memory GA: %+v", meshWrote)
+	}
+
+	const privates = 25
+	for i := 0; i < privates; i++ {
+		_, wrote, err := h.handleWrite(ctx, nil, writeInput{
+			Tenant:  "dogfood",
+			Summary: fmt.Sprintf("private RCA note %02d newer than mesh pull", i),
+			Tags:    []string{"private", "private_rca"},
+		})
+		if err != nil {
+			t.Fatalf("write private %d: %v", i, err)
+		}
+		if wrote.DualWrite != "off" {
+			t.Fatalf("write honesty: %+v", wrote)
+		}
+	}
+
+	_, out, err := h.handleOpsDigestExport(ctx, nil, opsDigestExportInput{
+		Tenant: "dogfood",
+		Window: "day",
+		AsOf:   asOf.Format(time.RFC3339),
+		Limit:  5, // TUI sticky default is 20; small limit must still keep both classes
+	})
+	if err != nil {
+		t.Fatalf("digest: %v", err)
+	}
+	assertOpsDigestHonesty(t, out.Honesty)
+	if len(out.Patterns) != 0 {
+		t.Fatalf("must not invent patterns: %+v", out.Patterns)
+	}
+	if len(out.Receipts) == 0 || len(out.Receipts) > 5 {
+		t.Fatalf("receipt count: %d want 1..5", len(out.Receipts))
+	}
+
+	haveMesh, havePrivate := false, false
+	foundMeshID := false
+	for _, r := range out.Receipts {
+		switch classifyTestSourceHint(r.SourceHint) {
+		case "mesh":
+			haveMesh = true
+			if r.ID == meshWrote.MemoryID || strings.Contains(r.Summary, "durable mesh consume") {
+				foundMeshID = true
+			}
+		case "private":
+			havePrivate = true
+		default:
+			t.Fatalf("unclassifiable source_hint: %+v", r)
+		}
+	}
+	if !haveMesh || !havePrivate {
+		t.Fatalf("default receipt set must include mesh+private when both exist: mesh=%v private=%v receipts=%+v sel=%+v",
+			haveMesh, havePrivate, out.Receipts, out.ReceiptSelection)
+	}
+	if !foundMeshID {
+		t.Fatalf("mesh-stamped turn missing from receipts: %+v", out.Receipts)
+	}
+	if !out.ReceiptSelection.MeshInWindow || !out.ReceiptSelection.PrivateInWindow {
+		t.Fatalf("window class flags: %+v", out.ReceiptSelection)
+	}
+	if !out.ReceiptSelection.MeshInReceipts || !out.ReceiptSelection.PrivateInReceipts {
+		t.Fatalf("receipt class flags: %+v", out.ReceiptSelection)
+	}
+	if out.Since == "" || out.AsOf == "" {
+		t.Fatalf("honest window bounds required: since=%q as_of=%q", out.Since, out.AsOf)
+	}
+	if strings.Contains(strings.ToLower(out.Honesty.Note), "cite-both") {
+		t.Fatalf("must not invent cite-both: %q", out.Honesty.Note)
+	}
+}
+
+func TestSelectDigestReceiptsPrefersSourceClassDiversity(t *testing.T) {
+	now := time.Date(2026, 9, 10, 16, 10, 0, 0, time.UTC)
+	meshAt := time.Date(2026, 9, 10, 6, 46, 0, 0, time.UTC)
+	entries := make([]palace.MemoryEntry, 0, 13)
+	for i := 0; i < 12; i++ {
+		entries = append(entries, palace.MemoryEntry{
+			ID:        fmt.Sprintf("priv-%02d", i),
+			Timestamp: now.Add(-time.Duration(i) * time.Minute),
+			Content: palace.MemoryContent{
+				Summary: "private RCA " + fmt.Sprintf("%02d", i),
+				Tags:    []string{"source_hint:private", "private_rca"},
+			},
+			Provenance: palace.MemoryProvenance{SourceHint: "private"},
+		})
+	}
+	entries = append(entries, palace.MemoryEntry{
+		ID:        "mesh-1",
+		Timestamp: meshAt,
+		Content: palace.MemoryContent{
+			Summary: "mesh pull morning",
+			Tags:    []string{"source_hint:mesh"},
+		},
+		Provenance: palace.MemoryProvenance{SourceHint: "mesh"},
+	})
+
+	got, sel := selectDigestReceipts(entries, 5)
+	if len(got) != 5 {
+		t.Fatalf("len=%d want 5: %+v", len(got), got)
+	}
+	haveMesh, havePrivate := false, false
+	for _, r := range got {
+		switch classifyTestSourceHint(r.SourceHint) {
+		case "mesh":
+			haveMesh = true
+			if r.ID != "mesh-1" {
+				t.Fatalf("unexpected mesh id: %+v", r)
+			}
+		case "private":
+			havePrivate = true
+		default:
+			t.Fatalf("unclassifiable: %+v", r)
+		}
+	}
+	if !haveMesh || !havePrivate {
+		t.Fatalf("diversity failed: mesh=%v private=%v receipts=%+v", haveMesh, havePrivate, got)
+	}
+	if !sel.MeshInWindow || !sel.PrivateInWindow || !sel.MeshInReceipts || !sel.PrivateInReceipts {
+		t.Fatalf("selection flags: %+v", sel)
+	}
+
+	privOnly, privSel := selectDigestReceipts(entries[:12], 5)
+	for _, r := range privOnly {
+		if classifyTestSourceHint(r.SourceHint) == "mesh" {
+			t.Fatalf("must not invent mesh: %+v", r)
+		}
+	}
+	if privSel.MeshInWindow || privSel.MeshInReceipts {
+		t.Fatalf("private-only must not claim mesh: %+v", privSel)
+	}
+
+	meshOnly, meshSel := selectDigestReceipts(entries[12:], 5)
+	if len(meshOnly) != 1 || classifyTestSourceHint(meshOnly[0].SourceHint) != "mesh" {
+		t.Fatalf("mesh-only: %+v", meshOnly)
+	}
+	if meshSel.PrivateInWindow || meshSel.PrivateInReceipts {
+		t.Fatalf("mesh-only must not invent private: %+v", meshSel)
+	}
+}
+
 func TestOpsDigestExportNeverInventsMesh(t *testing.T) {
 	h, err := New(Config{PalaceRoot: t.TempDir()})
 	if err != nil {
@@ -240,6 +409,9 @@ func TestOpsDigestExportNeverInventsMesh(t *testing.T) {
 		if classifyTestSourceHint(r.SourceHint) != "private" {
 			t.Fatalf("local palace receipt source_hint=%q want private class: %+v", r.SourceHint, r)
 		}
+	}
+	if out.ReceiptSelection.MeshInWindow || out.ReceiptSelection.MeshInReceipts {
+		t.Fatalf("must not invent mesh in receipt_selection: %+v", out.ReceiptSelection)
 	}
 }
 
