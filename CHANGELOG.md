@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] — 2026-09-10
+
 ### Changed
 - **Kernel pin:** `github.com/iome-sh/memory` annotated **`v1.5.8`** → annotated **`v1.5.9`** (memory #88: palace mode bits / writeMu / retrieve skip archival; hugot 0.7.8). `go` line follows the kernel (`1.26.6` → `1.27.0`). dual_write OFF · not Memory GA.
 
