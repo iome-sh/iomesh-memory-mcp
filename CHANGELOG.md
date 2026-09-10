@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Kernel pin (#58):** `github.com/iome-sh/memory` annotated **`v1.5.9`** → annotated **`v1.5.10`** (memory #90 / PR #91: `IngestTurn` stamps observable `provenance.source_hint=private` and tag `source_hint:private` when the caller does not already supply a classifiable mesh or private source). Host process labels (`mcp_memory_ingest_turn`, `source:iomesh-memory-mcp`) are not a cite-both class. dual_write OFF · not Memory GA · Catalog ≠ Connected.
+
 ## [0.3.0] — 2026-09-10
 
 ### Added
