@@ -21,7 +21,7 @@ local filesystem under PALACE_ROOT/<tenant>/…
 
 ## Features
 
-- **stdio or HTTP** — default stdio for local clients; optional streamable HTTP + `GET /healthz`
+- **stdio or HTTP** — default stdio for local clients; optional streamable HTTP + `GET /healthz` (HTTP defaults to loopback; optional shared secret)
 - **Local-first** — durable data under `PALACE_ROOT` on disk
 - **Thin host** — tools map to the public `github.com/iome-sh/memory` API
 - **Tenant paths** — one process, filesystem isolation by tenant subdirectory
@@ -50,7 +50,9 @@ cd iomesh-memory-mcp
 make build   # → bin/iomesh-memory-mcp
 ```
 
-Requires the Go version in [`go.mod`](go.mod). The kernel dependency is public: `github.com/iome-sh/memory`.
+Requires the Go version in [`go.mod`](go.mod). The kernel dependency is public
+`github.com/iome-sh/memory` **v1.5.8** (annotated tag; not the Aug-16
+`v1.5.8-0.20260816…` pseudo). dual_write OFF · **not** Memory GA.
 
 ### Tagged releases
 
@@ -84,9 +86,11 @@ export MEMORY_TENANT=default
   -tenant default \
   -http-addr :8080 \
   -http-path /mcp
+# :8080 is forced to 127.0.0.1:8080. 0.0.0.0 requires -allow-non-loopback.
 
 curl -fsS http://127.0.0.1:8080/healthz
 # expect dual_write=off · not_memory_ga=true · qdrant=off · tools>=9 (compile-time)
+# healthz stays open even if MEMORY_MCP_HTTP_SECRET is set
 ```
 
 ### Client config example (TUI)
@@ -135,8 +139,9 @@ Put that block in the client’s MCP config (`~/.cursor/mcp.json`, Claude Deskto
 `claude_desktop_config.json`, or equivalent). `command` can be an absolute path
 if `iomesh-memory-mcp` is not on `PATH`.
 
-**HTTP** (streamable MCP). Start the host with `-http-addr :8080 -http-path /mcp`,
-then:
+**HTTP** (streamable MCP). Start the host with `-http-addr :8080 -http-path /mcp`
+(`:8080` binds `127.0.0.1:8080`). Optional `MEMORY_MCP_HTTP_SECRET` fail-closes
+the MCP path when set (`X-Memory-MCP-Secret` or `Authorization: Bearer`). Then:
 
 ```json
 {
@@ -197,8 +202,10 @@ MEMORY_ONNX_MODEL_PATH=/absolute/path/to/model docker compose up --build
 |------|-------------|---------|--------|
 | `-palace-root` | `PALACE_ROOT` | `./data/memory-palaces` (or `/data/memory-palaces` in image) | Base directory for tenants |
 | `-tenant` | `MEMORY_TENANT` | empty | Process label only (validated if set). Tool `tenant` is required; omit fail-closes (does not write `PALACE_ROOT/default`) |
-| `-http-addr` | `MEMORY_MCP_HTTP_ADDR` | empty = **stdio** | e.g. `:8080` |
+| `-http-addr` | `MEMORY_MCP_HTTP_ADDR` | empty = **stdio** | e.g. `:8080` (forced to `127.0.0.1:8080`) |
 | `-http-path` | `MEMORY_MCP_HTTP_PATH` | `/mcp` | Streamable MCP path (`/healthz` is fixed) |
+| `-allow-non-loopback` | `MEMORY_MCP_HTTP_ALLOW_NON_LOOPBACK` | false | Required to bind `0.0.0.0` / `::` / LAN. Compose/image set this so the published `127.0.0.1:8080` can reach the container. |
+| `-http-secret` | `MEMORY_MCP_HTTP_SECRET` | empty = **off** | Optional shared secret for MCP HTTP. Fail-closed when set. `/healthz` stays open. stdio unchanged. |
 | `-preflight` | — | false | Print the same honesty JSON as `GET /healthz` and exit (no listen, no stdio MCP; `tool_names` = registration, not ingest) |
 | (env only) | `MEMORY_ONNX_MODEL_PATH` | empty = **hash** embeddings | Optional ONNX model dir/file for stronger semantic retrieve · see [memory](https://github.com/iome-sh/memory) README |
 | (env only) | `MEMORY_EMBEDDING_STRICT` | unset | When `true`, ONNX errors do not fall back to hash (kernel) |
@@ -214,8 +221,8 @@ Local palace FS on the operator machine. `tools/list` and `healthz.tool_names` a
 
 | Tool | Kernel API | Surface |
 |------|------------|---------|
-| `memory_ingest_turn` | `IngestTurn` | Write local FS (conversation turn) |
-| `memory_write` | `Write` / `WriteAndSupersede` (durable facts; not a conversation turn) | Write local FS |
+| `memory_ingest_turn` | `IngestTurn` | Write local FS (conversation turn). Host DLP redacts common secret shapes (`ghp_` / `sk-` / …) before write — residual heuristics, not commercial DLP. |
+| `memory_write` | `Write` / `WriteAndSupersede` (durable facts; not a conversation turn) | Write local FS (same host DLP as ingest) |
 | `memory_retrieve` | `SearchMemoryWithOptions` | Read/search local FS; does not ingest |
 | `memory_search_semantic` | Hybrid search on semantic tier | Read local FS; does not ingest |
 | `memory_list` | `ListMemoryWithOptions` | List local FS; does not ingest |

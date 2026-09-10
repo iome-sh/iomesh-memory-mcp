@@ -29,6 +29,7 @@ USER nonroot:nonroot
 EXPOSE 8080
 ENV PALACE_ROOT=/data/memory-palaces \
     MEMORY_MCP_HTTP_ADDR=:8080 \
-    MEMORY_MCP_HTTP_PATH=/mcp
+    MEMORY_MCP_HTTP_PATH=/mcp \
+    MEMORY_MCP_HTTP_ALLOW_NON_LOOPBACK=1
 VOLUME ["/data/memory-palaces"]
 ENTRYPOINT ["/iomesh-memory-mcp"]

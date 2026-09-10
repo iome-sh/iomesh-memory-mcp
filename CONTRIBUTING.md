@@ -57,8 +57,9 @@ make release-snapshot           # local GoReleaser snapshot (needs goreleaser + 
 | Package / surface | Focus |
 |-------------------|--------|
 | `internal/mcphost` tools | Temp palace dirs; ingest / retrieve / list / facts_as_of honesty |
-| `internal/mcphost` HTTP | `/healthz` dual_write=off · not_memory_ga · tools count · version stamp |
-| CLI / flags | stdio vs HTTP mode selection; env aliases residual |
+| `internal/mcphost` HTTP | `/healthz` dual_write=off · not_memory_ga · tools count · version stamp · loopback bind · optional shared secret |
+| `internal/mcphost` DLP | ingest/write redact `ghp_` / `sk-` before palace write |
+| CLI / flags | stdio vs HTTP mode selection; `MEMORY_MCP_*` only (no leftover product-plane env aliases) |
 
 New features should include unit tests. Prefer temp dirs for Palace FS (no live
 broker, no Qdrant requirement on the default path).
