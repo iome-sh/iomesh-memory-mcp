@@ -166,6 +166,7 @@ Optional additional surface (not required for the E4 sequence):
 | `memory_write` | Durable fact `Write` / optional `WriteAndSupersede` (#20) · dual_write OFF |
 | `memory_related` | `MultiHopRetrieve` (#17) · not full graph RAG |
 | `memory_supersede_entity` | `SupersedeEntityFacts` (#17) · HITL at the client |
+| `ops_digest_export` | Local palace receipts for TUI `/memory digest` MCP fallback (#55) · empty patterns OK · `source_hint=palace_timeline` · never invent mesh · dual_write OFF |
 
 Operator expectations when dogfooding against a client:
 
@@ -194,9 +195,10 @@ curl -fsS http://127.0.0.1:8080/healthz
 #   "not_memory_ga":true
 #   "embeddings":"hash" | "onnx"
 #   "qdrant":"off"
-#   "tools": <compile-time lean count, currently >= 9>
+#   "tools": <compile-time lean count, currently >= 10>
 #   "tool_names": [..., "memory_write", "memory_related",
-#                  "memory_supersede_entity", "memory_retrieve", ...]
+#                  "memory_supersede_entity", "memory_retrieve",
+#                  "ops_digest_export", ...]
 # honesty: healthz.tools is residual-honest registration, not a live MCP
 #   tools/list stamp. s1509 TUI attach tools=6 at tip f46afe2 is
 #   contemporaneous evidence — do not restamp as live forever-green.

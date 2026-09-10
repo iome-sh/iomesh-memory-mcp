@@ -221,6 +221,7 @@ var leanToolNames = []string{
 	"memory_facts_as_of",
 	"memory_related",
 	"memory_supersede_entity",
+	"ops_digest_export",
 }
 
 // LeanToolNames returns a copy of the compile-time lean registered tool names.
@@ -286,6 +287,14 @@ func (h *Host) Register(sdkServer *mcp.Server) {
 		Name:        "memory_supersede_entity",
 		Description: "Close open facts for an entity key on the local palace FS (SupersedeEntityFacts). Mutating; HITL stays at the client. dual_write OFF · not Memory GA",
 	}, h.handleSupersedeEntity)
+
+	mcp.AddTool(sdkServer, &mcp.Tool{
+		Name: "ops_digest_export",
+		Description: "Export an ops digest pack from the local palace FS (window day|week; horizon ops|knowledge|analytical|all). " +
+			"Receipts from memory_list; patterns stay empty (insufficient-signal OK). " +
+			"source_hint is palace_timeline for local entries — never invent mesh. " +
+			"Does not ingest. dual_write OFF · not Memory GA · catalog ≠ connected",
+	}, h.handleOpsDigestExport)
 
 	log.Printf("mcphost: registered tools=%d server=%s version=%s dual_write=off not_memory_ga=true",
 		len(leanToolNames), ServerName, ServerVersion)

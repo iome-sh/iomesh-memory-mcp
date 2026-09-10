@@ -630,6 +630,9 @@ func TestBadTenantToolIsError(t *testing.T) {
 	if res, _, err := h.handleSupersedeEntity(ctx, nil, supersedeEntityInput{Tenant: bad, EntityKey: "e"}); err == nil || res == nil || !res.IsError {
 		t.Fatalf("supersede: err=%v res=%+v", err, res)
 	}
+	if res, _, err := h.handleOpsDigestExport(ctx, nil, opsDigestExportInput{Tenant: bad}); err == nil || res == nil || !res.IsError {
+		t.Fatalf("ops_digest_export: err=%v res=%+v", err, res)
+	}
 
 	// Separator tenant also fail-closed; configured default still unused.
 	if res, _, err := h.handleList(ctx, nil, listInput{Tenant: "a/b"}); err == nil || res == nil || !res.IsError {
@@ -720,8 +723,18 @@ func TestRegisterSDKServer(t *testing.T) {
 		t.Fatal("nil sdk server")
 	}
 	names := LeanToolNames()
-	if len(names) < 9 {
-		t.Fatalf("lean tools=%d want >= 9: %v", len(names), names)
+	if len(names) < 10 {
+		t.Fatalf("lean tools=%d want >= 10: %v", len(names), names)
+	}
+	found := false
+	for _, n := range names {
+		if n == "ops_digest_export" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("lean tools missing ops_digest_export: %v", names)
 	}
 }
 
@@ -796,5 +809,8 @@ func TestInvalidTimeFieldsFailClosed(t *testing.T) {
 	}
 	if _, _, err := h.handleSupersedeEntity(ctx, nil, supersedeEntityInput{Tenant: "dogfood", EntityKey: "e", AsOf: bad}); err == nil {
 		t.Fatal("supersede as_of invalid must error")
+	}
+	if _, _, err := h.handleOpsDigestExport(ctx, nil, opsDigestExportInput{Tenant: "dogfood", AsOf: bad}); err == nil {
+		t.Fatal("ops_digest_export as_of invalid must error")
 	}
 }
