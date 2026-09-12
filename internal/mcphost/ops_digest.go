@@ -209,10 +209,10 @@ func leanOpsDigestHonesty(horizon string) opsDigestHonesty {
 		NeverInventGA:    true,
 		DualWriteDefault: "off",
 		BookDemo:         "off",
-		Note:             "Local palace listing only (memory_list window). Receipt selection prefers source-class diversity when mesh and private both exist in-window — never invents mesh. Patterns empty — insufficient-signal OK; do not invent GA. dual_write OFF · not Memory GA · catalog ≠ connected. No mesh bind required.",
+		Note:             "Local palace listing only (memory_list window). Receipt selection prefers source-class diversity when mesh and private both exist in-window — never invents mesh. Patterns empty — insufficient-signal OK. No mesh bind required.",
 	}
 	if horizon == "knowledge" || horizon == "analytical" {
-		h.Note = "Horizon " + horizon + " is Beta. Local palace listing only; receipt selection prefers source-class diversity when both classes exist in-window — never invents mesh. Patterns empty — insufficient-signal OK. dual_write OFF · not Memory GA · catalog ≠ connected."
+		h.Note = "Horizon " + horizon + " is Beta. Local palace listing only; receipt selection prefers source-class diversity when both classes exist in-window — never invents mesh. Patterns empty — insufficient-signal OK."
 	}
 	return h
 }

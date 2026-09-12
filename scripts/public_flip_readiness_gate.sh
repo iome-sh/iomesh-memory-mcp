@@ -2,7 +2,7 @@
 # public_flip_readiness_gate.sh — offline residual gate for M4 public-flip readiness (s1474).
 #
 # File greps only. No docker daemon, no long-running server, no gcloud, no Settings mutation.
-# residual PASS ≠ public flip · ≠ invent Memory GA · ≠ live dogfood green · dual_write OFF · public
+# residual PASS ≠ public flip · ≠ live dogfood green · public
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -54,7 +54,7 @@ forbid_needle() {
 }
 
 echo "== public_flip_readiness_gate (s1474 M4 final TUI-parity) offline — $ROOT =="
-echo "   dual_write OFF · not Memory GA · public · kernel first · residual PASS ≠ public flip"
+echo "   public · kernel first · residual PASS ≠ public flip"
 echo
 
 # --- required surfaces ---
@@ -76,10 +76,9 @@ need_file ".github/workflows/ci.yml"
 need_file ".github/ISSUE_TEMPLATE/config.yml"
 
 echo
-echo "-- docs/PUBLIC_FLIP_READINESS.md honesty + order --"
+echo "-- docs/PUBLIC_FLIP_READINESS.md order --"
 need_needle "docs/PUBLIC_FLIP_READINESS.md" "FLIP COMPLETE|flip is done|already public" "flip complete / already public"
-need_needle "docs/PUBLIC_FLIP_READINESS.md" "dual_write OFF|dual_write \*\*OFF\*\*" "dual_write OFF"
-need_needle "docs/PUBLIC_FLIP_READINESS.md" "not Memory GA" "not Memory GA"
+need_needle "docs/PUBLIC_FLIP_READINESS.md" "dual_write" "dual_write healthz field"
 need_needle "docs/PUBLIC_FLIP_READINESS.md" "public" "public"
 need_needle "docs/PUBLIC_FLIP_READINESS.md" "residual PASS ≠ public flip|residual PASS != public flip" "residual ≠ public flip"
 need_needle "docs/PUBLIC_FLIP_READINESS.md" "full platform sidecar parity|platform sidecar parity" "no full platform sidecar parity"
@@ -93,7 +92,7 @@ need_needle "docs/PUBLIC_FLIP_READINESS.md" "Post-flip|post-flip" "post-flip ste
 need_needle "docs/PUBLIC_FLIP_READINESS.md" "offline dogfood|edge-dogfood-gate|live dogfood" "offline dogfood ≠ live invent"
 need_needle "docs/PUBLIC_FLIP_READINESS.md" "compose PASS ≠ public registry|compose PASS != public registry|public registry" "compose ≠ public registry"
 need_needle "docs/PUBLIC_FLIP_READINESS.md" "public-flip-readiness-gate|public_flip_readiness_gate" "gate target"
-need_needle "docs/PUBLIC_FLIP_READINESS.md" "ghcr.io/iome-sh/iomesh-memory-mcp" "GHCR image name honesty"
+need_needle "docs/PUBLIC_FLIP_READINESS.md" "ghcr.io/iome-sh/iomesh-memory-mcp" "GHCR image name"
 need_needle "docs/PUBLIC_FLIP_READINESS.md" "Does not flip|does not flip|not flip|public" "does not flip visibility"
 need_needle "docs/PUBLIC_FLIP_READINESS.md" "GoReleaser|goreleaser|release.yml" "GoReleaser present"
 need_needle "docs/PUBLIC_FLIP_READINESS.md" "Public repository policy|public repository policy|CONTRIBUTING" "CONTRIBUTING public policy"
@@ -107,8 +106,7 @@ echo "-- LICENSE / SECURITY / audit process bar --"
 need_needle "LICENSE" "MIT|Permission is hereby granted" "LICENSE MIT-ish"
 need_needle "SECURITY.md" "security@|vulnerability|Private vulnerability" "SECURITY reporting"
 need_needle "docs/OPEN_SOURCE_AUDIT.md" "Public|public" "audit public"
-need_needle "docs/OPEN_SOURCE_AUDIT.md" "dual_write" "audit dual_write"
-need_needle "docs/OPEN_SOURCE_AUDIT.md" "not product Memory GA|not Memory GA|Memory GA" "audit not Memory GA"
+need_needle "docs/OPEN_SOURCE_AUDIT.md" "dual_write" "audit dual_write field"
 need_needle "docs/OPEN_SOURCE_AUDIT.md" "kernel first|M4|public flip" "audit M4 / kernel order"
 need_needle "docs/OPEN_SOURCE_AUDIT.md" "PUBLIC_FLIP_READINESS|public-flip-readiness" "audit links PUBLIC_FLIP_READINESS"
 need_needle "docs/OPEN_SOURCE_AUDIT.md" "Ready for deliberate public flip|ready for deliberate|Public" "audit verdict public / ready"
@@ -120,8 +118,7 @@ echo
 echo "-- CONTRIBUTING public policy + CI table --"
 need_needle "CONTRIBUTING.md" "Public repository policy" "CONTRIBUTING public policy section"
 need_needle "CONTRIBUTING.md" "ci-success" "CONTRIBUTING ci-success"
-need_needle "CONTRIBUTING.md" "dual_write" "CONTRIBUTING dual_write"
-need_needle "CONTRIBUTING.md" "not product Memory GA|not Memory GA|Memory GA" "CONTRIBUTING not Memory GA"
+need_needle "CONTRIBUTING.md" "dual_write" "CONTRIBUTING dual_write field"
 need_needle "CONTRIBUTING.md" "iomesh-memory-mcp" "CONTRIBUTING naming"
 need_needle "CONTRIBUTING.md" "does not import private control-plane|Does not import private control-plane|private control-plane / broker" "CONTRIBUTING no private control-plane import"
 forbid_needle "CONTRIBUTING.md" '[Aa][Ii][Oo][Nn]' "CONTRIBUTING no product-codename residual"
@@ -135,11 +132,11 @@ need_needle ".goreleaser.yaml" "cmd/iomesh-memory-mcp" "goreleaser main package"
 need_needle ".goreleaser.yaml" "ServerVersion" "goreleaser ServerVersion ldflags"
 need_needle ".goreleaser.yaml" "cosign" "goreleaser cosign signs"
 need_needle ".goreleaser.yaml" "sbom|sboms" "goreleaser sboms"
-need_needle ".goreleaser.yaml" "no GOPRIVATE|public" "goreleaser public kernel honesty"
+need_needle ".goreleaser.yaml" "no GOPRIVATE|public" "goreleaser public kernel"
 need_needle ".github/workflows/release.yml" "goreleaser|GoReleaser" "release workflow goreleaser"
 need_needle ".github/workflows/release.yml" "id-token" "release id-token write"
 need_needle ".github/workflows/release.yml" "cosign|syft" "release cosign/syft"
-need_needle ".github/workflows/release.yml" "public modules|no GOPRIVATE|PUBLIC" "release public modules honesty"
+need_needle ".github/workflows/release.yml" "public modules|no GOPRIVATE|PUBLIC" "release public modules"
 need_needle ".github/workflows/release.yml" "Module verify|go list -m github.com/iome-sh/memory" "release public module verify"
 need_needle "RELEASING.md" "GoReleaser|goreleaser" "RELEASING GoReleaser section"
 need_needle "RELEASING.md" "cosign verify-blob|certificate-identity-regexp" "RELEASING cosign verify"
@@ -147,20 +144,18 @@ need_needle "RELEASING.md" "kernel public|Kernel public" "RELEASING kernel publi
 need_needle "RELEASING.md" "M5 signing|M5" "RELEASING M5 signing/matrix"
 need_needle "RELEASING.md" "release-snapshot" "RELEASING release-snapshot dry-run"
 need_needle "RELEASING.md" "no auto-tag|no auto-tag releases" "RELEASING no auto-tag"
-need_needle "RELEASING.md" "dual_write" "RELEASING dual_write honesty"
-need_needle "RELEASING.md" "not Memory GA|not product Memory GA" "RELEASING not Memory GA"
-need_needle "RELEASING.md" "forever-green|invent.*signed|tip ≠ invent" "RELEASING residual ≠ invent signed green"
+need_needle "RELEASING.md" "dual_write" "RELEASING dual_write field"
+need_needle "RELEASING.md" "no auto-tag|snapshot ≠ production|standing signed-release" "RELEASING tag/snapshot policy"
 need_needle "Makefile" "release-snapshot" "Makefile release-snapshot"
 
 echo
 echo "-- README / Makefile / CHANGELOG / CI residual --"
-# Public README is consumer-facing; continuum honesty lives in docs/PUBLIC_FLIP_READINESS.md
+# Public README is consumer-facing; continuum lives in docs/PUBLIC_FLIP_READINESS.md
 need_needle "README.md" "PUBLIC_FLIP_READINESS|public-flip-readiness-gate|public-flip-readiness" "README public-flip docs pointer"
 need_needle "README.md" "iomesh-memory-mcp" "README naming"
 need_needle "README.md" "public|MIT" "README public MIT"
 need_needle "docs/PUBLIC_FLIP_READINESS.md" "FLIP COMPLETE|already public|public MIT" "PUBLIC_FLIP flip complete"
-need_needle "docs/PUBLIC_FLIP_READINESS.md" "dual_write OFF" "PUBLIC_FLIP dual_write OFF"
-need_needle "docs/PUBLIC_FLIP_READINESS.md" "not product Memory GA|not Memory GA" "PUBLIC_FLIP not Memory GA"
+need_needle "docs/PUBLIC_FLIP_READINESS.md" "dual_write" "PUBLIC_FLIP dual_write field"
 need_needle "Makefile" "public-flip-readiness-gate" "Makefile public-flip-readiness-gate"
 need_needle "Makefile" "public_flip_readiness_gate\\.sh" "Makefile script path"
 need_needle "CHANGELOG.md" "s1474" "CHANGELOG s1474"
@@ -196,5 +191,5 @@ if [[ "$fail" -ne 0 ]]; then
   exit 1
 fi
 echo "RESULT: PASS (public_flip_readiness_gate s1474 — offline residual only)"
-echo "  residual PASS ≠ public flip · ≠ Memory GA · ≠ live dogfood invent · dual_write OFF · public · kernel first"
+echo "  residual PASS ≠ public flip · ≠ live dogfood invent · public · kernel first"
 exit 0

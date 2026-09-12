@@ -3,9 +3,8 @@
 // Default transport is stdio; set -http-addr (or MEMORY_MCP_HTTP_ADDR) for
 // streamable HTTP. :port binds 127.0.0.1 unless -allow-non-loopback.
 // Optional MEMORY_MCP_HTTP_SECRET fail-closes MCP HTTP when set (/healthz stays open).
-// -preflight prints the same honesty JSON as GET /healthz and exits
+// -preflight prints the same JSON as GET /healthz and exits
 // (no listen, no stdio MCP). Does not import private control-plane/broker packages.
-// dual_write OFF · not Memory GA.
 package main
 
 import (
@@ -57,7 +56,7 @@ func run(args []string, stdout io.Writer) error {
 	httpSecret := fs.String("http-secret", envOr("MEMORY_MCP_HTTP_SECRET", ""),
 		"optional shared secret for streamable HTTP MCP (X-Memory-MCP-Secret or Authorization: Bearer). Empty = off. Fail-closed when set. /healthz stays open. stdio unchanged")
 	preflight := fs.Bool("preflight", false,
-		"print the same honesty JSON as GET /healthz and exit (no listen, no stdio MCP; not tools/list, not ingest)")
+		"print the same JSON as GET /healthz and exit (no listen, no stdio MCP; not tools/list, not ingest)")
 
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {

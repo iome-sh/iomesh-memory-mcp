@@ -2,7 +2,7 @@
 # edge_dogfood_gate.sh — offline residual gate for M3 edge dogfood (s1462).
 #
 # File greps only. No docker daemon, no long-running server, no gcloud.
-# residual PASS ≠ live dogfood · ≠ public flip · ≠ invent Memory GA · dual_write OFF
+# residual PASS ≠ live dogfood · ≠ public flip
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -63,7 +63,7 @@ forbid_needle() {
 }
 
 echo "== edge_dogfood_gate (s1462 M3) offline — $ROOT =="
-echo "   dual_write OFF · not Memory GA · public · dual_write OFF · no docker daemon required"
+echo "   public · PALACE_ROOT · no docker daemon required"
 echo
 
 # --- required surfaces ---
@@ -79,10 +79,10 @@ need_dir  "internal/mcphost"
 need_file "cmd/iomesh-memory-mcp/main.go"
 
 echo
-echo "-- docs/EDGE_DOGFOOD.md honesty + checklist --"
+echo "-- docs/EDGE_DOGFOOD.md checklist --"
 need_needle "docs/EDGE_DOGFOOD.md" "s1462" "serial s1462"
-need_needle "docs/EDGE_DOGFOOD.md" "dual_write OFF|dual_write \*\*OFF\*\*|dual_write OFF" "dual_write OFF"
-need_needle "docs/EDGE_DOGFOOD.md" "not Memory GA" "not Memory GA"
+need_needle "docs/EDGE_DOGFOOD.md" "PALACE_ROOT" "PALACE_ROOT"
+need_needle "docs/EDGE_DOGFOOD.md" "dual_write" "dual_write healthz field"
 need_needle "docs/EDGE_DOGFOOD.md" "public|still private" "public (or historical still private)"
 need_needle "docs/EDGE_DOGFOOD.md" "residual PASS ≠ live dogfood|residual PASS != live dogfood" "residual ≠ live dogfood"
 need_needle "docs/EDGE_DOGFOOD.md" "residual PASS ≠ public flip|residual PASS != public flip" "residual ≠ public flip"
@@ -102,10 +102,10 @@ need_needle "docs/EDGE_DOGFOOD.md" "/mcp" "/mcp path"
 need_needle "docs/EDGE_DOGFOOD.md" "docker compose|Docker Compose" "compose path"
 need_needle "docs/EDGE_DOGFOOD.md" "iomesh-memory-mcp:local" "local image only"
 need_needle "docs/EDGE_DOGFOOD.md" "compose PASS ≠ public registry|compose PASS != public registry" "compose ≠ public registry"
-need_needle "docs/EDGE_DOGFOOD.md" "memory_ingest_turn|ingest" "ingest tool honesty"
-need_needle "docs/EDGE_DOGFOOD.md" "memory_retrieve|retrieve" "retrieve tool honesty"
-need_needle "docs/EDGE_DOGFOOD.md" "memory_list|list" "list tool honesty"
-need_needle "docs/EDGE_DOGFOOD.md" "memory_compact_status|compact_status" "compact_status honesty"
+need_needle "docs/EDGE_DOGFOOD.md" "memory_ingest_turn|ingest" "ingest tool"
+need_needle "docs/EDGE_DOGFOOD.md" "memory_retrieve|retrieve" "retrieve tool"
+need_needle "docs/EDGE_DOGFOOD.md" "memory_list|list" "list tool"
+need_needle "docs/EDGE_DOGFOOD.md" "memory_compact_status|compact_status" "compact_status"
 need_needle "docs/EDGE_DOGFOOD.md" "M4" "M4 later"
 need_needle "docs/EDGE_DOGFOOD.md" "s1463|TUI" "peer TUI s1463 mention"
 need_needle "docs/EDGE_DOGFOOD.md" "s1464" "peer private-plane residual s1464"
@@ -113,35 +113,32 @@ need_needle "docs/EDGE_DOGFOOD.md" "edge-dogfood-gate|edge_dogfood_gate" "gate t
 
 echo
 echo "-- README / Makefile / CHANGELOG --"
-# Public README is consumer-facing; continuum honesty lives in docs/EDGE_DOGFOOD.md
+# Public README is consumer-facing; continuum lives in docs/EDGE_DOGFOOD.md
 need_needle "README.md" "EDGE_DOGFOOD|edge-dogfood-gate|edge dogfood" "README edge dogfood docs pointer"
 need_needle "README.md" "iomesh-memory-mcp" "README naming"
+need_needle "README.md" "PALACE_ROOT" "README PALACE_ROOT"
 need_needle "docs/EDGE_DOGFOOD.md" "s1462" "EDGE_DOGFOOD continuum s1462"
-need_needle "docs/EDGE_DOGFOOD.md" "dual_write OFF|dual_write remains OFF" "EDGE_DOGFOOD dual_write OFF"
-need_needle "docs/EDGE_DOGFOOD.md" "not product Memory GA|not Memory GA" "EDGE_DOGFOOD not Memory GA"
+need_needle "docs/EDGE_DOGFOOD.md" "dual_write" "EDGE_DOGFOOD dual_write field"
 need_needle "Makefile" "edge-dogfood-gate" "Makefile edge-dogfood-gate"
 need_needle "Makefile" "edge_dogfood_gate\\.sh" "Makefile script path"
 need_needle "CHANGELOG.md" "s1462" "CHANGELOG s1462"
 need_needle "CHANGELOG.md" "edge dogfood|EDGE_DOGFOOD|M3" "CHANGELOG M3 edge dogfood"
 
 echo
-echo "-- docker-compose / Dockerfile honesty --"
+echo "-- docker-compose / Dockerfile --"
 need_needle "docker-compose.yml" "iomesh-memory-mcp:local" "compose local image"
-need_needle "docker-compose.yml" "dual_write OFF|dual_write" "compose dual_write"
-need_needle "docker-compose.yml" "not Memory GA|not_memory_ga|Memory GA" "compose not Memory GA"
+need_needle "docker-compose.yml" "PALACE_ROOT" "compose PALACE_ROOT"
 need_needle "docker-compose.yml" "M3|edge dogfood|dogfood" "compose M3 / dogfood comment"
 need_needle "docker-compose.yml" "healthz|/healthz" "compose healthz note"
 need_needle "Dockerfile" "iomesh-memory-mcp" "Dockerfile binary name"
-need_needle "Dockerfile" "dual_write OFF|dual_write" "Dockerfile dual_write"
-need_needle "Dockerfile" "not Memory GA|Memory GA" "Dockerfile not Memory GA"
 
 echo
-echo "-- host layout + dual_write residual in code --"
-need_needle "cmd/iomesh-memory-mcp/main.go" "dual_write|not_memory_ga|not Memory GA" "main honesty"
+echo "-- host layout --"
+need_needle "cmd/iomesh-memory-mcp/main.go" "PALACE_ROOT" "main PALACE_ROOT"
 need_needle "internal/mcphost/host.go" "iomesh-memory-mcp" "ServerName iomesh-memory-mcp"
 need_needle "internal/mcphost/http.go" "healthz|/healthz" "HTTP healthz"
 need_needle "internal/mcphost/http.go" "dual_write" "HTTP dual_write field"
-need_needle "internal/mcphost/tools.go" "dual_write" "tools dual_write"
+need_needle "internal/mcphost/tools.go" "dual_write" "tools dual_write field"
 
 echo
 echo "-- product-codename residual forbid --"
@@ -190,5 +187,5 @@ if [[ "$fail" -ne 0 ]]; then
   exit 1
 fi
 echo "RESULT: PASS (edge_dogfood_gate s1462 — offline residual only)"
-echo "  residual PASS ≠ live dogfood · ≠ public flip · ≠ Memory GA · dual_write OFF"
+echo "  residual PASS ≠ live dogfood · ≠ public flip"
 exit 0

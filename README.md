@@ -32,10 +32,9 @@ local filesystem under PALACE_ROOT/<tenant>/…
 Kernel operator page: [memory `docs/TTFH.md`](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md)
 (three RCA-shaped turns → retrieve in-process → facts-as-of → print `source_hint`).
 Cost-max: **hash embedder**, **no Qdrant**, **no cloud palace**. This host pin
-(`v0.4.1`) and companion TUI pin (`v1.3.6`) are not **E-G1**. **E-G1 is not closed.**
-Cite-both is a TUI session rule (`/memory digest --require-sources mesh,private`);
-honest miss is success; catalog/grant ≠ cite-both; never invent mesh.
-dual_write OFF · **not** Memory GA.
+(`v0.4.1`) and companion TUI pin (`v1.3.6`) match that path.
+Cite-both is a TUI session flag (`/memory digest --require-sources mesh,private`);
+a miss is success; a catalog or grant is not a cite. Never invent mesh.
 
 ## Install
 
@@ -44,8 +43,8 @@ dual_write OFF · **not** Memory GA.
 Pin the latest annotated `v*` GitHub Release:
 [`v0.4.1`](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.4.1).
 `@latest` / floating `main` are not production pins. Default `ServerVersion` is
-`v0.4.1` (GoReleaser ldflags override on tagged assets). **Not** Memory GA.
-Path isolation `PALACE_ROOT/<tenant>/` ≠ cloud multi-tenant. `X-IOMesh-Org` is
+`v0.4.1` (GoReleaser ldflags override on tagged assets).
+Path isolation `PALACE_ROOT/<tenant>/` is not cloud multi-tenant. `X-IOMesh-Org` is
 a mesh-client header; this host does not implement it.
 
 ```bash
@@ -66,7 +65,6 @@ companion TUI pin is [iomesh-tui **v1.3.6**](https://github.com/iome-sh/iomesh-t
 Historical: ingest + digest since [TUI **v1.3.3**](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.3)
 (optional `source_hint` on ingest · `ops_digest_export` mesh+private receipts);
 [`/memory extract`](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.4) since TUI **v1.3.4**.
-dual_write OFF · **not** Memory GA.
 
 ### Tagged releases
 
@@ -88,7 +86,7 @@ make release-snapshot
 ```bash
 export PALACE_ROOT=./data/memory-palaces
 export MEMORY_TENANT=default
-./bin/iomesh-memory-mcp -preflight   # same honesty JSON as GET /healthz; no listen · dual_write=off · not Memory GA
+./bin/iomesh-memory-mcp -preflight   # same JSON as GET /healthz; no listen
 ./bin/iomesh-memory-mcp -palace-root "$PALACE_ROOT" -tenant "$MEMORY_TENANT"
 ```
 
@@ -103,7 +101,7 @@ export MEMORY_TENANT=default
 # :8080 is forced to 127.0.0.1:8080. 0.0.0.0 requires -allow-non-loopback.
 
 curl -fsS http://127.0.0.1:8080/healthz
-# expect dual_write=off · not_memory_ga=true · persist_embeddings=off (default) · qdrant=off · tools>=11 (compile-time)
+# expect persist_embeddings=off (default) · qdrant=off · tools>=11 (compile-time)
 # healthz stays open even if MEMORY_MCP_HTTP_SECRET is set
 ```
 
@@ -126,8 +124,8 @@ url = "http://127.0.0.1:8080/mcp"
 
 ### Other MCP clients (Cursor, Claude Desktop, generic)
 
-No TUI, mesh, or Memory Ops Pack required. Point any MCP client at the same binary
-or HTTP URL. **Not** a partnership claim. **Not** Memory GA.
+No TUI or mesh required. Point any MCP client at the same binary
+or HTTP URL. That is not a partnership claim.
 
 **stdio** (`command` + `args`). Flags match `PALACE_ROOT` / `MEMORY_TENANT`:
 
@@ -167,17 +165,17 @@ the MCP path when set (`X-Memory-MCP-Secret` or `Authorization: Bearer`). Then:
 }
 ```
 
-Probe honesty (`GET /healthz` 200 is not Connected):
+`GET /healthz` 200 means the process is up, not that an MCP client is Connected:
 
 ```bash
 curl -fsS http://127.0.0.1:8080/healthz
-# expect dual_write=off · not_memory_ga=true · embeddings=hash|onnx · persist_embeddings=off (default)
-#   · qdrant=off + residual-honest "tools" (compile-time lean count, >=11) and "tool_names"
+# expect embeddings=hash|onnx · persist_embeddings=off (default)
+#   · qdrant=off + "tools" (compile-time lean count, >=11) and "tool_names"
 #   healthz.tools is compile-time registration, not a live MCP tools/list stamp
 #   persist_embeddings is on only for ONNX + MEMORY_PERSIST_EMBEDDINGS; hash never persists
 ```
 
-Tools exposed after `tools/list` (lean kernel maps; dual_write OFF):
+Tools exposed after `tools/list` (lean kernel maps):
 `memory_ingest_turn`, `memory_extract_facts`, `memory_write`, `memory_retrieve`, `memory_search_semantic`,
 `memory_list`, `memory_compact_status`, `memory_facts_as_of`, `memory_related`,
 `memory_supersede_entity`, `ops_digest_export`.
@@ -187,7 +185,7 @@ Tools exposed after `tools/list` (lean kernel maps; dual_write OFF):
 ```bash
 docker compose up --build
 curl -fsS http://127.0.0.1:8080/healthz
-# expect dual_write=off · not_memory_ga=true · embeddings=hash|onnx · persist_embeddings=off (default) · qdrant=off · tools>=11
+# expect embeddings=hash|onnx · persist_embeddings=off (default) · qdrant=off · tools>=11
 ```
 
 ### Advanced: better semantic recall (optional ONNX)
@@ -209,7 +207,9 @@ Compose (optional env passthrough already works if you set the variable on the h
 MEMORY_ONNX_MODEL_PATH=/absolute/path/to/model docker compose up --build
 ```
 
-**Honesty:** ONNX improves embeddings · dual_write **OFF** · **not** Memory GA · Qdrant still **off** for lean host search · `persist_embeddings` default **off** (ONNX-only opt-in) · optional path ≠ invent platform GPU palace.
+ONNX improves embeddings. Qdrant stays **off** for lean host search.
+`persist_embeddings` defaults **off** (ONNX-only opt-in). Optional ONNX is not a
+platform GPU palace.
 
 ## Configuration
 
@@ -221,7 +221,7 @@ MEMORY_ONNX_MODEL_PATH=/absolute/path/to/model docker compose up --build
 | `-http-path` | `MEMORY_MCP_HTTP_PATH` | `/mcp` | Streamable MCP path (`/healthz` is fixed) |
 | `-allow-non-loopback` | `MEMORY_MCP_HTTP_ALLOW_NON_LOOPBACK` | false | Required to bind `0.0.0.0` / `::` / LAN. Compose/image set this so the published `127.0.0.1:8080` can reach the container. |
 | `-http-secret` | `MEMORY_MCP_HTTP_SECRET` | empty = **off** | Optional shared secret for MCP HTTP. Fail-closed when set. `/healthz` stays open. stdio unchanged. |
-| `-preflight` | — | false | Print the same honesty JSON as `GET /healthz` and exit (no listen, no stdio MCP; `tool_names` = registration, not ingest) |
+| `-preflight` | — | false | Print the same JSON as `GET /healthz` and exit (no listen, no stdio MCP; `tool_names` = registration, not ingest) |
 | (env only) | `MEMORY_ONNX_MODEL_PATH` | empty = **hash** embeddings | Optional ONNX model dir/file for stronger semantic retrieve · see [memory](https://github.com/iome-sh/memory) README |
 | (env only) | `MEMORY_PERSIST_EMBEDDINGS` | unset = **off** | Opt-in ONNX vector persist on palace JSON (`1`/`true`/`on`/`yes`, case-insensitive). Ignored on hash (never persist hash; kernel #45). Does not require Qdrant/usearch. Default path unchanged. |
 | (env only) | `MEMORY_EMBEDDING_STRICT` | unset | When `true`, ONNX errors do not fall back to hash (kernel) |
@@ -233,12 +233,12 @@ MEMORY_ONNX_MODEL_PATH=/absolute/path/to/model docker compose up --build
 
 ## MCP tools
 
-Local palace FS on the operator machine. `tools/list` and `healthz.tool_names` are discovery / compile-time registration — they are **not** ingest. dual_write **OFF** · **not** Memory GA.
+Local palace FS on the operator machine. `tools/list` and `healthz.tool_names` are discovery / compile-time registration — they are **not** ingest.
 
 | Tool | Kernel API | Surface |
 |------|------------|---------|
 | `memory_ingest_turn` | `IngestTurn` | Write local FS (conversation turn). Optional `source_hint` (`mesh` / `private` or kernel-classifiable alias) stamps provenance + `source_hint:<hint>` tag; omit keeps private — do not invent mesh from session id. Host DLP redacts common secret shapes (`ghp_` / `sk-` / …) before write — residual heuristics, not commercial DLP. |
-| `memory_extract_facts` | `ExtractAtomicFacts` + `Write` (`turn_fact` children) | Optional HITL extract-after-persist. Required `tenant` (omit fail-closes) + `memory_id` (parent already on disk). Optional `facts`; omit runs kernel `ExtractAtomicFacts` on a copy. Writes semantic `turn_fact` children; does **not** rewrite/delete the parent and is **not** called from ingest (extract is not a PalaceStore write-gate). dual_write OFF · not NLP · not Memory GA. TUI v1.3.4 ignores unknown tools. |
+| `memory_extract_facts` | `ExtractAtomicFacts` + `Write` (`turn_fact` children) | Optional HITL extract-after-persist. Required `tenant` (omit fail-closes) + `memory_id` (parent already on disk). Optional `facts`; omit runs kernel `ExtractAtomicFacts` on a copy. Writes semantic `turn_fact` children; does **not** rewrite/delete the parent and is **not** called from ingest (extract is not a PalaceStore write-gate). Structural extract, not NLP. TUI v1.3.4 ignores unknown tools. |
 | `memory_write` | `Write` / `WriteAndSupersede` (durable facts; not a conversation turn) | Write local FS (same host DLP as ingest) |
 | `memory_retrieve` | `SearchMemoryWithOptions` | Read/search local FS; does not ingest |
 | `memory_search_semantic` | Hybrid search on semantic tier | Read local FS; does not ingest |
@@ -247,7 +247,7 @@ Local palace FS on the operator machine. `tools/list` and `healthz.tool_names` a
 | `memory_facts_as_of` | `ListFactsAsOf` | List local FS; does not ingest |
 | `memory_related` | `MultiHopRetrieve` (entity BFS lite; not full graph RAG) | Read local FS; does not ingest |
 | `memory_supersede_entity` | `SupersedeEntityFacts` (mutating; HITL stays at the client) | Write local FS (close facts) |
-| `ops_digest_export` | Local `ListMemoryWithOptions` window → receipts (TUI `/memory digest` MCP fallback) | Read/list local FS; does not ingest. Patterns stay empty (insufficient-signal OK). Receipt selection prefers mesh+private diversity when both exist in-window (not newest-`event_time` only); `source_hint=palace_timeline` for local/private; mesh only when the entry is mesh-sourced. Receipts also carry palace `provenance.source_hint` + tags so TUI can classify mesh — never invented. dual_write OFF · not Memory GA · catalog ≠ connected |
+| `ops_digest_export` | Local `ListMemoryWithOptions` window → receipts (TUI `/memory digest` MCP fallback) | Read/list local FS; does not ingest. Patterns stay empty (insufficient-signal OK). Receipt selection prefers mesh+private diversity when both exist in-window (not newest-`event_time` only); `source_hint=palace_timeline` for local/private; mesh only when the entry is mesh-sourced. Receipts also carry palace `provenance.source_hint` + tags so TUI can classify mesh — never invented. |
 
 Server name: **`iomesh-memory-mcp`**. Default version stamp: **`v0.4.1`** (overridden by `make build` / GoReleaser ldflags).
 
@@ -264,8 +264,6 @@ $PALACE_ROOT/
 Isolation is path-based within a single process (`PALACE_ROOT/<tenant>/`). Tool and HTTP calls must pass `tenant`; omit fail-closes and does not write `PALACE_ROOT/default`. Invalid segments (`.`, `..`, separators) stay fail-closed. Path isolation ≠ cloud multi-tenant security. Organization isolation for the I/O Mesh broker is a separate HTTP header (`X-IOMesh-Org`) on mesh clients; this host does not implement that.
 
 **Supported topology:** **one host process per palace root.** Multi-process writers on a shared root remain unsupported (product contract, not a hidden defect). In-process kernel `writeMu` serializes the two shared files; two processes are last-write-wins. HTTP defaults to loopback; optional `MEMORY_MCP_HTTP_SECRET`; unauthenticated HTTP remains the residual when the secret is unset.
-
-dual_write **OFF** · **not** Memory GA.
 
 ## Development
 
@@ -294,10 +292,10 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contributor guide |
 | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community standards |
 | [SUPPORT.md](SUPPORT.md) | Issues, security, support scope |
-| [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) | E3 install matrix · E4 operator dogfood runbook (optional TTFH-shaped path; **E-G1 not closed**) |
-| [memory docs/TTFH.md](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md) | Kernel TTFH walking skeleton · cost-max hash / no Qdrant / no cloud palace · **E-G1 not closed** |
-| [docs/PUBLIC_FLIP_READINESS.md](docs/PUBLIC_FLIP_READINESS.md) | Maintainer residual (flip complete; not operator how-to; public MIT ≠ Memory GA) |
-| [docs/OPEN_SOURCE_AUDIT.md](docs/OPEN_SOURCE_AUDIT.md) | Maintainer OSS process residual (not a product claim; public MIT ≠ Memory GA) |
+| [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) | E3 install matrix · E4 operator dogfood runbook (optional TTFH-shaped path) |
+| [memory docs/TTFH.md](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md) | Kernel TTFH walking skeleton · cost-max hash / no Qdrant / no cloud palace |
+| [docs/PUBLIC_FLIP_READINESS.md](docs/PUBLIC_FLIP_READINESS.md) | Maintainer residual (flip complete; not operator how-to) |
+| [docs/OPEN_SOURCE_AUDIT.md](docs/OPEN_SOURCE_AUDIT.md) | Maintainer OSS process residual (not a product claim) |
 
 ## Related projects
 
@@ -306,7 +304,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 | [memory](https://github.com/iome-sh/memory) | Go memory kernel library |
 | [iomesh-tui](https://github.com/iome-sh/iomesh-tui) | Agent TUI/CLI (MCP client) |
 | [iomesh-client-sdk-go](https://github.com/iome-sh/iomesh-client-sdk-go) | Official Go client for I/O Mesh |
-| [iomesh-client-sdk-python](https://github.com/iome-sh/iomesh-client-sdk-python) | Official Python client for I/O Mesh (**Beta** / pre-1.0 — not invent 1.0 / live PyPI GA) |
+| [iomesh-client-sdk-python](https://github.com/iome-sh/iomesh-client-sdk-python) | Official Python client for I/O Mesh (**Beta** / pre-1.0) |
 
 ## License
 

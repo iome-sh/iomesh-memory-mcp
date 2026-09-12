@@ -70,8 +70,8 @@ func TestIngestRetrieveListRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("semantic: %v", err)
 	}
-	if !strings.Contains(sem.Note, "not Memory GA") {
-		t.Fatalf("semantic note honesty: %q", sem.Note)
+	if !strings.Contains(sem.Note, "semantic_tier_hybrid") || !strings.Contains(sem.Note, "Qdrant not wired") {
+		t.Fatalf("semantic note: %q", sem.Note)
 	}
 
 	_, facts, err := h.handleFactsAsOf(ctx, nil, factsAsOfInput{
@@ -465,8 +465,8 @@ func TestRelatedAndSupersedeEntity(t *testing.T) {
 	if !found {
 		t.Fatalf("related missed written fact; got %+v", rel.Memories)
 	}
-	if !strings.Contains(rel.Note, "not Memory GA") {
-		t.Fatalf("related note honesty: %q", rel.Note)
+	if !strings.Contains(rel.Note, "multi-hop lite") || !strings.Contains(rel.Note, "not full graph RAG") {
+		t.Fatalf("related note: %q", rel.Note)
 	}
 
 	_, empty, err := h.handleRelated(ctx, nil, relatedInput{})
@@ -1178,8 +1178,8 @@ func TestExtractFactsAfterIngestWritesFacts(t *testing.T) {
 	if out.FactsWritten != 1 {
 		t.Fatalf("facts_written=%d want 1 (blank HITL rows skipped): %+v", out.FactsWritten, out)
 	}
-	if !strings.Contains(out.Note, "not NLP") || !strings.Contains(out.Note, "not Memory GA") {
-		t.Fatalf("note honesty: %q", out.Note)
+	if !strings.Contains(out.Note, "not NLP") || !strings.Contains(out.Note, "structural extract") {
+		t.Fatalf("extract note: %q", out.Note)
 	}
 
 	parentAfter, ok := loadEntryAcrossTiers(ps, ingested.MemoryID)

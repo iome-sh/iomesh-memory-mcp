@@ -1,20 +1,20 @@
 # Contributing
 
 Thanks for helping improve **iomesh-memory-mcp** (lean edge Memory MCP host).
-Please treat quality, security, honesty locks, and tests as first-class.
+Please treat quality, security, and tests as first-class.
 
 ## What this repo is
 
 - **Edge MCP host** — stdio or streamable HTTP tools over `github.com/iome-sh/memory` Palace FS  
-- **Naming honesty** — binary/image **`iomesh-memory-mcp`**  
-- **dual_write OFF** by default · **not product Memory GA**  
+- **Naming** — binary/image **`iomesh-memory-mcp`**  
+- Mesh audit publish (`dual_write`) stays **off** by default  
 - **Does not import** private control-plane / broker packages  
 - Private control plane / broker / INSTALL_STORE / billing stay out of this tree  
 
 This repository is **public** (MIT). The kernel (`github.com/iome-sh/memory`) is
 also public. `GOPRIVATE` / a GitHub token are **not** required to clone, test, or
 `go install` this host. Maintainers may still set `GOPRIVATE` for other private
-org modules. residual PASS ≠ invent Memory GA. Maintainer process residuals
+org modules. Maintainer process residuals
 ([docs/OPEN_SOURCE_AUDIT.md](docs/OPEN_SOURCE_AUDIT.md),
 [docs/PUBLIC_FLIP_READINESS.md](docs/PUBLIC_FLIP_READINESS.md)) are **not**
 operator how-tos — the visibility flip is already complete.
@@ -50,7 +50,7 @@ make release-snapshot           # local GoReleaser snapshot (needs goreleaser + 
 
 - **Lean host** — tools and HTTP surface stay small; prefer kernel APIs over re-implementing Palace  
 - **Does not import private control-plane / broker packages** — do not pull private control-plane or broker modules into this tree  
-- **Honesty locks** — dual_write OFF by default; do not invent Memory GA; product name is **iomesh-memory-mcp**  
+- Product name is **iomesh-memory-mcp**; mesh audit publish stays off by default  
 - **Fail closed** on empty palace root, omitted tool tenant, and bad paths; tenant isolation is path-based only (document residuals)  
 - Prefer small, focused PRs with tests for new tool/HTTP behavior  
 - Run `gofmt` (or `make fmt`) before commit  
@@ -59,8 +59,8 @@ make release-snapshot           # local GoReleaser snapshot (needs goreleaser + 
 
 | Package / surface | Focus |
 |-------------------|--------|
-| `internal/mcphost` tools | Temp palace dirs; ingest / retrieve / list / facts_as_of honesty |
-| `internal/mcphost` HTTP | `/healthz` dual_write=off · not_memory_ga · tools count · version stamp · loopback bind · optional shared secret |
+| `internal/mcphost` tools | Temp palace dirs; ingest / retrieve / list / facts_as_of |
+| `internal/mcphost` HTTP | `/healthz` `dual_write` field · tools count · version stamp · loopback bind · optional shared secret |
 | `internal/mcphost` DLP | ingest/write redact `ghp_` / `sk-` before palace write |
 | CLI / flags | stdio vs HTTP mode selection; `MEMORY_MCP_*` only (no leftover product-plane env aliases) |
 
@@ -88,7 +88,7 @@ Report vulnerabilities privately — see [SECURITY.md](SECURITY.md). **Do not op
 **This repository is public.** Keep private program material out of the tree and PR surface:
 
 - Do **not** put private monorepo paths (private control-plane clone/build instructions), internal pending-todos, or unpublished stage URLs in PRs, docs, or CHANGELOG  
-- Do **not** invent **Memory GA**, dual_write ON by default, or full platform sidecar parity with a private control-plane sidecar  
+- Do **not** turn on mesh audit publish by default, or claim full platform sidecar parity with a private control-plane sidecar  
 - Do **not** put private ledger serials (`s###`) in PR titles, commit subjects, or CHANGELOG user-facing notes (internal continuum stamps stay in private process only)  
 - Prefer **I/O Mesh / edge Memory MCP** product language over private control-plane / broker codenames in new docs  
 - Binary/image names operators run (**`iomesh-memory-mcp`**, `ghcr.io/iome-sh/iomesh-memory-mcp`) may appear when documenting install/wire-up  
@@ -103,8 +103,8 @@ Historical readiness residuals may still mention serial stamps; they are maintai
 - Ensure CI is green  
 - Do not commit API keys, `.env`, or palace data  
 - Update [CHANGELOG.md](CHANGELOG.md) **Unreleased** for user-visible changes  
-- Keep honesty locks intact (`dual_write=off`, `not_memory_ga`, naming **iomesh-memory-mcp**, does not import private control-plane/broker packages)  
-- Follow **Public repository policy** above (no private control-plane build paths; no invent Memory GA)  
+- Keep naming **iomesh-memory-mcp**; do not import private control-plane/broker packages  
+- Follow **Public repository policy** above (no private control-plane build paths)  
 
 ### CI on PR and merge
 
@@ -154,8 +154,7 @@ Tenant layout: `filepath.Join(palaceRoot, tenant)` as Palace `BaseDir`.
 
 ## Out of scope here
 
-- Enabling dual_write / private control-plane audit by default  
-- Inventing Memory GA  
+- Enabling mesh audit publish / private control-plane audit by default  
 - Requiring Qdrant/ONNX for default path  
 - Importing private control-plane / broker packages  
 - Inventing a GitHub token / `GOPRIVATE` requirement for this public host + kernel  
