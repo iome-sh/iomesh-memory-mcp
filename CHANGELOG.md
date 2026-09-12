@@ -7,11 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] — 2026-09-12
+
+Kernel pin **v1.5.11** + optional ONNX `PersistEmbeddings` (#72). dual_write OFF · not Memory GA · persist default off · hash never stored.
+
 ### Added
-- **Optional ONNX `PersistEmbeddings`:** env `MEMORY_PERSIST_EMBEDDINGS` (`1`/`true`/`on`/`yes`, case-insensitive) default **off**. `PalaceConfig.PersistEmbeddings` is true only when embeddings are **onnx** and the env is on. Hash never persists (kernel #45). `GET /healthz` reports `persist_embeddings` (`off`|`on`). Does not require Qdrant/usearch. Default write path unchanged. dual_write OFF · not Memory GA · catalog ≠ Connected.
+- **Optional ONNX `PersistEmbeddings` (#72):** env `MEMORY_PERSIST_EMBEDDINGS` (`1`/`true`/`on`/`yes`, case-insensitive) default **off**. `PalaceConfig.PersistEmbeddings` is true only when embeddings are **onnx** and the env is on. Hash never persists (kernel #45). `GET /healthz` reports `persist_embeddings` (`off`|`on`). Does not require Qdrant/usearch. Default write path unchanged. dual_write OFF · not Memory GA · catalog ≠ Connected.
 
 ### Changed
-- **Kernel pin:** `github.com/iome-sh/memory` annotated **`v1.5.10`** → annotated **`v1.5.11`** (optional ONNX vector persist, default off). dual_write OFF · not Memory GA · catalog ≠ Connected.
+- **Kernel pin (#72):** `github.com/iome-sh/memory` annotated **`v1.5.10`** → annotated **`v1.5.11`** (optional ONNX vector persist, default off). dual_write OFF · not Memory GA · catalog ≠ Connected.
 
 ## [0.4.0] — 2026-09-12
 
@@ -182,7 +186,8 @@ dual_write OFF · not Memory GA.
   - **Repository remains private** until a deliberate visibility flip
   - dual_write **OFF** · not product Memory GA · private control plane / broker stays out of this tree · no default Qdrant/ONNX requirement
 
-[Unreleased]: https://github.com/iome-sh/iomesh-memory-mcp/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-memory-mcp/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/iome-sh/iomesh-memory-mcp/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/iome-sh/iomesh-memory-mcp/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/iome-sh/iomesh-memory-mcp/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/iome-sh/iomesh-memory-mcp/compare/v0.3.0...v0.3.1
