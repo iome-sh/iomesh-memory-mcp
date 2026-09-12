@@ -32,14 +32,14 @@ local filesystem under PALACE_ROOT/<tenant>/…
 ### From source
 
 Pin the latest annotated `v*` GitHub Release:
-[`v0.3.0`](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.3.0).
+[`v0.3.2`](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.3.2).
 `@latest` / floating `main` are not production pins. Default `ServerVersion` is
-`v0.3.0` (GoReleaser ldflags override on tagged assets). **Not** Memory GA.
+`v0.3.2` (GoReleaser ldflags override on tagged assets). **Not** Memory GA.
 Path isolation `PALACE_ROOT/<tenant>/` ≠ cloud multi-tenant. `X-IOMesh-Org` is
 a mesh-client header; this host does not implement it.
 
 ```bash
-go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.3.0
+go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.3.2
 ```
 
 ### Build from a clone
@@ -51,8 +51,10 @@ make build   # → bin/iomesh-memory-mcp
 ```
 
 Requires the Go version in [`go.mod`](go.mod). The kernel dependency is public
-`github.com/iome-sh/memory` **v1.5.8** (annotated tag; not the Aug-16
-`v1.5.8-0.20260816…` pseudo). dual_write OFF · **not** Memory GA.
+`github.com/iome-sh/memory` **v1.5.10** (annotated tag; `go.mod` pin). Compatible
+with [iomesh-tui **v1.3.3**](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.3)
+(optional `source_hint` on ingest · `ops_digest_export` mesh+private receipts).
+dual_write OFF · **not** Memory GA.
 
 ### Tagged releases
 
@@ -232,7 +234,7 @@ Local palace FS on the operator machine. `tools/list` and `healthz.tool_names` a
 | `memory_supersede_entity` | `SupersedeEntityFacts` (mutating; HITL stays at the client) | Write local FS (close facts) |
 | `ops_digest_export` | Local `ListMemoryWithOptions` window → receipts (TUI `/memory digest` MCP fallback) | Read/list local FS; does not ingest. Patterns stay empty (insufficient-signal OK). Receipt selection prefers mesh+private diversity when both exist in-window (not newest-`event_time` only); `source_hint=palace_timeline` for local/private; mesh only when the entry is mesh-sourced. Receipts also carry palace `provenance.source_hint` + tags so TUI can classify mesh — never invented. dual_write OFF · not Memory GA · catalog ≠ connected |
 
-Server name: **`iomesh-memory-mcp`**. Default version stamp: **`v0.3.0`** (overridden by `make build` / GoReleaser ldflags).
+Server name: **`iomesh-memory-mcp`**. Default version stamp: **`v0.3.2`** (overridden by `make build` / GoReleaser ldflags).
 
 ## Tenant layout
 
@@ -244,7 +246,11 @@ $PALACE_ROOT/
     …
 ```
 
-Isolation is path-based within a single process (`PALACE_ROOT/<tenant>/`). Tool and HTTP calls must pass `tenant`; omit fail-closes and does not write `PALACE_ROOT/default`. Invalid segments (`.`, `..`, separators) stay fail-closed. Path isolation ≠ cloud multi-tenant security. Organization isolation for the I/O Mesh broker is a separate HTTP header (`X-IOMesh-Org`) on mesh clients; this host does not implement that. dual_write **OFF** · **not** Memory GA.
+Isolation is path-based within a single process (`PALACE_ROOT/<tenant>/`). Tool and HTTP calls must pass `tenant`; omit fail-closes and does not write `PALACE_ROOT/default`. Invalid segments (`.`, `..`, separators) stay fail-closed. Path isolation ≠ cloud multi-tenant security. Organization isolation for the I/O Mesh broker is a separate HTTP header (`X-IOMesh-Org`) on mesh clients; this host does not implement that.
+
+**Supported topology:** **one host process per palace root.** Multi-process writers on a shared root remain unsupported (product contract, not a hidden defect). In-process kernel `writeMu` serializes the two shared files; two processes are last-write-wins. HTTP defaults to loopback; optional `MEMORY_MCP_HTTP_SECRET`; unauthenticated HTTP remains the residual when the secret is unset.
+
+dual_write **OFF** · **not** Memory GA.
 
 ## Development
 
