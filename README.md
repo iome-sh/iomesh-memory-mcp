@@ -32,7 +32,7 @@ local filesystem under PALACE_ROOT/<tenant>/…
 Kernel operator page: [memory `docs/TTFH.md`](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md)
 (three RCA-shaped turns → retrieve in-process → facts-as-of → print `source_hint`).
 Cost-max: **hash embedder**, **no Qdrant**, **no cloud palace**. This host pin
-(`v0.4.1`) and companion TUI pin (`v1.3.6`) match that path.
+(`v0.4.2`) and companion TUI pin (`v1.3.6`) match that path.
 Cite-both is a TUI session flag (`/memory digest --require-sources mesh,private`);
 a miss is success; a catalog or grant is not a cite. Never invent mesh.
 
@@ -41,14 +41,14 @@ a miss is success; a catalog or grant is not a cite. Never invent mesh.
 ### From source
 
 Pin the latest annotated `v*` GitHub Release:
-[`v0.4.1`](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.4.1).
+[`v0.4.2`](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.4.2).
 `@latest` / floating `main` are not production pins. Default `ServerVersion` is
-`v0.4.1` (GoReleaser ldflags override on tagged assets).
+`v0.4.2` (GoReleaser ldflags override on tagged assets).
 Path isolation `PALACE_ROOT/<tenant>/` is not cloud multi-tenant. `X-IOMesh-Org` is
 a mesh-client header; this host does not implement it.
 
 ```bash
-go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.1
+go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.2
 ```
 
 ### Build from a clone
@@ -60,7 +60,7 @@ make build   # → bin/iomesh-memory-mcp
 ```
 
 Requires the Go version in [`go.mod`](go.mod). The kernel dependency is public
-`github.com/iome-sh/memory` **v1.5.11** (annotated tag; `go.mod` pin). Current
+`github.com/iome-sh/memory` **v1.5.12** (annotated tag; `go.mod` pin). Current
 companion TUI pin is [iomesh-tui **v1.3.6**](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.6).
 Historical: ingest + digest since [TUI **v1.3.3**](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.3)
 (optional `source_hint` on ingest · `ops_digest_export` mesh+private receipts);
@@ -249,7 +249,7 @@ Local palace FS on the operator machine. `tools/list` and `healthz.tool_names` a
 | `memory_supersede_entity` | `SupersedeEntityFacts` (mutating; HITL stays at the client) | Write local FS (close facts) |
 | `ops_digest_export` | Local `ListMemoryWithOptions` window → receipts (TUI `/memory digest` MCP fallback) | Read/list local FS; does not ingest. Patterns stay empty (insufficient-signal OK). Receipt selection prefers mesh+private diversity when both exist in-window (not newest-`event_time` only); `source_hint=palace_timeline` for local/private; mesh only when the entry is mesh-sourced. Receipts also carry palace `provenance.source_hint` + tags so TUI can classify mesh — never invented. |
 
-Server name: **`iomesh-memory-mcp`**. Default version stamp: **`v0.4.1`** (overridden by `make build` / GoReleaser ldflags).
+Server name: **`iomesh-memory-mcp`**. Default version stamp: **`v0.4.2`** (overridden by `make build` / GoReleaser ldflags).
 
 ## Tenant layout
 
