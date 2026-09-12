@@ -64,8 +64,8 @@ Supported install / attach surfaces for the **local-primary** edge host. All pat
 ### Install options
 
 ```bash
-# operator pin — annotated GitHub Release v0.4.1
-go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.1
+# operator pin — annotated GitHub Release v0.4.2
+go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.2
 
 # from clone
 git clone https://github.com/iome-sh/iomesh-memory-mcp.git

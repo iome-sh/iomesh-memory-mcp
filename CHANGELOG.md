@@ -7,17 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- **TTFH walking-skeleton pointer:** README + EDGE_DOGFOOD E4.3 point at kernel [`docs/TTFH.md`](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md). Optional RCA-shaped ingest path (local overlay **private**; never invent mesh); retrieve / facts-as-of print `source_hint`; cite-both is a TUI session flag (`/memory digest --require-sources mesh,private`) over `ops_digest_export` receipts — a miss is success; catalog/grant is not cite-both. Cost-max: hash embedder, no Qdrant, no cloud palace.
-- **E4 optional extract surface:** EDGE_DOGFOOD optional table lists `memory_extract_facts` (HITL extract-after-persist; not a PalaceStore write-gate; not required for E4).
+## [0.4.2] — 2026-09-12
+
+Kernel pin **v1.5.12** (T1 multi-session retrieve + count assembly). Persist default off · hash never stored.
 
 ### Changed
-- **Operator pin:** EDGE_DOGFOOD install uses annotated **`v0.4.1`** (`go install …@v0.4.1`); drop “no annotated v* release yet”. `@main` remains a labeled non-pin tip.
-- **Companion TUI pin:** README names current companion TUI **v1.3.6** (keep history: ingest+digest since v1.3.3; `/memory extract` since v1.3.4).
-- **E4.4 healthz:** compile-time lean `tools` currently **>= 11** (including extract); expect `persist_embeddings` default **off** (hash never persists). s1509 TUI attach `tools=6` stays historical — do not restamp as live forever-green.
-- **Public-docs:** `docs/PUBLIC_FLIP_READINESS.md` and `docs/OPEN_SOURCE_AUDIT.md` marked maintainer residuals (flip complete; not operator how-tos). README / CONTRIBUTING qualify those files. EDGE_DOGFOOD serials remain historical engineering pins, not a product ledger.
-- **Public-docs:** `docs/EDGE_DOGFOOD_EVIDENCE.md` marked a maintainer residual (local evidence log; not operator how-to; not a product claim). residual PASS ≠ live dogfood.
-- **Operator copy:** README, support/release docs, and host comments describe the lean local MCP host. Tool notes stay technical (local FS, hash/ONNX, no Qdrant). `-preflight` / `GET /healthz` JSON shape is unchanged.
+- **Kernel pin:** `github.com/iome-sh/memory` annotated **`v1.5.11`** → annotated **`v1.5.12`** (T1 `SessionIDs` / `conv:` tags / count-query assembly; LME harness batch retrieve). Library `PersistEmbeddings` still default **off**. Hash never persisted.
+- **Operator pin:** install / `ServerVersion` **v0.4.2**. Companion TUI pin remains **v1.3.6** until the TUI pin-bump tag. `@main` is not a production pin.
+- **TTFH walking-skeleton pointer:** README + EDGE_DOGFOOD E4.3 point at kernel [`docs/TTFH.md`](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md). Local overlay **private**; never invent mesh. Cite-both is a TUI session flag; a miss is success.
+- **Public-docs / operator copy:** maintainer residuals marked; lean host comments stay technical (local FS, hash/ONNX, no Qdrant). E4 optional table lists `memory_extract_facts` (HITL; not a PalaceStore write-gate).
 
 ## [0.4.1] — 2026-09-12
 
@@ -198,7 +196,8 @@ dual_write OFF · not Memory GA.
   - **Repository remains private** until a deliberate visibility flip
   - dual_write **OFF** · not product Memory GA · private control plane / broker stays out of this tree · no default Qdrant/ONNX requirement
 
-[Unreleased]: https://github.com/iome-sh/iomesh-memory-mcp/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-memory-mcp/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/iome-sh/iomesh-memory-mcp/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/iome-sh/iomesh-memory-mcp/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/iome-sh/iomesh-memory-mcp/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/iome-sh/iomesh-memory-mcp/compare/v0.3.1...v0.3.2
