@@ -1,6 +1,7 @@
 # iomesh-memory-mcp
 
 [![ci](https://github.com/iome-sh/iomesh-memory-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/iome-sh/iomesh-memory-mcp/actions/workflows/ci.yml)
+[![GitHub release](https://img.shields.io/github/v/release/iome-sh/iomesh-memory-mcp)](https://github.com/iome-sh/iomesh-memory-mcp/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Go Reference](https://pkg.go.dev/badge/github.com/iome-sh/iomesh-memory-mcp.svg)](https://pkg.go.dev/github.com/iome-sh/iomesh-memory-mcp)
 
@@ -19,37 +20,34 @@ github.com/iome-sh/memory  (PalaceStore)
 local filesystem under PALACE_ROOT/<tenant>/…
 ```
 
-## Features
+This host does not dual-write to a mesh. Persist embeddings default **off**; hash embeddings are never stored.
 
-- **stdio or HTTP** — default stdio for local clients; optional streamable HTTP + `GET /healthz` (HTTP defaults to loopback; optional shared secret)
-- **Local-first** — durable data under `PALACE_ROOT` on disk
-- **Thin host** — tools map to the public `github.com/iome-sh/memory` API
-- **Tenant paths** — one process, filesystem isolation by tenant subdirectory
-- **Releases** — multi-platform binaries via GoReleaser (SBOM + keyless cosign on checksums)
+## Contents
 
-## TTFH walking skeleton
-
-Kernel operator page: [memory `docs/TTFH.md`](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md)
-(three RCA-shaped turns → retrieve in-process → facts-as-of → print `source_hint`).
-Cost-max: **hash embedder**, **no Qdrant**, **no cloud palace**. This host pin
-(`v0.4.2`) and companion TUI pin (`v1.3.6`) match that path.
-Cite-both is a TUI session flag (`/memory digest --require-sources mesh,private`);
-a miss is success; a catalog or grant is not a cite. Never invent mesh.
+- [Install](#install)
+- [Quick start](#quick-start)
+- [Configuration](#configuration)
+- [MCP tools](#mcp-tools)
+- [Tenant layout](#tenant-layout)
+- [Development](#development)
+- [Documentation](#documentation)
+- [Related projects](#related-projects)
+- [License](#license)
 
 ## Install
 
-### From source
-
-Pin the latest annotated `v*` GitHub Release:
-[`v0.4.2`](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.4.2).
+Pin the latest annotated GitHub Release:
+**[v0.4.2](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.4.2)**.
 `@latest` / floating `main` are not production pins. Default `ServerVersion` is
 `v0.4.2` (GoReleaser ldflags override on tagged assets).
-Path isolation `PALACE_ROOT/<tenant>/` is not cloud multi-tenant. `X-IOMesh-Org` is
-a mesh-client header; this host does not implement it.
 
 ```bash
 go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.2
 ```
+
+Requires the Go version in [`go.mod`](go.mod). Put `$(go env GOPATH)/bin` on `PATH`.
+Kernel: [`github.com/iome-sh/memory` **v1.5.12**](https://github.com/iome-sh/memory/releases/tag/v1.5.12).
+Companion TUI: [iomesh-tui **v1.3.7**](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.7).
 
 ### Build from a clone
 
@@ -59,19 +57,12 @@ cd iomesh-memory-mcp
 make build   # → bin/iomesh-memory-mcp
 ```
 
-Requires the Go version in [`go.mod`](go.mod). The kernel dependency is public
-`github.com/iome-sh/memory` **v1.5.12** (annotated tag; `go.mod` pin). Current
-companion TUI pin is [iomesh-tui **v1.3.6**](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.6).
-Historical: ingest + digest since [TUI **v1.3.3**](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.3)
-(optional `source_hint` on ingest · `ops_digest_export` mesh+private receipts);
-[`/memory extract`](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.4) since TUI **v1.3.4**.
+### GitHub Releases
 
-### Tagged releases
-
-[`v0.1.0`](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.1.0) is
-the first annotated `v*` GitHub Release. Later annotated `v*` tags run
-[`.github/workflows/release.yml`](.github/workflows/release.yml). See
-[RELEASING.md](RELEASING.md) for the checklist and signing matrix.
+Multi-platform archives (linux/darwin/windows; amd64 + arm64 except Windows arm64)
+are on the [v0.4.2](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.4.2)
+release. Checksums are keyless-cosign signed; each archive has an SPDX SBOM.
+See [RELEASING.md](RELEASING.md).
 
 Local dry-run (needs `goreleaser` + `syft` on `PATH`):
 
@@ -81,19 +72,19 @@ make release-snapshot
 
 ## Quick start
 
-### Stdio (local MCP client)
+### Stdio + healthz (30 seconds)
 
 ```bash
 export PALACE_ROOT=./data/memory-palaces
 export MEMORY_TENANT=default
-./bin/iomesh-memory-mcp -preflight   # same JSON as GET /healthz; no listen
-./bin/iomesh-memory-mcp -palace-root "$PALACE_ROOT" -tenant "$MEMORY_TENANT"
+iomesh-memory-mcp -preflight   # same JSON as GET /healthz; no listen
+iomesh-memory-mcp -palace-root "$PALACE_ROOT" -tenant "$MEMORY_TENANT"
 ```
 
-### HTTP (streamable MCP + health)
+HTTP (streamable MCP + health):
 
 ```bash
-./bin/iomesh-memory-mcp \
+iomesh-memory-mcp \
   -palace-root ./data/memory-palaces \
   -tenant default \
   -http-addr :8080 \
@@ -101,31 +92,13 @@ export MEMORY_TENANT=default
 # :8080 is forced to 127.0.0.1:8080. 0.0.0.0 requires -allow-non-loopback.
 
 curl -fsS http://127.0.0.1:8080/healthz
-# expect persist_embeddings=off (default) · qdrant=off · tools>=11 (compile-time)
-# healthz stays open even if MEMORY_MCP_HTTP_SECRET is set
+# persist_embeddings=off (default) · qdrant=off · tools>=11 (compile-time)
+# /healthz stays open even if MEMORY_MCP_HTTP_SECRET is set
 ```
 
-### Client config example (TUI)
+### Cursor / Claude Desktop
 
-[iomesh-tui](https://github.com/iome-sh/iomesh-tui) TOML:
-
-```toml
-[[mcp.servers]]
-name = "iomesh-memory-mcp"
-command = "/path/to/iomesh-memory-mcp"
-args = ["-palace-root", "/path/to/memory-palaces", "-tenant", "default"]
-```
-
-HTTP (when the client supports a URL transport):
-
-```text
-url = "http://127.0.0.1:8080/mcp"
-```
-
-### Other MCP clients (Cursor, Claude Desktop, generic)
-
-No TUI or mesh required. Point any MCP client at the same binary
-or HTTP URL. That is not a partnership claim.
+No TUI required. Point any MCP client at the binary (stdio) or HTTP URL.
 
 **stdio** (`command` + `args`). Flags match `PALACE_ROOT` / `MEMORY_TENANT`:
 
@@ -148,12 +121,12 @@ or HTTP URL. That is not a partnership claim.
 ```
 
 Put that block in the client’s MCP config (`~/.cursor/mcp.json`, Claude Desktop
-`claude_desktop_config.json`, or equivalent). `command` can be an absolute path
-if `iomesh-memory-mcp` is not on `PATH`.
+`claude_desktop_config.json`, or equivalent). Use an absolute `command` if
+`iomesh-memory-mcp` is not on `PATH`.
 
-**HTTP** (streamable MCP). Start the host with `-http-addr :8080 -http-path /mcp`
-(`:8080` binds `127.0.0.1:8080`). Optional `MEMORY_MCP_HTTP_SECRET` fail-closes
-the MCP path when set (`X-Memory-MCP-Secret` or `Authorization: Bearer`). Then:
+**HTTP** (streamable MCP). Start the host with `-http-addr :8080 -http-path /mcp`.
+Optional `MEMORY_MCP_HTTP_SECRET` fail-closes the MCP path when set
+(`X-Memory-MCP-Secret` or `Authorization: Bearer`). Then:
 
 ```json
 {
@@ -165,91 +138,100 @@ the MCP path when set (`X-Memory-MCP-Secret` or `Authorization: Bearer`). Then:
 }
 ```
 
-`GET /healthz` 200 means the process is up, not that an MCP client is Connected:
+`GET /healthz` 200 means the process is up. `tools` / `tool_names` are compile-time
+registration, not a live MCP `tools/list`.
 
-```bash
-curl -fsS http://127.0.0.1:8080/healthz
-# expect embeddings=hash|onnx · persist_embeddings=off (default)
-#   · qdrant=off + "tools" (compile-time lean count, >=11) and "tool_names"
-#   healthz.tools is compile-time registration, not a live MCP tools/list stamp
-#   persist_embeddings is on only for ONNX + MEMORY_PERSIST_EMBEDDINGS; hash never persists
+### iomesh-tui
+
+[iomesh-tui](https://github.com/iome-sh/iomesh-tui) TOML:
+
+```toml
+[[mcp.servers]]
+name = "iomesh-memory-mcp"
+command = "/path/to/iomesh-memory-mcp"
+args = ["-palace-root", "/path/to/memory-palaces", "-tenant", "default"]
 ```
 
-Tools exposed after `tools/list` (lean kernel maps):
-`memory_ingest_turn`, `memory_extract_facts`, `memory_write`, `memory_retrieve`, `memory_search_semantic`,
-`memory_list`, `memory_compact_status`, `memory_facts_as_of`, `memory_related`,
-`memory_supersede_entity`, `ops_digest_export`.
+HTTP (when the client supports a URL transport):
+
+```text
+url = "http://127.0.0.1:8080/mcp"
+```
+
+Cite-both is a TUI session flag (`/memory digest --require-sources mesh,private`).
 
 ### Docker Compose
 
 ```bash
 docker compose up --build
 curl -fsS http://127.0.0.1:8080/healthz
-# expect embeddings=hash|onnx · persist_embeddings=off (default) · qdrant=off · tools>=11
 ```
 
-### Advanced: better semantic recall (optional ONNX)
+### Optional ONNX (better semantic recall)
 
 Default path needs **no** Qdrant and **no** ONNX. To maximize hybrid/semantic quality:
 
 ```bash
 # From a checkout of github.com/iome-sh/memory (public):
 go run ./scripts/download_onnx_model.go
-# then point the host at the model directory/file:
 export MEMORY_ONNX_MODEL_PATH=/path/to/model   # hugot model dir or .onnx file
 iomesh-memory-mcp -palace-root ./data/memory-palaces -tenant default -http-addr :8080
 curl -fsS http://127.0.0.1:8080/healthz   # embeddings should report "onnx" when load succeeds
 ```
 
-Compose (optional env passthrough already works if you set the variable on the host):
+Compose passthrough:
 
 ```bash
 MEMORY_ONNX_MODEL_PATH=/absolute/path/to/model docker compose up --build
 ```
 
-ONNX improves embeddings. Qdrant stays **off** for lean host search.
-`persist_embeddings` defaults **off** (ONNX-only opt-in). Optional ONNX is not a
-platform GPU palace.
+`persist_embeddings` is **on** only for ONNX + `MEMORY_PERSIST_EMBEDDINGS`; hash never persists.
 
 ## Configuration
 
 | Flag | Environment | Default | Notes |
 |------|-------------|---------|--------|
 | `-palace-root` | `PALACE_ROOT` | `./data/memory-palaces` (or `/data/memory-palaces` in image) | Base directory for tenants |
-| `-tenant` | `MEMORY_TENANT` | empty | Process label only (validated if set). Tool `tenant` is required; omit fail-closes (does not write `PALACE_ROOT/default`) |
+| `-tenant` | `MEMORY_TENANT` | empty | Process label only (validated if set). Tool `tenant` is required; omit fail-closes |
 | `-http-addr` | `MEMORY_MCP_HTTP_ADDR` | empty = **stdio** | e.g. `:8080` (forced to `127.0.0.1:8080`) |
 | `-http-path` | `MEMORY_MCP_HTTP_PATH` | `/mcp` | Streamable MCP path (`/healthz` is fixed) |
-| `-allow-non-loopback` | `MEMORY_MCP_HTTP_ALLOW_NON_LOOPBACK` | false | Required to bind `0.0.0.0` / `::` / LAN. Compose/image set this so the published `127.0.0.1:8080` can reach the container. |
-| `-http-secret` | `MEMORY_MCP_HTTP_SECRET` | empty = **off** | Optional shared secret for MCP HTTP. Fail-closed when set. `/healthz` stays open. stdio unchanged. |
-| `-preflight` | — | false | Print the same JSON as `GET /healthz` and exit (no listen, no stdio MCP; `tool_names` = registration, not ingest) |
-| (env only) | `MEMORY_ONNX_MODEL_PATH` | empty = **hash** embeddings | Optional ONNX model dir/file for stronger semantic retrieve · see [memory](https://github.com/iome-sh/memory) README |
-| (env only) | `MEMORY_PERSIST_EMBEDDINGS` | unset = **off** | Opt-in ONNX vector persist on palace JSON (`1`/`true`/`on`/`yes`, case-insensitive). Ignored on hash (never persist hash; kernel #45). Does not require Qdrant/usearch. Default path unchanged. |
-| (env only) | `MEMORY_EMBEDDING_STRICT` | unset | When `true`, ONNX errors do not fall back to hash (kernel) |
+| `-allow-non-loopback` | `MEMORY_MCP_HTTP_ALLOW_NON_LOOPBACK` | false | Required to bind `0.0.0.0` / `::` / LAN. Compose/image set this so host publish `127.0.0.1:8080` can reach the container |
+| `-http-secret` | `MEMORY_MCP_HTTP_SECRET` | empty = **off** | Optional shared secret for MCP HTTP. Fail-closed when set. `/healthz` stays open |
+| `-preflight` | — | false | Print the same JSON as `GET /healthz` and exit (no listen, no stdio MCP) |
+| (env only) | `MEMORY_ONNX_MODEL_PATH` | empty = **hash** embeddings | Optional ONNX model dir/file · see [memory](https://github.com/iome-sh/memory) |
+| (env only) | `MEMORY_PERSIST_EMBEDDINGS` | unset = **off** | Opt-in ONNX vector persist (`1`/`true`/`on`/`yes`, case-insensitive). Ignored on hash (never persist hash) |
+| (env only) | `MEMORY_EMBEDDING_STRICT` | unset | When `true`, ONNX errors do not fall back to hash |
 | (env only) | `MEMORY_HUGOT_BACKEND` | `go` | Kernel hugot backend (`go` / `ort` / `auto`) |
 
-**Embeddings:** default is **hash** (no extra deps). Set `MEMORY_ONNX_MODEL_PATH` to maximize semantic `/memory semantic` and hybrid retrieve quality in clients such as `iomesh-tui`. `MEMORY_PERSIST_EMBEDDINGS` is **off** unless you opt in **and** embeddings are ONNX. Hash embeddings are **never** persisted.
+Default embeddings are **hash** (no extra deps). Set `MEMORY_ONNX_MODEL_PATH` for stronger
+semantic retrieve. `MEMORY_PERSIST_EMBEDDINGS` is **off** unless you opt in **and**
+embeddings are ONNX. Hash embeddings are **never** persisted.
 
-**Qdrant:** **not required** and **not wired** into this lean host’s search path (`healthz.qdrant=off`). The [memory](https://github.com/iome-sh/memory) kernel has an optional VectorStore API for custom Go; running Qdrant does not change lean host behavior today.
+Qdrant is **not wired** into this host’s search path (`healthz.qdrant=off`). The
+[memory](https://github.com/iome-sh/memory) kernel has an optional VectorStore API
+for custom Go; running Qdrant does not change lean host behavior.
 
 ## MCP tools
 
-Local palace FS on the operator machine. `tools/list` and `healthz.tool_names` are discovery / compile-time registration — they are **not** ingest.
+Local palace FS on the operator machine. `tools/list` and `healthz.tool_names` are
+discovery / compile-time registration — they are **not** ingest.
 
-| Tool | Kernel API | Surface |
-|------|------------|---------|
-| `memory_ingest_turn` | `IngestTurn` | Write local FS (conversation turn). Optional `source_hint` (`mesh` / `private` or kernel-classifiable alias) stamps provenance + `source_hint:<hint>` tag; omit keeps private — do not invent mesh from session id. Host DLP redacts common secret shapes (`ghp_` / `sk-` / …) before write — residual heuristics, not commercial DLP. |
-| `memory_extract_facts` | `ExtractAtomicFacts` + `Write` (`turn_fact` children) | Optional HITL extract-after-persist. Required `tenant` (omit fail-closes) + `memory_id` (parent already on disk). Optional `facts`; omit runs kernel `ExtractAtomicFacts` on a copy. Writes semantic `turn_fact` children; does **not** rewrite/delete the parent and is **not** called from ingest (extract is not a PalaceStore write-gate). Structural extract, not NLP. TUI v1.3.4 ignores unknown tools. |
-| `memory_write` | `Write` / `WriteAndSupersede` (durable facts; not a conversation turn) | Write local FS (same host DLP as ingest) |
-| `memory_retrieve` | `SearchMemoryWithOptions` | Read/search local FS; does not ingest |
-| `memory_search_semantic` | Hybrid search on semantic tier | Read local FS; does not ingest |
-| `memory_list` | `ListMemoryWithOptions` | List local FS; does not ingest |
-| `memory_compact_status` | `GetStats` | Local FS stats; does not ingest |
-| `memory_facts_as_of` | `ListFactsAsOf` | List local FS; does not ingest |
-| `memory_related` | `MultiHopRetrieve` (entity BFS lite; not full graph RAG) | Read local FS; does not ingest |
-| `memory_supersede_entity` | `SupersedeEntityFacts` (mutating; HITL stays at the client) | Write local FS (close facts) |
-| `ops_digest_export` | Local `ListMemoryWithOptions` window → receipts (TUI `/memory digest` MCP fallback) | Read/list local FS; does not ingest. Patterns stay empty (insufficient-signal OK). Receipt selection prefers mesh+private diversity when both exist in-window (not newest-`event_time` only); `source_hint=palace_timeline` for local/private; mesh only when the entry is mesh-sourced. Receipts also carry palace `provenance.source_hint` + tags so TUI can classify mesh — never invented. |
+| Tool | Kernel API | Notes |
+|------|------------|-------|
+| `memory_ingest_turn` | `IngestTurn` | Write a conversation turn; optional `source_hint`; host DLP redacts common secret shapes |
+| `memory_extract_facts` | `ExtractAtomicFacts` + `Write` | HITL extract-after-persist; writes `turn_fact` children without rewriting the parent |
+| `memory_write` | `Write` / `WriteAndSupersede` | Write a durable fact (same DLP as ingest) |
+| `memory_retrieve` | `SearchMemoryWithOptions` | Keyword + optional vector re-rank; does not ingest |
+| `memory_search_semantic` | Hybrid search on semantic tier | Hybrid semantic search; Qdrant not wired |
+| `memory_list` | `ListMemoryWithOptions` | List by event time; does not ingest |
+| `memory_compact_status` | `GetStats` | Local palace stats; does not ingest |
+| `memory_facts_as_of` | `ListFactsAsOf` | Facts valid at `as_of`; does not ingest |
+| `memory_related` | `MultiHopRetrieve` | Entity BFS lite; does not ingest |
+| `memory_supersede_entity` | `SupersedeEntityFacts` | Close open facts for an entity key |
+| `ops_digest_export` | `ListMemoryWithOptions` window | Local receipts for TUI `/memory digest`; does not ingest |
 
-Server name: **`iomesh-memory-mcp`**. Default version stamp: **`v0.4.2`** (overridden by `make build` / GoReleaser ldflags).
+Server name: **`iomesh-memory-mcp`**. Default version stamp: **`v0.4.2`**
+(overridden by `make build` / GoReleaser ldflags).
 
 ## Tenant layout
 
@@ -261,9 +243,16 @@ $PALACE_ROOT/
     …
 ```
 
-Isolation is path-based within a single process (`PALACE_ROOT/<tenant>/`). Tool and HTTP calls must pass `tenant`; omit fail-closes and does not write `PALACE_ROOT/default`. Invalid segments (`.`, `..`, separators) stay fail-closed. Path isolation ≠ cloud multi-tenant security. Organization isolation for the I/O Mesh broker is a separate HTTP header (`X-IOMesh-Org`) on mesh clients; this host does not implement that.
+Isolation is path-based within a single process (`PALACE_ROOT/<tenant>/`). Tool
+and HTTP calls must pass `tenant`; omit fail-closes and does not write
+`PALACE_ROOT/default`. Invalid segments (`.`, `..`, separators) stay fail-closed.
+Path isolation is not cloud multi-tenant security. This host does not implement
+the mesh-client `X-IOMesh-Org` header.
 
-**Supported topology:** **one host process per palace root.** Multi-process writers on a shared root remain unsupported (product contract, not a hidden defect). In-process kernel `writeMu` serializes the two shared files; two processes are last-write-wins. HTTP defaults to loopback; optional `MEMORY_MCP_HTTP_SECRET`; unauthenticated HTTP remains the residual when the secret is unset.
+**Supported topology:** **one host process per palace root.** Multi-process writers
+on a shared root remain unsupported. HTTP defaults to loopback; optional
+`MEMORY_MCP_HTTP_SECRET`; unauthenticated HTTP remains the residual when the
+secret is unset.
 
 ## Development
 
@@ -292,10 +281,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contributor guide |
 | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community standards |
 | [SUPPORT.md](SUPPORT.md) | Issues, security, support scope |
-| [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) | E3 install matrix · E4 operator dogfood runbook (optional TTFH-shaped path) |
-| [memory docs/TTFH.md](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md) | Kernel TTFH walking skeleton · cost-max hash / no Qdrant / no cloud palace |
-| [docs/PUBLIC_FLIP_READINESS.md](docs/PUBLIC_FLIP_READINESS.md) | Maintainer residual (flip complete; not operator how-to) |
-| [docs/OPEN_SOURCE_AUDIT.md](docs/OPEN_SOURCE_AUDIT.md) | Maintainer OSS process residual (not a product claim) |
+| [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) | Install matrix and operator dogfood runbook |
 
 ## Related projects
 
@@ -309,3 +295,12 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 ## License
 
 [MIT](LICENSE) · [NOTICE](NOTICE)
+
+## Maintainer notes
+
+Not operator how-tos. Flip is already public MIT.
+
+| Document | Description |
+|----------|-------------|
+| [docs/PUBLIC_FLIP_READINESS.md](docs/PUBLIC_FLIP_READINESS.md) | Maintainer residual (flip complete) |
+| [docs/OPEN_SOURCE_AUDIT.md](docs/OPEN_SOURCE_AUDIT.md) | Maintainer OSS process residual |

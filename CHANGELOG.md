@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Docs:** README for OSS newcomers; companion TUI pin **v1.3.7**.
+
 ## [0.4.2] — 2026-09-12
 
 Kernel pin **v1.5.12** (T1 multi-session retrieve + count assembly). Persist default off · hash never stored.
