@@ -36,6 +36,7 @@ It exposes tools over **stdio** or **streamable HTTP**. It is **not product Memo
 |----------------|---------|
 | Local Palace filesystem (`PALACE_ROOT` / `-palace-root`) | **User data** — the process can read/write all entries under that root. Treat as confidential. |
 | Tenant subdirectory (`MEMORY_TENANT` / tool `tenant`) | **Path-based isolation only** — same process residual; not cloud multi-tenant security. Omitted tool tenant fail-closes (does not write `$PALACE_ROOT/default`). `.`, `..`, and separators fail closed. |
+| Shared palace root | **Single-writer contract** — one host process per `PALACE_ROOT`. Multi-process writers are unsupported (last-write-wins). Path tenancy is not cloud isolation. |
 | Streamable HTTP (`MEMORY_MCP_HTTP_ADDR`) | Network-exposed MCP. Default bind is loopback (`:8080` → `127.0.0.1:8080`). `0.0.0.0` / non-loopback requires `-allow-non-loopback` / `MEMORY_MCP_HTTP_ALLOW_NON_LOOPBACK`. Optional shared secret (`MEMORY_MCP_HTTP_SECRET` / `X-Memory-MCP-Secret` or `Authorization: Bearer`) fail-closes MCP when set. `GET /healthz` stays open. Unauthenticated HTTP remains residual when the secret is unset. |
 | dual_write / audit | **OFF by default**. Lean v1 does not enable mesh audit publish. Optional dual_write is residual / later. |
 | Kernel embeddings | Default hash/simple embedding path; optional ONNX residual via kernel — not required for dogfood. |
@@ -45,6 +46,7 @@ It exposes tools over **stdio** or **streamable HTTP**. It is **not product Memo
 - **HTTP unauthenticated lean v1** unless optional shared secret is set — do not expose to untrusted networks. Loopback is the default bind; `0.0.0.0` is refused without an explicit allow flag.  
 - **Host-side DLP is residual heuristics** — ingest/write redacts common paste shapes (`ghp_` / `sk-` / AWS `AKIA` / Slack `xox*` / PEM / JWT-shaped). Not commercial DLP, not hardware-bound keys, not default envelope encryption.  
 - **Path-based tenancy ≠ multi-tenant cloud isolation** — one process, shared code. Omitted and invalid tenant fail closed so list/write stay under `$PALACE_ROOT/<tenant>/` and never share `$PALACE_ROOT/default`. `GET /healthz` does not leak tenant or org. Organization isolation for the I/O Mesh broker is a separate HTTP header (`X-IOMesh-Org`) on mesh clients; this host does not implement that.  
+- **Single-writer contract** — one host process per palace root. Multi-process writers on a shared root remain unsupported. That is the product contract, not a defect to hide. In-process kernel `writeMu` is not flock and not a tenancy boundary.  
 - **Palace FS is user data** — encryption at rest, backup, and OS permissions are operator responsibilities.  
 - **Not Memory GA** — no hosted Palace SLA.  
 - **dual_write OFF** — no default mesh audit side effects.

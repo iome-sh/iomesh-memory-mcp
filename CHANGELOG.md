@@ -7,15 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- **`memory_ingest_turn` optional `source_hint` (#63):** callers (durable mesh pull) can pass `mesh`, `private`, or a kernel-classifiable alias. When non-empty, the host stamps `provenance.source_hint` and tag `source_hint:<hint>` before `IngestTurn` (`FormatSourceHintTag`). When omitted or blank, kernel `ensurePrivateIngestSource` keeps today’s private default — session ids such as `dept.*.events.*` do not invent mesh. `ops_digest_export` honors a stamped mesh/private class on the entry (never invents mesh). dual_write OFF · not Memory GA · catalog ≠ connected.
+### Changed
+- **Release hygiene:** README install pin **v0.3.2** (was leftover v0.3.0); kernel pin language **v1.5.10** to match `go.mod` (was leftover v1.5.8). Default `ServerVersion` **v0.3.2**. CHANGELOG records already-cut **v0.3.1** / **v0.3.2** instead of leaving those waves under Unreleased.
+- **Single-writer contract:** README + SECURITY.md: one host process per palace root. Multi-process writers on a shared root remain unsupported (product contract). HTTP loopback default, optional shared secret, unauth-if-unset still documented.
+
+Compatible with [iomesh-tui **v1.3.3**](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.3) (cite-both on `ops_digest_export` provenance/tags + optional `source_hint` on ingest). dual_write OFF · not Memory GA · catalog ≠ connected.
+
+## [0.3.2] — 2026-09-10
+
+Cite-both companion to [iomesh-tui v1.3.3](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.3). dual_write OFF · not Memory GA · catalog ≠ connected.
 
 ### Fixed
-- **`ops_digest_export` receipt selection (#66):** default receipts no longer drop in-window `source_hint=mesh` turns when newer private RCA fills newest-`event_time` (TUI sticky limit). Scan the window past the receipt cap, merge `source_hint:mesh` tagged entries, and prefer source-class diversity (mesh+private) when both exist — never invent mesh. Payload keeps honest `since`/`as_of` and adds `receipt_selection` (scan/class flags). Companion primary UX is [iomesh-tui#419](https://github.com/iome-sh/iomesh-tui/issues/419). dual_write OFF · not Memory GA · catalog ≠ connected.
-- **`ops_digest_export` receipt class wire (#66 residual):** receipts still labeled `source_hint=palace_timeline` after #67, so TUI `ClassifyDigestReceipt` could not see palace mesh. Each receipt now copies palace `provenance.source_hint` / `source_step` and tags (`source_hint:mesh` / TemporalTags included), and sets receipt `source_hint=mesh` when the entry is mesh-sourced — never invented. Sticky default limit still keeps ≥1 mesh + ≥1 private when both exist in-window. dual_write OFF · not Memory GA · catalog ≠ connected.
+- **`ops_digest_export` receipt selection (#66 / #67):** default receipts no longer drop in-window `source_hint=mesh` turns when newer private RCA fills newest-`event_time` (TUI sticky limit). Scan the window past the receipt cap, merge `source_hint:mesh` tagged entries, and prefer source-class diversity (mesh+private) when both exist — never invent mesh. Payload keeps honest `since`/`as_of` and adds `receipt_selection` (scan/class flags). Companion primary UX is [iomesh-tui#419](https://github.com/iome-sh/iomesh-tui/issues/419).
+- **`ops_digest_export` receipt class wire (#66 residual / #68):** receipts still labeled `source_hint=palace_timeline` after #67, so TUI `ClassifyDigestReceipt` could not see palace mesh. Each receipt now copies palace `provenance.source_hint` / `source_step` and tags (`source_hint:mesh` / TemporalTags included), and sets receipt `source_hint=mesh` when the entry is mesh-sourced — never invented. Sticky default limit still keeps ≥1 mesh + ≥1 private when both exist in-window.
+
+## [0.3.1] — 2026-09-10
+
+Kernel v1.5.10 + optional ingest class. Compatible with TUI durable pull `source_hint=mesh` (iomesh-tui#418). dual_write OFF · not Memory GA · catalog ≠ connected.
+
+### Added
+- **`memory_ingest_turn` optional `source_hint` (#63 / #65):** callers (durable mesh pull) can pass `mesh`, `private`, or a kernel-classifiable alias. When non-empty, the host stamps `provenance.source_hint` and tag `source_hint:<hint>` before `IngestTurn` (`FormatSourceHintTag`). When omitted or blank, kernel `ensurePrivateIngestSource` keeps today’s private default — session ids such as `dept.*.events.*` do not invent mesh. `ops_digest_export` honors a stamped mesh/private class on the entry (never invents mesh).
 
 ### Changed
-- **Kernel pin (#58):** `github.com/iome-sh/memory` annotated **`v1.5.9`** → annotated **`v1.5.10`** (memory #90 / PR #91: `IngestTurn` stamps observable `provenance.source_hint=private` and tag `source_hint:private` when the caller does not already supply a classifiable mesh or private source). Host process labels (`mcp_memory_ingest_turn`, `source:iomesh-memory-mcp`) are not a cite-both class. dual_write OFF · not Memory GA · Catalog ≠ Connected.
+- **Kernel pin (#58 / #60):** `github.com/iome-sh/memory` annotated **`v1.5.9`** → annotated **`v1.5.10`** (memory #90 / PR #91: `IngestTurn` stamps observable `provenance.source_hint=private` and tag `source_hint:private` when the caller does not already supply a classifiable mesh or private source). Host process labels (`mcp_memory_ingest_turn`, `source:iomesh-memory-mcp`) are not a cite-both class.
 
 ## [0.3.0] — 2026-09-10
 
@@ -156,3 +170,12 @@ dual_write OFF · not Memory GA.
     RELEASING, CHANGELOG, OPEN_SOURCE_AUDIT, Makefile, CI, Dependabot, Dockerfile, compose
   - **Repository remains private** until a deliberate visibility flip
   - dual_write **OFF** · not product Memory GA · private control plane / broker stays out of this tree · no default Qdrant/ONNX requirement
+
+[Unreleased]: https://github.com/iome-sh/iomesh-memory-mcp/compare/v0.3.2...HEAD
+[0.3.2]: https://github.com/iome-sh/iomesh-memory-mcp/compare/v0.3.1...v0.3.2
+[0.3.1]: https://github.com/iome-sh/iomesh-memory-mcp/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/iome-sh/iomesh-memory-mcp/compare/v0.2.1...v0.3.0
+[0.2.1]: https://github.com/iome-sh/iomesh-memory-mcp/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/iome-sh/iomesh-memory-mcp/compare/v0.1.1...v0.2.0
+[0.1.1]: https://github.com/iome-sh/iomesh-memory-mcp/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.1.0
