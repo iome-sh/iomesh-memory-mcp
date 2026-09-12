@@ -213,6 +213,7 @@ func (h *Host) resolveStore(tenant string) (string, *palace.PalaceStore, error) 
 // f46afe2 stays contemporaneous attach evidence — do not restamp as live forever-green).
 var leanToolNames = []string{
 	"memory_ingest_turn",
+	"memory_extract_facts",
 	"memory_write",
 	"memory_retrieve",
 	"memory_search_semantic",
@@ -247,6 +248,11 @@ func (h *Host) Register(sdkServer *mcp.Server) {
 		Name:        "memory_ingest_turn",
 		Description: "Ingest a conversation turn into the local tenant palace FS (role=user|assistant|tool). Optional source_hint (mesh|private or kernel-classifiable alias); omit keeps private. dual_write OFF · not Memory GA",
 	}, h.handleIngestTurn)
+
+	mcp.AddTool(sdkServer, &mcp.Tool{
+		Name:        "memory_extract_facts",
+		Description: "Optional HITL extract-after-persist: write turn_fact children from a durable parent (HITL facts or kernel ExtractAtomicFacts). Does not rewrite the parent and is not called from ingest. dual_write OFF · not NLP · not Memory GA",
+	}, h.handleExtractFacts)
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
 		Name:        "memory_write",

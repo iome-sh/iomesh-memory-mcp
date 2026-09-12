@@ -67,18 +67,24 @@ func TestPreflightPrintsHealthzAndExits(t *testing.T) {
 	if body.Version != mcphost.ServerVersion {
 		t.Fatalf("version: %q", body.Version)
 	}
-	if body.Tools < 10 {
-		t.Fatalf("tools: %d want >= 10 (compile-time registration, not tools/list)", body.Tools)
+	if body.Tools < 11 {
+		t.Fatalf("tools: %d want >= 11 (compile-time registration, not tools/list)", body.Tools)
 	}
 	foundDigest := false
+	foundExtract := false
 	for _, n := range body.ToolNames {
 		if n == "ops_digest_export" {
 			foundDigest = true
-			break
+		}
+		if n == "memory_extract_facts" {
+			foundExtract = true
 		}
 	}
 	if !foundDigest {
 		t.Fatalf("preflight tool_names missing ops_digest_export: %v", body.ToolNames)
+	}
+	if !foundExtract {
+		t.Fatalf("preflight tool_names missing memory_extract_facts: %v", body.ToolNames)
 	}
 	if body.Tools != len(body.ToolNames) {
 		t.Fatalf("tools=%d tool_names=%d", body.Tools, len(body.ToolNames))

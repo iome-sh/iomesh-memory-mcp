@@ -25,8 +25,8 @@ func TestOpsDigestExportRegistered(t *testing.T) {
 	if !found {
 		t.Fatalf("leanToolNames missing ops_digest_export: %v", names)
 	}
-	if len(names) < 10 {
-		t.Fatalf("lean tools=%d want >= 10 (ops_digest_export added): %v", len(names), names)
+	if len(names) < 11 {
+		t.Fatalf("lean tools=%d want >= 11 (ops_digest_export + memory_extract_facts): %v", len(names), names)
 	}
 
 	h, err := New(Config{PalaceRoot: t.TempDir()})
@@ -47,7 +47,7 @@ func TestOpsDigestExportRegistered(t *testing.T) {
 	if !have {
 		t.Fatalf("healthz/preflight tool_names missing ops_digest_export: %v", snap.ToolNames)
 	}
-	if snap.Tools != len(snap.ToolNames) || snap.Tools < 10 {
+	if snap.Tools != len(snap.ToolNames) || snap.Tools < 11 {
 		t.Fatalf("healthz tools=%d names=%d", snap.Tools, len(snap.ToolNames))
 	}
 }
