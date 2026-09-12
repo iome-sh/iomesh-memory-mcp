@@ -1,5 +1,7 @@
 # Open-source readiness audit
 
+**Maintainer process residual** — not a product spec and not a user guide. Visibility is already **public MIT**. **Public MIT ≠ Memory GA.** Flip is complete. Operators: [README.md](../README.md) · [SECURITY.md](../SECURITY.md) · [CONTRIBUTING.md](../CONTRIBUTING.md).
+
 Checklist for the OSS **process bar** of **github.com/iome-sh/iomesh-memory-mcp**
 (lean edge Memory MCP host) vs public **iomesh-tui** (binary product) and public
 kernel **memory**. Visibility flip is **complete** (public MIT). Re-run before

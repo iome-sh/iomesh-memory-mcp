@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Public-docs hygiene:** `docs/PUBLIC_FLIP_READINESS.md` and `docs/OPEN_SOURCE_AUDIT.md` marked maintainer residuals (flip complete; not operator how-tos). README / CONTRIBUTING qualify those files. EDGE_DOGFOOD serials remain historical engineering pins, not a product ledger. dual_write OFF · not Memory GA · catalog ≠ Connected · public MIT ≠ Memory GA.
+
 ## [0.4.1] — 2026-09-12
 
 Kernel pin **v1.5.11** + optional ONNX `PersistEmbeddings` (#72). dual_write OFF · not Memory GA · persist default off · hash never stored.
