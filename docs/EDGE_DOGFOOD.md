@@ -13,6 +13,8 @@ This doc advances **Edge Memory GA candidacy** exit criteria on the public binar
 
 **Serial stamp:** **s1500** · free eng **s1504** (local E4 unit + healthz evidence) · free eng **s1509** (TUI client attach evidence) · free eng after free-floor **s1499+** · prior M3 offline SSOT **s1462** · peers TUI **s1463** · private control-plane residual **s1464** (mention only) · free-floor peer **s1465** · free eng after **s1467+** · M4 public flip residual **s1468+** · M5 signing **s1492** · Edge Memory GA candidacy residual (private control-plane **s1496**, mention only).
 
+Serials below are historical engineering pins, not a product ledger.
+
 **Modules are public:** host + kernel (`github.com/iome-sh/memory`) are public MIT. Historical “still private” language on pre-flip residuals is **retired** for install paths (no `GOPRIVATE` / PAT for consumers).
 
 ---
@@ -273,8 +275,8 @@ Peers (mention only): TUI s1463 dogfood tip · private control-plane residual s1
 | [Makefile](../Makefile) | `edge-dogfood-gate` · `check` · `ci` |
 | [scripts/edge_dogfood_gate.sh](../scripts/edge_dogfood_gate.sh) | Offline residual greps |
 | [EDGE_DOGFOOD_EVIDENCE.md](EDGE_DOGFOOD_EVIDENCE.md) | **s1504** unit + healthz · **s1509** TUI client attach evidence |
-| [docs/OPEN_SOURCE_AUDIT.md](OPEN_SOURCE_AUDIT.md) | Visibility / OSS process bar |
-| [docs/PUBLIC_FLIP_READINESS.md](PUBLIC_FLIP_READINESS.md) | M4 public-flip readiness residual |
+| [docs/OPEN_SOURCE_AUDIT.md](OPEN_SOURCE_AUDIT.md) | Maintainer OSS process residual (not operator how-to) |
+| [docs/PUBLIC_FLIP_READINESS.md](PUBLIC_FLIP_READINESS.md) | M4 public-flip maintainer residual (flip complete; not operator how-to) |
 | [CHANGELOG.md](../CHANGELOG.md) | s1462 · s1500 · s1504 · s1509 entries |
 
 ---

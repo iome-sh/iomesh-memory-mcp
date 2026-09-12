@@ -165,8 +165,12 @@ for f in "${user_facing[@]}"; do
   forbid_needle "$f" "$codename_pat" "no product-codename residual"
 done
 # Tree-wide: no leftover product-codename token (pattern is split above).
-if git grep -I -n -E -- "$codename_pat" -- . >/dev/null; then
-  git grep -I -n -E -- "$codename_pat" -- . || true
+# Exclude tokenizer/vocab fixtures: WordPiece lists contain coincidental
+# letter runs and are not product-plane names.
+if git grep -I -n -E -- "$codename_pat" -- . \
+    ':!**/testdata/**' ':!testdata' ':!**/tokenizer.json' ':!**/vocab.txt' >/dev/null; then
+  git grep -I -n -E -- "$codename_pat" -- . \
+    ':!**/testdata/**' ':!testdata' ':!**/tokenizer.json' ':!**/vocab.txt' || true
   fail_msg "product-codename residual (git grep)"
 else
   pass "tree has no product-codename residual"

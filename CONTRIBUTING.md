@@ -14,7 +14,10 @@ Please treat quality, security, honesty locks, and tests as first-class.
 This repository is **public** (MIT). The kernel (`github.com/iome-sh/memory`) is
 also public. `GOPRIVATE` / a GitHub token are **not** required to clone, test, or
 `go install` this host. Maintainers may still set `GOPRIVATE` for other private
-org modules. residual PASS ≠ invent Memory GA.
+org modules. residual PASS ≠ invent Memory GA. Maintainer process residuals
+([docs/OPEN_SOURCE_AUDIT.md](docs/OPEN_SOURCE_AUDIT.md),
+[docs/PUBLIC_FLIP_READINESS.md](docs/PUBLIC_FLIP_READINESS.md)) are **not**
+operator how-tos — the visibility flip is already complete.
 
 ## Development setup
 
@@ -39,7 +42,7 @@ make cover
 make vuln
 make ci                         # full local gate (fmt + vet + test + vuln + build)
 make edge-dogfood-gate          # offline M3 residual greps (no docker)
-make public-flip-readiness-gate # offline M4 readiness greps (no visibility flip)
+make public-flip-readiness-gate # offline M4 residual greps (flip complete; not operator how-to)
 make release-snapshot           # local GoReleaser snapshot (needs goreleaser + syft)
 ```
 
@@ -78,7 +81,7 @@ Report vulnerabilities privately — see [SECURITY.md](SECURITY.md). **Do not op
 
 - Bugs / features: use [issue templates](https://github.com/iome-sh/iomesh-memory-mcp/issues/new/choose)  
 - Support channels: [SUPPORT.md](SUPPORT.md)  
-- Docs first: [docs/](docs/) (EDGE_DOGFOOD · PUBLIC_FLIP_READINESS · OPEN_SOURCE_AUDIT)
+- Docs first: [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) (operator dogfood). Flip/audit files ([docs/PUBLIC_FLIP_READINESS.md](docs/PUBLIC_FLIP_READINESS.md), [docs/OPEN_SOURCE_AUDIT.md](docs/OPEN_SOURCE_AUDIT.md)) are maintainer residuals, not operator how-tos.
 
 ## Public repository policy
 
@@ -86,12 +89,12 @@ Report vulnerabilities privately — see [SECURITY.md](SECURITY.md). **Do not op
 
 - Do **not** put private monorepo paths (private control-plane clone/build instructions), internal pending-todos, or unpublished stage URLs in PRs, docs, or CHANGELOG  
 - Do **not** invent **Memory GA**, dual_write ON by default, or full platform sidecar parity with a private control-plane sidecar  
-- After public flip, **strip private ledger serials** (`s###`) from PR titles, commit subjects, and CHANGELOG user-facing notes (internal continuum stamps stay in private process only)  
+- Do **not** put private ledger serials (`s###`) in PR titles, commit subjects, or CHANGELOG user-facing notes (internal continuum stamps stay in private process only)  
 - Prefer **I/O Mesh / edge Memory MCP** product language over private control-plane / broker codenames in new docs  
 - Binary/image names operators run (**`iomesh-memory-mcp`**, `ghcr.io/iome-sh/iomesh-memory-mcp`) may appear when documenting install/wire-up  
 - Do **not** document “clone the private control-plane monorepo” as the product edge build path  
 
-Historical readiness residuals may still mention serial stamps; they are not a public claim. The repo is public.
+Historical readiness residuals may still mention serial stamps; they are maintainer residuals, not operator how-tos or a public product claim. The repo is public.
 
 ## Pull requests
 

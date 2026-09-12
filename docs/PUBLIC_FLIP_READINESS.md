@@ -1,5 +1,7 @@
 # Public-flip readiness / post-flip SSOT (iomesh-memory-mcp)
 
+**Not current operator documentation.** Visibility is already **public MIT**. This file is a **maintainer residual** kept so `make public-flip-readiness-gate` still has an offline SSOT. It is **not** a how-to-go-public guide, **not** a product claim, and **not Memory GA**. Operators read [README.md](../README.md), [SECURITY.md](../SECURITY.md), and [CONTRIBUTING.md](../CONTRIBUTING.md).
+
 **Status: FLIP COMPLETE (public)** — `github.com/iome-sh/memory` is **public**; this host is **public**.  
 CI no longer requires `GOPRIVATE` / `IOMESH_CI_PAT`. **dual_write OFF** · **not Memory GA**.
 
