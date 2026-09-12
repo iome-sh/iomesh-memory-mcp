@@ -32,14 +32,14 @@ local filesystem under PALACE_ROOT/<tenant>/…
 ### From source
 
 Pin the latest annotated `v*` GitHub Release:
-[`v0.3.2`](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.3.2).
+[`v0.4.0`](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.4.0).
 `@latest` / floating `main` are not production pins. Default `ServerVersion` is
-`v0.3.2` (GoReleaser ldflags override on tagged assets). **Not** Memory GA.
+`v0.4.0` (GoReleaser ldflags override on tagged assets). **Not** Memory GA.
 Path isolation `PALACE_ROOT/<tenant>/` ≠ cloud multi-tenant. `X-IOMesh-Org` is
 a mesh-client header; this host does not implement it.
 
 ```bash
-go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.3.2
+go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.0
 ```
 
 ### Build from a clone
@@ -52,10 +52,11 @@ make build   # → bin/iomesh-memory-mcp
 
 Requires the Go version in [`go.mod`](go.mod). The kernel dependency is public
 `github.com/iome-sh/memory` **v1.5.10** (annotated tag; `go.mod` pin). Compatible
-with [iomesh-tui **v1.3.3**](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.3)
+with [iomesh-tui **v1.3.4+**](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.4)
+(`/memory extract`). Ingest + digest remain compatible with
+[iomesh-tui **v1.3.3**](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.3)
 (optional `source_hint` on ingest · `ops_digest_export` mesh+private receipts).
-Optional `memory_extract_facts` is unknown-tool-safe for TUI **v1.3.4** (ingest
-schema unchanged). dual_write OFF · **not** Memory GA.
+dual_write OFF · **not** Memory GA.
 
 ### Tagged releases
 
@@ -236,7 +237,7 @@ Local palace FS on the operator machine. `tools/list` and `healthz.tool_names` a
 | `memory_supersede_entity` | `SupersedeEntityFacts` (mutating; HITL stays at the client) | Write local FS (close facts) |
 | `ops_digest_export` | Local `ListMemoryWithOptions` window → receipts (TUI `/memory digest` MCP fallback) | Read/list local FS; does not ingest. Patterns stay empty (insufficient-signal OK). Receipt selection prefers mesh+private diversity when both exist in-window (not newest-`event_time` only); `source_hint=palace_timeline` for local/private; mesh only when the entry is mesh-sourced. Receipts also carry palace `provenance.source_hint` + tags so TUI can classify mesh — never invented. dual_write OFF · not Memory GA · catalog ≠ connected |
 
-Server name: **`iomesh-memory-mcp`**. Default version stamp: **`v0.3.2`** (overridden by `make build` / GoReleaser ldflags).
+Server name: **`iomesh-memory-mcp`**. Default version stamp: **`v0.4.0`** (overridden by `make build` / GoReleaser ldflags).
 
 ## Tenant layout
 
