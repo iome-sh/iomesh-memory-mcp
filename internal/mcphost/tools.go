@@ -110,6 +110,157 @@ func (h *Host) handleIngestTurn(_ context.Context, _ *mcp.CallToolRequest, in in
 	return toolJSON(out), out, nil
 }
 
+// --- memory_extract_facts (optional HITL; not a PalaceStore write-gate) ---
+
+const (
+	extractFactsSourceStep = "mcp_memory_extract_facts"
+	extractFactsNote       = "structural extract (rule-based ExtractAtomicFacts or HITL facts); not NLP; dual_write off; not Memory GA"
+)
+
+type extractFactsInput struct {
+	Tenant   string   `json:"tenant" jsonschema:"required tenant subdirectory under palace root; omit fail-closes"`
+	MemoryID string   `json:"memory_id" jsonschema:"required parent turn id already on disk"`
+	Facts    []string `json:"facts,omitempty" jsonschema:"optional HITL facts; omit runs palace.ExtractAtomicFacts on a copy"`
+}
+
+type extractFactsOutput struct {
+	MemoryID     string `json:"memory_id"`
+	Tenant       string `json:"tenant"`
+	FactsWritten int    `json:"facts_written"`
+	DualWrite    string `json:"dual_write"`
+	Note         string `json:"note"`
+}
+
+func (h *Host) handleExtractFacts(_ context.Context, _ *mcp.CallToolRequest, in extractFactsInput) (*mcp.CallToolResult, extractFactsOutput, error) {
+	tenant, ps, err := h.resolveStore(in.Tenant)
+	if err != nil {
+		return toolError(err), extractFactsOutput{}, err
+	}
+	id := strings.TrimSpace(in.MemoryID)
+	if id == "" {
+		err := fmt.Errorf("memory_id required")
+		return toolError(err), extractFactsOutput{}, err
+	}
+
+	parent, ok := loadEntryAcrossTiers(ps, id)
+	if !ok {
+		err := fmt.Errorf("memory_id %q not found", id)
+		return toolError(err), extractFactsOutput{}, err
+	}
+
+	var facts []string
+	if len(in.Facts) > 0 {
+		facts = in.Facts
+	} else {
+		copyEntry := parent
+		if strings.TrimSpace(copyEntry.Content.Full) == "" {
+			copyEntry.Content.Full = firstNonEmpty(copyEntry.Content.Summary, copyEntry.OriginalText)
+		}
+		facts = palace.ExtractAtomicFacts(copyEntry)
+	}
+
+	written := 0
+	for _, factText := range facts {
+		factText = RedactSecrets(strings.TrimSpace(factText))
+		if factText == "" {
+			continue
+		}
+		if err := writeExtractedTurnFact(ps, parent, factText); err != nil {
+			// Partial persist: already-written children and the parent stay. Do not
+			// rewrite or delete the parent. Extract is not an ingest write-gate.
+			return toolError(err), extractFactsOutput{}, err
+		}
+		written++
+	}
+
+	out := extractFactsOutput{
+		MemoryID:     parent.ID,
+		Tenant:       tenant,
+		FactsWritten: written,
+		DualWrite:    "off",
+		Note:         extractFactsNote,
+	}
+	return toolJSON(out), out, nil
+}
+
+// loadEntryAcrossTiers finds a durable parent by id. Ingest defaults to working;
+// kernel tier 0 writes contextual. Search semantic/archival if the turn moved.
+func loadEntryAcrossTiers(ps *palace.PalaceStore, id string) (palace.MemoryEntry, bool) {
+	if ps == nil || strings.TrimSpace(id) == "" {
+		return palace.MemoryEntry{}, false
+	}
+	for _, tier := range []palace.MemoryTier{
+		palace.TierWorking,
+		palace.TierContextual,
+		palace.TierSemantic,
+		palace.TierArchival,
+	} {
+		if e, ok := ps.Load(id, tier); ok {
+			return e, true
+		}
+	}
+	return palace.MemoryEntry{}, false
+}
+
+// writeExtractedTurnFact writes one turn_fact child (kernel IngestTurn child shape).
+// SourceHint is inherited from the parent (private default on ingest; never invent mesh).
+func writeExtractedTurnFact(ps *palace.PalaceStore, parent palace.MemoryEntry, factText string) error {
+	now := time.Now().UTC()
+	factEntry := palace.MemoryEntry{
+		ID:        palace.GenerateMemoryID(),
+		Type:      "turn_fact",
+		Tier:      palace.TierSemantic,
+		Version:   1,
+		CreatedAt: now,
+		UpdatedAt: now,
+		Timestamp: parent.Timestamp,
+		TurnID:    parent.TurnID,
+		SessionID: parent.SessionID,
+		Content: palace.MemoryContent{
+			Summary: truncate(factText, 280),
+			Full:    factText,
+			Tags:    inheritExtractFactTags(parent.Content.Tags),
+		},
+		Provenance: palace.MemoryProvenance{
+			SourceStep: extractFactsSourceStep,
+			SourceHint: parent.Provenance.SourceHint,
+			ParentIDs:  []string{parent.ID},
+		},
+		Metrics: palace.MemoryMetrics{
+			ScoreImpact: 0.92,
+			UsageCount:  1,
+		},
+		// Kernel hasValidFromTag / applyParentSessionAndValidFrom are unexported
+		// in v1.5.10; stamp the documented valid_from:<RFC3339> TemporalTag.
+		TemporalTags: []string{"valid_from:" + now.Format(time.RFC3339)},
+	}
+	return ps.Write(factEntry)
+}
+
+// inheritExtractFactTags copies parent Content.Tags and appends fact_augmented
+// / from_turn (same markers as kernel inheritTurnFactTags).
+func inheritExtractFactTags(parentTags []string) []string {
+	out := make([]string, 0, len(parentTags)+2)
+	seen := make(map[string]struct{}, len(parentTags)+2)
+	add := func(t string) {
+		t = strings.TrimSpace(t)
+		if t == "" {
+			return
+		}
+		if _, ok := seen[t]; ok {
+			return
+		}
+		seen[t] = struct{}{}
+		out = append(out, t)
+	}
+	for _, t := range parentTags {
+		add(t)
+	}
+	add("fact_augmented")
+	add("from_turn")
+	return out
+}
+
 // --- memory_write (durable fact; kernel Write / WriteAndSupersede) ---
 
 type writeInput struct {

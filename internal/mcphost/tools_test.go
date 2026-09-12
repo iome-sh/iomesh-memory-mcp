@@ -888,6 +888,9 @@ func TestBadTenantToolIsError(t *testing.T) {
 	if res, _, err := h.handleOpsDigestExport(ctx, nil, opsDigestExportInput{Tenant: bad}); err == nil || res == nil || !res.IsError {
 		t.Fatalf("ops_digest_export: err=%v res=%+v", err, res)
 	}
+	if res, _, err := h.handleExtractFacts(ctx, nil, extractFactsInput{Tenant: bad, MemoryID: "m1"}); err == nil || res == nil || !res.IsError {
+		t.Fatalf("extract_facts: err=%v res=%+v", err, res)
+	}
 
 	// Separator tenant also fail-closed; configured default still unused.
 	if res, _, err := h.handleList(ctx, nil, listInput{Tenant: "a/b"}); err == nil || res == nil || !res.IsError {
@@ -930,6 +933,8 @@ func TestOmittedTenantWritesDoNotSharePalace(t *testing.T) {
 	assertOmitWriteClosed(t, "write omit 1", res, err)
 	res, _, err = h.handleWrite(ctx, nil, writeInput{Summary: "org B fact omit"})
 	assertOmitWriteClosed(t, "write omit 2", res, err)
+	res, _, err = h.handleExtractFacts(ctx, nil, extractFactsInput{MemoryID: "missing"})
+	assertOmitWriteClosed(t, "extract omit", res, err)
 
 	entries, err := os.ReadDir(root)
 	if err != nil {
@@ -978,18 +983,24 @@ func TestRegisterSDKServer(t *testing.T) {
 		t.Fatal("nil sdk server")
 	}
 	names := LeanToolNames()
-	if len(names) < 10 {
-		t.Fatalf("lean tools=%d want >= 10: %v", len(names), names)
+	if len(names) < 11 {
+		t.Fatalf("lean tools=%d want >= 11: %v", len(names), names)
 	}
-	found := false
+	foundDigest := false
+	foundExtract := false
 	for _, n := range names {
 		if n == "ops_digest_export" {
-			found = true
-			break
+			foundDigest = true
+		}
+		if n == "memory_extract_facts" {
+			foundExtract = true
 		}
 	}
-	if !found {
+	if !foundDigest {
 		t.Fatalf("lean tools missing ops_digest_export: %v", names)
+	}
+	if !foundExtract {
+		t.Fatalf("lean tools missing memory_extract_facts: %v", names)
 	}
 }
 
@@ -1067,5 +1078,315 @@ func TestInvalidTimeFieldsFailClosed(t *testing.T) {
 	}
 	if _, _, err := h.handleOpsDigestExport(ctx, nil, opsDigestExportInput{Tenant: "dogfood", AsOf: bad}); err == nil {
 		t.Fatal("ops_digest_export as_of invalid must error")
+	}
+}
+
+func TestExtractFactsRegistered(t *testing.T) {
+	names := LeanToolNames()
+	found := false
+	for _, n := range names {
+		if n == "memory_extract_facts" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("leanToolNames missing memory_extract_facts: %v", names)
+	}
+	if len(names) < 11 {
+		t.Fatalf("lean tools=%d want >= 11 (memory_extract_facts added): %v", len(names), names)
+	}
+
+	h, err := New(Config{PalaceRoot: t.TempDir()})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	if sdk := h.NewSDKServer(); sdk == nil {
+		t.Fatal("nil sdk server")
+	}
+	snap := HealthzSnapshot(h)
+	have := false
+	for _, n := range snap.ToolNames {
+		if n == "memory_extract_facts" {
+			have = true
+			break
+		}
+	}
+	if !have {
+		t.Fatalf("healthz/preflight tool_names missing memory_extract_facts: %v", snap.ToolNames)
+	}
+	if snap.Tools != len(snap.ToolNames) || snap.Tools < 11 {
+		t.Fatalf("healthz tools=%d names=%d", snap.Tools, len(snap.ToolNames))
+	}
+}
+
+func TestExtractFactsAfterIngestWritesFacts(t *testing.T) {
+	t.Setenv("MEMORY_ONNX_MODEL_PATH", "")
+	h, err := New(Config{PalaceRoot: t.TempDir(), DefaultTenant: "dogfood"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	ctx := context.Background()
+	const needle = "extract-after-persist-parent-body"
+	_, ingested, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+		Tenant:    "dogfood",
+		SessionID: "sess-extract",
+		Role:      "user",
+		Content:   "My name is Alice. I live in Seattle. " + needle,
+	})
+	if err != nil {
+		t.Fatalf("ingest: %v", err)
+	}
+	if ingested.MemoryID == "" {
+		t.Fatal("expected memory_id")
+	}
+	if ingested.DualWrite != "off" || ingested.Audited {
+		t.Fatalf("ingest dual_write must be off: %+v", ingested)
+	}
+
+	ps := h.Store("dogfood")
+	if ps == nil {
+		t.Fatal("nil store")
+	}
+	parentBefore, ok := loadEntryAcrossTiers(ps, ingested.MemoryID)
+	if !ok {
+		t.Fatal("parent missing after ingest")
+	}
+	if parentBefore.OriginalText == "" || !strings.Contains(parentBefore.OriginalText, needle) {
+		t.Fatalf("parent OriginalText dropped on ingest: %+v", parentBefore)
+	}
+	semBefore := len(ps.ListEntriesInTier(palace.TierSemantic))
+
+	const hitl = "HITL: I work at Acme extract-child-needle"
+	res, out, err := h.handleExtractFacts(ctx, nil, extractFactsInput{
+		Tenant:   "dogfood",
+		MemoryID: ingested.MemoryID,
+		Facts:    []string{"  ", hitl, ""},
+	})
+	if err != nil {
+		t.Fatalf("extract: %v", err)
+	}
+	if res == nil || res.IsError {
+		t.Fatalf("extract want success, got %+v", res)
+	}
+	if out.DualWrite != "off" {
+		t.Fatalf("dual_write must be off: %+v", out)
+	}
+	if out.Tenant != "dogfood" || out.MemoryID != ingested.MemoryID {
+		t.Fatalf("extract ids: %+v", out)
+	}
+	if out.FactsWritten != 1 {
+		t.Fatalf("facts_written=%d want 1 (blank HITL rows skipped): %+v", out.FactsWritten, out)
+	}
+	if !strings.Contains(out.Note, "not NLP") || !strings.Contains(out.Note, "not Memory GA") {
+		t.Fatalf("note honesty: %q", out.Note)
+	}
+
+	parentAfter, ok := loadEntryAcrossTiers(ps, ingested.MemoryID)
+	if !ok {
+		t.Fatal("parent missing after extract")
+	}
+	if parentAfter.OriginalText != parentBefore.OriginalText {
+		t.Fatalf("extract must not drop OriginalText: before=%q after=%q", parentBefore.OriginalText, parentAfter.OriginalText)
+	}
+	if parentAfter.Type != parentBefore.Type || parentAfter.ID != parentBefore.ID {
+		t.Fatalf("extract must not rewrite parent identity: before=%+v after=%+v", parentBefore, parentAfter)
+	}
+
+	sem := ps.ListEntriesInTier(palace.TierSemantic)
+	if len(sem) < semBefore+1 {
+		t.Fatalf("semantic entries=%d want >= %d", len(sem), semBefore+1)
+	}
+	found := false
+	for _, e := range sem {
+		if e.Type != "turn_fact" {
+			continue
+		}
+		if e.Content.Full != hitl && e.Content.Summary != hitl {
+			continue
+		}
+		found = true
+		if e.Tier != palace.TierSemantic {
+			t.Fatalf("child tier=%d want semantic", e.Tier)
+		}
+		if e.Provenance.SourceStep != extractFactsSourceStep {
+			t.Fatalf("source_step=%q want %q", e.Provenance.SourceStep, extractFactsSourceStep)
+		}
+		if len(e.Provenance.ParentIDs) != 1 || e.Provenance.ParentIDs[0] != ingested.MemoryID {
+			t.Fatalf("parent_ids=%v want [%s]", e.Provenance.ParentIDs, ingested.MemoryID)
+		}
+		if e.Provenance.SourceHint != parentAfter.Provenance.SourceHint {
+			t.Fatalf("source_hint not inherited: child=%q parent=%q", e.Provenance.SourceHint, parentAfter.Provenance.SourceHint)
+		}
+		if e.Provenance.SourceHint == "mesh" && parentAfter.Provenance.SourceHint != "mesh" {
+			t.Fatal("must not invent mesh source_hint")
+		}
+		from, until := palace.ParseValidityWindow(e)
+		if from == nil {
+			t.Fatalf("missing valid_from on child tags=%v", e.TemporalTags)
+		}
+		if until != nil {
+			t.Fatalf("did not expect valid_until on new child tags=%v", e.TemporalTags)
+		}
+		if !palace.EntryHasTag(e, "fact_augmented") || !palace.EntryHasTag(e, "from_turn") {
+			t.Fatalf("missing structural tags: %v", e.Content.Tags)
+		}
+		if !palace.EntryHasTag(e, "source:iomesh-memory-mcp") {
+			t.Fatalf("missing inherited source tag: %v", e.Content.Tags)
+		}
+	}
+	if !found {
+		t.Fatalf("HITL turn_fact child missing: %+v", sem)
+	}
+
+	// Auto-extract path (no HITL facts) still writes children; parent stays.
+	res2, auto, err := h.handleExtractFacts(ctx, nil, extractFactsInput{
+		Tenant:   "dogfood",
+		MemoryID: ingested.MemoryID,
+	})
+	if err != nil {
+		t.Fatalf("auto extract: %v", err)
+	}
+	if res2 == nil || res2.IsError {
+		t.Fatalf("auto extract want success, got %+v", res2)
+	}
+	if auto.DualWrite != "off" {
+		t.Fatalf("auto extract dual_write must be off: %+v", auto)
+	}
+	if auto.FactsWritten < 1 {
+		t.Fatalf("auto extract facts_written=%d want >= 1", auto.FactsWritten)
+	}
+	parentFinal, ok := loadEntryAcrossTiers(ps, ingested.MemoryID)
+	if !ok {
+		t.Fatal("parent missing after auto extract")
+	}
+	if parentFinal.OriginalText != parentBefore.OriginalText {
+		t.Fatal("auto extract must not drop OriginalText")
+	}
+}
+
+func TestExtractFactsMissingIDErrors(t *testing.T) {
+	t.Setenv("MEMORY_ONNX_MODEL_PATH", "")
+	h, err := New(Config{PalaceRoot: t.TempDir(), DefaultTenant: "dogfood"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	ctx := context.Background()
+	if _, _, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+		Tenant:    "dogfood",
+		SessionID: "sess-missing",
+		Role:      "user",
+		Content:   "durable parent stays when extract id misses",
+	}); err != nil {
+		t.Fatalf("ingest: %v", err)
+	}
+	ps := h.Store("dogfood")
+	semBefore := len(ps.ListEntriesInTier(palace.TierSemantic))
+	totalBefore := ps.GetStats().TotalEntries
+
+	res, out, err := h.handleExtractFacts(ctx, nil, extractFactsInput{
+		Tenant:   "dogfood",
+		MemoryID: "does-not-exist",
+		Facts:    []string{"must not invent this fact"},
+	})
+	if err == nil {
+		t.Fatal("missing memory_id must error")
+	}
+	if res == nil || !res.IsError {
+		t.Fatalf("missing memory_id want IsError, got %+v", res)
+	}
+	if out.FactsWritten != 0 {
+		t.Fatalf("must not invent facts: %+v", out)
+	}
+	if ps.GetStats().TotalEntries != totalBefore {
+		t.Fatalf("missing id must not write: before=%d after=%d", totalBefore, ps.GetStats().TotalEntries)
+	}
+	if got := len(ps.ListEntriesInTier(palace.TierSemantic)); got != semBefore {
+		t.Fatalf("semantic count changed on missing id: %d -> %d", semBefore, got)
+	}
+
+	res, _, err = h.handleExtractFacts(ctx, nil, extractFactsInput{
+		Tenant: "dogfood",
+	})
+	if err == nil || res == nil || !res.IsError {
+		t.Fatalf("empty memory_id want IsError, err=%v res=%+v", err, res)
+	}
+}
+
+func TestIngestSucceedsWithoutExtract(t *testing.T) {
+	t.Setenv("MEMORY_ONNX_MODEL_PATH", "")
+	h, err := New(Config{PalaceRoot: t.TempDir(), DefaultTenant: "dogfood"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	ctx := context.Background()
+	const needle = "ingest-without-host-extract-call"
+	_, out, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+		Tenant:    "dogfood",
+		SessionID: "sess-no-extract",
+		Role:      "user",
+		Content:   "My name is Bob. I live in Portland. " + needle,
+	})
+	if err != nil {
+		t.Fatalf("ingest must succeed without calling extract: %v", err)
+	}
+	if out.DualWrite != "off" || out.Audited {
+		t.Fatalf("dual_write must be off: %+v", out)
+	}
+	if out.MemoryID == "" {
+		t.Fatal("expected memory_id")
+	}
+
+	ps := h.Store("dogfood")
+	parent, ok := loadEntryAcrossTiers(ps, out.MemoryID)
+	if !ok {
+		t.Fatal("parent must be durable without host extract")
+	}
+	if !strings.Contains(parent.OriginalText, needle) {
+		t.Fatalf("OriginalText dropped: %q", parent.OriginalText)
+	}
+	for _, e := range ps.ListEntriesInTier(palace.TierSemantic) {
+		if e.Provenance.SourceStep == extractFactsSourceStep {
+			t.Fatalf("handleIngestTurn must not call memory_extract_facts; child %+v", e)
+		}
+	}
+}
+
+func TestExtractFactsTenantOmitFailClosed(t *testing.T) {
+	t.Setenv("MEMORY_ONNX_MODEL_PATH", "")
+	root := t.TempDir()
+	h, err := New(Config{PalaceRoot: root, DefaultTenant: "dogfood"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	ctx := context.Background()
+	_, ingested, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+		Tenant:    "dogfood",
+		SessionID: "sess-omit",
+		Role:      "user",
+		Content:   "omit-extract-parent",
+	})
+	if err != nil {
+		t.Fatalf("ingest: %v", err)
+	}
+
+	res, out, err := h.handleExtractFacts(ctx, nil, extractFactsInput{
+		MemoryID: ingested.MemoryID,
+		Facts:    []string{"must not write on omit tenant"},
+	})
+	if err == nil || !errors.Is(err, ErrTenantRequired) {
+		t.Fatalf("omit tenant: err=%v want ErrTenantRequired", err)
+	}
+	if res == nil || !res.IsError {
+		t.Fatalf("omit tenant want IsError, got %+v", res)
+	}
+	if out.FactsWritten != 0 || out.Tenant != "" {
+		t.Fatalf("omit tenant output: %+v", out)
+	}
+	ps := h.Store("dogfood")
+	for _, e := range ps.ListEntriesInTier(palace.TierSemantic) {
+		if e.Provenance.SourceStep == extractFactsSourceStep {
+			t.Fatalf("omit tenant must not write extract children: %+v", e)
+		}
 	}
 }

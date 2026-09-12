@@ -124,8 +124,8 @@ func assertHealthzHonesty(t *testing.T, body HealthzResponse) {
 	if body.Version != ServerVersion {
 		t.Fatalf("version: %q", body.Version)
 	}
-	if body.Tools < 10 {
-		t.Fatalf("tools count: %d want >= 10", body.Tools)
+	if body.Tools < 11 {
+		t.Fatalf("tools count: %d want >= 11", body.Tools)
 	}
 	if body.Tools != len(body.ToolNames) {
 		t.Fatalf("tools=%d tool_names=%d (%v)", body.Tools, len(body.ToolNames), body.ToolNames)
@@ -134,7 +134,7 @@ func assertHealthzHonesty(t *testing.T, body HealthzResponse) {
 	for _, n := range body.ToolNames {
 		have[n] = true
 	}
-	for _, n := range []string{"memory_write", "memory_related", "memory_supersede_entity", "memory_retrieve", "ops_digest_export"} {
+	for _, n := range []string{"memory_write", "memory_related", "memory_supersede_entity", "memory_retrieve", "ops_digest_export", "memory_extract_facts"} {
 		if !have[n] {
 			t.Fatalf("tool_names missing %q: %v", n, body.ToolNames)
 		}

@@ -54,7 +54,8 @@ Requires the Go version in [`go.mod`](go.mod). The kernel dependency is public
 `github.com/iome-sh/memory` **v1.5.10** (annotated tag; `go.mod` pin). Compatible
 with [iomesh-tui **v1.3.3**](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.3)
 (optional `source_hint` on ingest · `ops_digest_export` mesh+private receipts).
-dual_write OFF · **not** Memory GA.
+Optional `memory_extract_facts` is unknown-tool-safe for TUI **v1.3.4** (ingest
+schema unchanged). dual_write OFF · **not** Memory GA.
 
 ### Tagged releases
 
@@ -91,7 +92,7 @@ export MEMORY_TENANT=default
 # :8080 is forced to 127.0.0.1:8080. 0.0.0.0 requires -allow-non-loopback.
 
 curl -fsS http://127.0.0.1:8080/healthz
-# expect dual_write=off · not_memory_ga=true · qdrant=off · tools>=10 (compile-time)
+# expect dual_write=off · not_memory_ga=true · qdrant=off · tools>=11 (compile-time)
 # healthz stays open even if MEMORY_MCP_HTTP_SECRET is set
 ```
 
@@ -160,12 +161,12 @@ Probe honesty (`GET /healthz` 200 is not Connected):
 ```bash
 curl -fsS http://127.0.0.1:8080/healthz
 # expect dual_write=off · not_memory_ga=true · embeddings=hash|onnx · qdrant=off
-#   + residual-honest "tools" (compile-time lean count, >=10) and "tool_names"
+#   + residual-honest "tools" (compile-time lean count, >=11) and "tool_names"
 #   healthz.tools is compile-time registration, not a live MCP tools/list stamp
 ```
 
 Tools exposed after `tools/list` (lean kernel maps; dual_write OFF):
-`memory_ingest_turn`, `memory_write`, `memory_retrieve`, `memory_search_semantic`,
+`memory_ingest_turn`, `memory_extract_facts`, `memory_write`, `memory_retrieve`, `memory_search_semantic`,
 `memory_list`, `memory_compact_status`, `memory_facts_as_of`, `memory_related`,
 `memory_supersede_entity`, `ops_digest_export`.
 
@@ -174,7 +175,7 @@ Tools exposed after `tools/list` (lean kernel maps; dual_write OFF):
 ```bash
 docker compose up --build
 curl -fsS http://127.0.0.1:8080/healthz
-# expect dual_write=off · not_memory_ga=true · embeddings=hash|onnx · qdrant=off · tools>=10
+# expect dual_write=off · not_memory_ga=true · embeddings=hash|onnx · qdrant=off · tools>=11
 ```
 
 ### Advanced: better semantic recall (optional ONNX)
@@ -224,6 +225,7 @@ Local palace FS on the operator machine. `tools/list` and `healthz.tool_names` a
 | Tool | Kernel API | Surface |
 |------|------------|---------|
 | `memory_ingest_turn` | `IngestTurn` | Write local FS (conversation turn). Optional `source_hint` (`mesh` / `private` or kernel-classifiable alias) stamps provenance + `source_hint:<hint>` tag; omit keeps private — do not invent mesh from session id. Host DLP redacts common secret shapes (`ghp_` / `sk-` / …) before write — residual heuristics, not commercial DLP. |
+| `memory_extract_facts` | `ExtractAtomicFacts` + `Write` (`turn_fact` children) | Optional HITL extract-after-persist. Required `tenant` (omit fail-closes) + `memory_id` (parent already on disk). Optional `facts`; omit runs kernel `ExtractAtomicFacts` on a copy. Writes semantic `turn_fact` children; does **not** rewrite/delete the parent and is **not** called from ingest (extract is not a PalaceStore write-gate). dual_write OFF · not NLP · not Memory GA. TUI v1.3.4 ignores unknown tools. |
 | `memory_write` | `Write` / `WriteAndSupersede` (durable facts; not a conversation turn) | Write local FS (same host DLP as ingest) |
 | `memory_retrieve` | `SearchMemoryWithOptions` | Read/search local FS; does not ingest |
 | `memory_search_semantic` | Hybrid search on semantic tier | Read local FS; does not ingest |
