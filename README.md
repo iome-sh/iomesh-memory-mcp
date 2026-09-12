@@ -27,6 +27,16 @@ local filesystem under PALACE_ROOT/<tenant>/…
 - **Tenant paths** — one process, filesystem isolation by tenant subdirectory
 - **Releases** — multi-platform binaries via GoReleaser (SBOM + keyless cosign on checksums)
 
+## TTFH walking skeleton
+
+Kernel operator page: [memory `docs/TTFH.md`](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md)
+(three RCA-shaped turns → retrieve in-process → facts-as-of → print `source_hint`).
+Cost-max: **hash embedder**, **no Qdrant**, **no cloud palace**. This host pin
+(`v0.4.1`) and companion TUI pin (`v1.3.6`) are not **E-G1**. **E-G1 is not closed.**
+Cite-both is a TUI session rule (`/memory digest --require-sources mesh,private`);
+honest miss is success; catalog/grant ≠ cite-both; never invent mesh.
+dual_write OFF · **not** Memory GA.
+
 ## Install
 
 ### From source
@@ -51,11 +61,11 @@ make build   # → bin/iomesh-memory-mcp
 ```
 
 Requires the Go version in [`go.mod`](go.mod). The kernel dependency is public
-`github.com/iome-sh/memory` **v1.5.11** (annotated tag; `go.mod` pin). Compatible
-with [iomesh-tui **v1.3.4+**](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.4)
-(`/memory extract`). Ingest + digest remain compatible with
-[iomesh-tui **v1.3.3**](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.3)
-(optional `source_hint` on ingest · `ops_digest_export` mesh+private receipts).
+`github.com/iome-sh/memory` **v1.5.11** (annotated tag; `go.mod` pin). Current
+companion TUI pin is [iomesh-tui **v1.3.6**](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.6).
+Historical: ingest + digest since [TUI **v1.3.3**](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.3)
+(optional `source_hint` on ingest · `ops_digest_export` mesh+private receipts);
+[`/memory extract`](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.4) since TUI **v1.3.4**.
 dual_write OFF · **not** Memory GA.
 
 ### Tagged releases
@@ -284,7 +294,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contributor guide |
 | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community standards |
 | [SUPPORT.md](SUPPORT.md) | Issues, security, support scope |
-| [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) | E3 install matrix · E4 operator dogfood runbook |
+| [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) | E3 install matrix · E4 operator dogfood runbook (optional TTFH-shaped path; **E-G1 not closed**) |
+| [memory docs/TTFH.md](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md) | Kernel TTFH walking skeleton · cost-max hash / no Qdrant / no cloud palace · **E-G1 not closed** |
 | [docs/PUBLIC_FLIP_READINESS.md](docs/PUBLIC_FLIP_READINESS.md) | Maintainer residual (flip complete; not operator how-to; public MIT ≠ Memory GA) |
 | [docs/OPEN_SOURCE_AUDIT.md](docs/OPEN_SOURCE_AUDIT.md) | Maintainer OSS process residual (not a product claim; public MIT ≠ Memory GA) |
 

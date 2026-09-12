@@ -35,6 +35,7 @@ Serials below are historical engineering pins, not a product ledger.
 | **does not import private control-plane/broker packages** | Builds on `github.com/iome-sh/memory` + MCP SDK only. |
 | **naming honesty** | Product edge = **`iomesh-memory-mcp`**. |
 | **open boxes stay open** | Still-human product close / still-open product gates (E4 live evidence · E10 founder/GTM) remain open; do not close by residual alone. |
+| **E-G1 not closed** | Kernel TTFH walking skeleton + this runbook do **not** close **E-G1** (real laptop: PULSE + 3 RCA + cite-both-or-miss). Docs / CI green ≠ E-G1. |
 | **Palace sunset** | Hosted Palace path remains sunset / residual; local-primary FS is the edge dogfood path. |
 | **mesh optional for pull** | Mesh credentials + platform endpoint are optional for durable pull/retain. Local FS path needs neither mesh nor a priced add-on. Do not invent a priced add-on SKU or a mesh base rate here. |
 | **compose PASS ≠ public registry** | `docker compose up --build` uses **local image** `iomesh-memory-mcp:local` only. |
@@ -71,16 +72,16 @@ Supported install / attach surfaces for the **local-primary** edge host. All pat
 ### Install options
 
 ```bash
-# go install (public modules) — no annotated v* release yet; @latest is a pseudo-version
-go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main
+# operator pin — annotated GitHub Release v0.4.1 (not Memory GA)
+go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.1
 
 # from clone
 git clone https://github.com/iome-sh/iomesh-memory-mcp.git
 cd iomesh-memory-mcp
 make build   # → bin/iomesh-memory-mcp (embeds git describe)
 
-# after the first annotated tag (maintainers; see RELEASING.md) pin a release
-# go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@vX.Y.Z
+# non-pin tip only (not a production pin; @latest is also not a pin)
+# go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main
 ```
 
 Honesty: **build PASS ≠ invent GA** · dual_write remains OFF · not Memory GA · residual PASS ≠ invent Edge Memory GA.
@@ -168,6 +169,7 @@ Optional additional surface (not required for the E4 sequence):
 | `memory_write` | Durable fact `Write` / optional `WriteAndSupersede` (#20) · dual_write OFF |
 | `memory_related` | `MultiHopRetrieve` (#17) · not full graph RAG |
 | `memory_supersede_entity` | `SupersedeEntityFacts` (#17) · HITL at the client |
+| `memory_extract_facts` | HITL extract-after-persist (parent already on disk). Optional `facts`; else kernel `ExtractAtomicFacts` on a copy. Writes `turn_fact` children; does **not** rewrite/delete the parent; **not** a PalaceStore write-gate; **not** required for E4. dual_write OFF · not NLP · not Memory GA. |
 | `ops_digest_export` | Local palace receipts for TUI `/memory digest` MCP fallback (#55/#66) · empty patterns OK · source-class diversity when mesh+private exist in-window · receipt `source_hint` + `provenance`/`tags` from palace (mesh only when stamped) · never invent mesh · dual_write OFF |
 
 Operator expectations when dogfooding against a client:
@@ -176,6 +178,18 @@ Operator expectations when dogfooding against a client:
 2. Retrieve then list and confirm FS-backed hits under `$PALACE_ROOT/<tenant>/…`.
 3. Call `memory_facts_as_of`, then `memory_compact_status` — status payload should reflect dual_write **off** / not Memory GA residual.
 4. Do **not** expect private control-plane audit dual_write publish, mesh pull, or platform sidecar parity.
+
+#### Optional TTFH-shaped path (not E4 required; **E-G1 not closed**)
+
+Kernel walking skeleton: [memory `docs/TTFH.md`](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md). Cost-max: **hash embedder**, **no Qdrant**, **no cloud palace**. Writing these steps here does **not** close **E-G1** (real laptop: PULSE + 3 RCA + cite-both-or-miss).
+
+After the required E4 sequence (or as extra ingest turns), operators may walk the RCA-shaped path:
+
+1. Three RCA-shaped `memory_ingest_turn` calls (PagerDuty page: webhook ingress 5xx; HMAC-verified delivery HTTP 200 is **not** a consume receipt; `CreateConsumer` 500 when `consumers.mode` is NULL). Local overlay stays **private**; omit `source_hint` or pass `private` — **do not invent mesh**. Host process labels (`mcp_memory_ingest_turn`, `source:iomesh-memory-mcp`) are **not** a cite-both class.
+2. `memory_retrieve` then `memory_facts_as_of` for the same session; print `source_hint` on hits (expect `private` on this overlay).
+3. Cite-both is a **TUI session rule** (`/memory digest --require-sources mesh,private`) over `ops_digest_export` receipts — **honest miss is success**. Catalog/grant ≠ cite-both. This host cannot mint a mesh-class receipt without a stamped mesh source — never invent mesh.
+
+**E-G1 is not closed** by this page. A docs PR, a green gate, or a TUI slash-command name is not a laptop PULSE run.
 
 **residual PASS ≠ live dogfood** — this section is the honesty SSOT for a human or client round-trip; CI does not run a live MCP session. **PASS ≠ live dogfood green.**
 
@@ -196,11 +210,12 @@ curl -fsS http://127.0.0.1:8080/healthz
 #   "dual_write":"off"
 #   "not_memory_ga":true
 #   "embeddings":"hash" | "onnx"
+#   "persist_embeddings":"off"  (default; on only for ONNX + MEMORY_PERSIST_EMBEDDINGS; hash never persists)
 #   "qdrant":"off"
-#   "tools": <compile-time lean count, currently >= 10>
+#   "tools": <compile-time lean count, currently >= 11>
 #   "tool_names": [..., "memory_write", "memory_related",
 #                  "memory_supersede_entity", "memory_retrieve",
-#                  "ops_digest_export", ...]
+#                  "memory_extract_facts", "ops_digest_export", ...]
 # honesty: healthz.tools is residual-honest registration, not a live MCP
 #   tools/list stamp. s1509 TUI attach tools=6 at tip f46afe2 is
 #   contemporaneous evidence — do not restamp as live forever-green.
@@ -275,6 +290,7 @@ Peers (mention only): TUI s1463 dogfood tip · private control-plane residual s1
 | [Makefile](../Makefile) | `edge-dogfood-gate` · `check` · `ci` |
 | [scripts/edge_dogfood_gate.sh](../scripts/edge_dogfood_gate.sh) | Offline residual greps |
 | [EDGE_DOGFOOD_EVIDENCE.md](EDGE_DOGFOOD_EVIDENCE.md) | Maintainer residual (local evidence log; not operator how-to) · **s1504** unit + healthz · **s1509** TUI client attach |
+| [memory docs/TTFH.md](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md) | Kernel TTFH walking skeleton (3 RCA + retrieve + facts-as-of + `source_hint`) · cost-max hash / no Qdrant / no cloud palace · **E-G1 not closed** |
 | [docs/OPEN_SOURCE_AUDIT.md](OPEN_SOURCE_AUDIT.md) | Maintainer OSS process residual (not operator how-to) |
 | [docs/PUBLIC_FLIP_READINESS.md](PUBLIC_FLIP_READINESS.md) | M4 public-flip maintainer residual (flip complete; not operator how-to) |
 | [CHANGELOG.md](../CHANGELOG.md) | s1462 · s1500 · s1504 · s1509 entries |
