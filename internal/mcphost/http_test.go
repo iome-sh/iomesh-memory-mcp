@@ -41,6 +41,9 @@ func TestHealthzDoesNotLeakTenantOrOrg(t *testing.T) {
 	if body["not_memory_ga"] != true {
 		t.Fatalf("not_memory_ga: %v", body["not_memory_ga"])
 	}
+	if body["persist_embeddings"] != "off" {
+		t.Fatalf("persist_embeddings: %v want off", body["persist_embeddings"])
+	}
 }
 
 func TestHealthzHandler(t *testing.T) {
@@ -77,7 +80,8 @@ func TestHealthzSnapshotMatchesHandler(t *testing.T) {
 	}
 	want := HealthzSnapshot(h)
 	if got.Status != want.Status || got.Service != want.Service || got.DualWrite != want.DualWrite ||
-		got.NotMemoryGA != want.NotMemoryGA || got.Embeddings != want.Embeddings || got.Qdrant != want.Qdrant ||
+		got.NotMemoryGA != want.NotMemoryGA || got.Embeddings != want.Embeddings ||
+		got.PersistEmbeddings != want.PersistEmbeddings || got.Qdrant != want.Qdrant ||
 		got.Version != want.Version || got.Tools != want.Tools {
 		t.Fatalf("handler vs snapshot: got=%+v want=%+v", got, want)
 	}
@@ -120,6 +124,9 @@ func assertHealthzHonesty(t *testing.T, body HealthzResponse) {
 	}
 	if body.Qdrant != "off" {
 		t.Fatalf("qdrant must be off for lean host: %q", body.Qdrant)
+	}
+	if body.PersistEmbeddings != "off" {
+		t.Fatalf("persist_embeddings: %q want off (default; hash never persists)", body.PersistEmbeddings)
 	}
 	if body.Version != ServerVersion {
 		t.Fatalf("version: %q", body.Version)

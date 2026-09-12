@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Optional ONNX `PersistEmbeddings`:** env `MEMORY_PERSIST_EMBEDDINGS` (`1`/`true`/`on`/`yes`, case-insensitive) default **off**. `PalaceConfig.PersistEmbeddings` is true only when embeddings are **onnx** and the env is on. Hash never persists (kernel #45). `GET /healthz` reports `persist_embeddings` (`off`|`on`). Does not require Qdrant/usearch. Default write path unchanged. dual_write OFF · not Memory GA · catalog ≠ Connected.
+
+### Changed
+- **Kernel pin:** `github.com/iome-sh/memory` annotated **`v1.5.10`** → annotated **`v1.5.11`** (optional ONNX vector persist, default off). dual_write OFF · not Memory GA · catalog ≠ Connected.
+
 ## [0.4.0] — 2026-09-12
 
 Optional HITL `memory_extract_facts` (#70). Compatible with [iomesh-tui **v1.3.4+**](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.4) `/memory extract`. dual_write OFF · not Memory GA · catalog ≠ connected.

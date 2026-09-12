@@ -51,7 +51,7 @@ make build   # → bin/iomesh-memory-mcp
 ```
 
 Requires the Go version in [`go.mod`](go.mod). The kernel dependency is public
-`github.com/iome-sh/memory` **v1.5.10** (annotated tag; `go.mod` pin). Compatible
+`github.com/iome-sh/memory` **v1.5.11** (annotated tag; `go.mod` pin). Compatible
 with [iomesh-tui **v1.3.4+**](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.4)
 (`/memory extract`). Ingest + digest remain compatible with
 [iomesh-tui **v1.3.3**](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.3)
@@ -93,7 +93,7 @@ export MEMORY_TENANT=default
 # :8080 is forced to 127.0.0.1:8080. 0.0.0.0 requires -allow-non-loopback.
 
 curl -fsS http://127.0.0.1:8080/healthz
-# expect dual_write=off · not_memory_ga=true · qdrant=off · tools>=11 (compile-time)
+# expect dual_write=off · not_memory_ga=true · persist_embeddings=off (default) · qdrant=off · tools>=11 (compile-time)
 # healthz stays open even if MEMORY_MCP_HTTP_SECRET is set
 ```
 
@@ -161,9 +161,10 @@ Probe honesty (`GET /healthz` 200 is not Connected):
 
 ```bash
 curl -fsS http://127.0.0.1:8080/healthz
-# expect dual_write=off · not_memory_ga=true · embeddings=hash|onnx · qdrant=off
-#   + residual-honest "tools" (compile-time lean count, >=11) and "tool_names"
+# expect dual_write=off · not_memory_ga=true · embeddings=hash|onnx · persist_embeddings=off (default)
+#   · qdrant=off + residual-honest "tools" (compile-time lean count, >=11) and "tool_names"
 #   healthz.tools is compile-time registration, not a live MCP tools/list stamp
+#   persist_embeddings is on only for ONNX + MEMORY_PERSIST_EMBEDDINGS; hash never persists
 ```
 
 Tools exposed after `tools/list` (lean kernel maps; dual_write OFF):
@@ -176,7 +177,7 @@ Tools exposed after `tools/list` (lean kernel maps; dual_write OFF):
 ```bash
 docker compose up --build
 curl -fsS http://127.0.0.1:8080/healthz
-# expect dual_write=off · not_memory_ga=true · embeddings=hash|onnx · qdrant=off · tools>=11
+# expect dual_write=off · not_memory_ga=true · embeddings=hash|onnx · persist_embeddings=off (default) · qdrant=off · tools>=11
 ```
 
 ### Advanced: better semantic recall (optional ONNX)
@@ -198,7 +199,7 @@ Compose (optional env passthrough already works if you set the variable on the h
 MEMORY_ONNX_MODEL_PATH=/absolute/path/to/model docker compose up --build
 ```
 
-**Honesty:** ONNX improves embeddings · dual_write **OFF** · **not** Memory GA · Qdrant still **off** for lean host search · optional path ≠ invent platform GPU palace.
+**Honesty:** ONNX improves embeddings · dual_write **OFF** · **not** Memory GA · Qdrant still **off** for lean host search · `persist_embeddings` default **off** (ONNX-only opt-in) · optional path ≠ invent platform GPU palace.
 
 ## Configuration
 
@@ -212,10 +213,11 @@ MEMORY_ONNX_MODEL_PATH=/absolute/path/to/model docker compose up --build
 | `-http-secret` | `MEMORY_MCP_HTTP_SECRET` | empty = **off** | Optional shared secret for MCP HTTP. Fail-closed when set. `/healthz` stays open. stdio unchanged. |
 | `-preflight` | — | false | Print the same honesty JSON as `GET /healthz` and exit (no listen, no stdio MCP; `tool_names` = registration, not ingest) |
 | (env only) | `MEMORY_ONNX_MODEL_PATH` | empty = **hash** embeddings | Optional ONNX model dir/file for stronger semantic retrieve · see [memory](https://github.com/iome-sh/memory) README |
+| (env only) | `MEMORY_PERSIST_EMBEDDINGS` | unset = **off** | Opt-in ONNX vector persist on palace JSON (`1`/`true`/`on`/`yes`, case-insensitive). Ignored on hash (never persist hash; kernel #45). Does not require Qdrant/usearch. Default path unchanged. |
 | (env only) | `MEMORY_EMBEDDING_STRICT` | unset | When `true`, ONNX errors do not fall back to hash (kernel) |
 | (env only) | `MEMORY_HUGOT_BACKEND` | `go` | Kernel hugot backend (`go` / `ort` / `auto`) |
 
-**Embeddings:** default is **hash** (no extra deps). Set `MEMORY_ONNX_MODEL_PATH` to maximize semantic `/memory semantic` and hybrid retrieve quality in clients such as `iomesh-tui`.
+**Embeddings:** default is **hash** (no extra deps). Set `MEMORY_ONNX_MODEL_PATH` to maximize semantic `/memory semantic` and hybrid retrieve quality in clients such as `iomesh-tui`. `MEMORY_PERSIST_EMBEDDINGS` is **off** unless you opt in **and** embeddings are ONNX. Hash embeddings are **never** persisted.
 
 **Qdrant:** **not required** and **not wired** into this lean host’s search path (`healthz.qdrant=off`). The [memory](https://github.com/iome-sh/memory) kernel has an optional VectorStore API for custom Go; running Qdrant does not change lean host behavior today.
 

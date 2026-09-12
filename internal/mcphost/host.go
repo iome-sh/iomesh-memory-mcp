@@ -31,6 +31,9 @@ var ErrTenantRequired = errors.New("tenant required")
 const (
 	// ServerName is the MCP implementation name (product edge honesty).
 	ServerName = "iomesh-memory-mcp"
+	// EnvPersistEmbeddings opts into PalaceConfig.PersistEmbeddings.
+	// Default unset = off. ONNX only; hash vectors are never persisted (kernel #45).
+	EnvPersistEmbeddings = "MEMORY_PERSIST_EMBEDDINGS"
 )
 
 // ServerVersion is the default MCP implementation version stamp.
@@ -49,6 +52,7 @@ type Config struct {
 	// Tool and HTTP calls must pass tenant; omitted tenant does not fall back here.
 	DefaultTenant string
 	// EmbeddingMode is residual-honest: "hash" (default) or "onnx" when MEMORY_ONNX_MODEL_PATH loads.
+	// Tests may set "onnx" without a model to exercise PalaceConfig.PersistEmbeddings.
 	// Qdrant is NOT wired into lean host search (kernel VectorStore residual only).
 	EmbeddingMode string
 }
@@ -61,11 +65,13 @@ type Host struct {
 	embedFn  palace.EmbeddingFunc
 	batchFn  palace.BatchEmbeddingFunc
 	embedDim int
+	onnxPath string
 }
 
 // New constructs a Host. PalaceRoot must be non-empty.
 // Optional advanced embeddings: set MEMORY_ONNX_MODEL_PATH to an ONNX model dir/file
 // (see github.com/iome-sh/memory README). Empty path keeps hash embeddings (default).
+// MEMORY_PERSIST_EMBEDDINGS is opt-in and ONNX-only (default off). Hash never persists.
 // dual_write OFF · not Memory GA · Qdrant not required / not wired for lean search.
 func New(cfg Config) (*Host, error) {
 	root := strings.TrimSpace(cfg.PalaceRoot)
@@ -82,6 +88,7 @@ func New(cfg Config) (*Host, error) {
 	var embedFn palace.EmbeddingFunc
 	var batchFn palace.BatchEmbeddingFunc
 	dim := 0
+	onnxPath := ""
 	if path := strings.TrimSpace(os.Getenv(palace.EnvONNXModelPath)); path != "" {
 		emb, err := palace.NewGONNXEmbedder(palace.GONNXOptions{ModelPath: path})
 		if err != nil {
@@ -94,12 +101,22 @@ func New(cfg Config) (*Host, error) {
 			dim = palace.ResolveEmbeddingDim(path)
 		}
 		mode = "onnx"
-		log.Printf("mcphost: embeddings=onnx path=%s dim=%d dual_write=off not_memory_ga=true", path, dim)
+		onnxPath = path
+		log.Printf("mcphost: embeddings=onnx path=%s dim=%d persist_embeddings=%s dual_write=off not_memory_ga=true",
+			path, dim, persistEmbeddingsHonesty(mode))
 	} else {
 		// Explicit hash path; NewPalaceStoreWithConfig also defaults EmbeddingFunc.
 		embedFn = palace.GenerateSimpleEmbedding
 		mode = "hash"
-		log.Printf("mcphost: embeddings=hash (set MEMORY_ONNX_MODEL_PATH for ONNX) dual_write=off not_memory_ga=true")
+		// Tests may inject EmbeddingMode=onnx without loading a model (no ONNX path).
+		if strings.EqualFold(strings.TrimSpace(cfg.EmbeddingMode), "onnx") {
+			mode = "onnx"
+		} else {
+			log.Printf("mcphost: embeddings=hash (set MEMORY_ONNX_MODEL_PATH for ONNX) dual_write=off not_memory_ga=true")
+			if envPersistEmbeddings() {
+				log.Printf("mcphost: MEMORY_PERSIST_EMBEDDINGS ignored on hash embedder (never persist hash)")
+			}
+		}
 	}
 	return &Host{
 		cfg: Config{
@@ -111,6 +128,7 @@ func New(cfg Config) (*Host, error) {
 		embedFn:  embedFn,
 		batchFn:  batchFn,
 		embedDim: dim,
+		onnxPath: onnxPath,
 	}, nil
 }
 
@@ -120,6 +138,46 @@ func (h *Host) EmbeddingMode() string {
 		return "hash"
 	}
 	return h.cfg.EmbeddingMode
+}
+
+// PersistEmbeddingsHonesty is "on" only when embeddings are onnx and
+// MEMORY_PERSIST_EMBEDDINGS is on. Default "off". Hash never persists (kernel #45).
+func (h *Host) PersistEmbeddingsHonesty() string {
+	if h == nil {
+		return "off"
+	}
+	return persistEmbeddingsHonesty(h.EmbeddingMode())
+}
+
+func envPersistEmbeddings() bool {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv(EnvPersistEmbeddings))) {
+	case "1", "true", "on", "yes":
+		return true
+	default:
+		return false
+	}
+}
+
+func persistEmbeddingsEnabled(mode string) bool {
+	return envPersistEmbeddings() && strings.EqualFold(strings.TrimSpace(mode), "onnx")
+}
+
+func persistEmbeddingsHonesty(mode string) string {
+	if persistEmbeddingsEnabled(mode) {
+		return "on"
+	}
+	return "off"
+}
+
+func palaceEmbeddingModel(mode, onnxPath string) string {
+	if !strings.EqualFold(strings.TrimSpace(mode), "onnx") {
+		return ""
+	}
+	base := filepath.Base(strings.TrimSpace(onnxPath))
+	if base == "" || base == "." || base == string(filepath.Separator) {
+		return "onnx"
+	}
+	return base
 }
 
 // validateTenantSegment allows one path segment so TenantDir stays under palace
@@ -175,6 +233,7 @@ func (h *Host) TenantDir(tenant string) string {
 // Multi-tenant isolation is path-based only; this is one process residual-honest.
 // Invalid tenant (not a single path segment) returns nil.
 // Embeddings: hash default · optional ONNX when host was constructed with MEMORY_ONNX_MODEL_PATH.
+// PersistEmbeddings is ONNX-only and opt-in via MEMORY_PERSIST_EMBEDDINGS (default off).
 // Qdrant is not attached here (lean FS hybrid + EmbeddingFunc re-rank only).
 func (h *Host) Store(tenant string) *palace.PalaceStore {
 	key, err := h.ResolveTenant(tenant)
@@ -187,10 +246,18 @@ func (h *Host) Store(tenant string) *palace.PalaceStore {
 		return ps
 	}
 	base := filepath.Join(h.cfg.PalaceRoot, key)
+	mode := h.EmbeddingMode()
+	embedDim := 0
+	if strings.EqualFold(mode, "onnx") {
+		embedDim = h.embedDim
+	}
 	cfg := palace.PalaceConfig{
 		BaseDir:            base,
 		EmbeddingFunc:      h.embedFn,
 		BatchEmbeddingFunc: h.batchFn,
+		PersistEmbeddings:  persistEmbeddingsEnabled(mode),
+		EmbeddingModel:     palaceEmbeddingModel(mode, h.onnxPath),
+		EmbeddingDim:       embedDim,
 	}
 	ps := palace.NewPalaceStoreWithConfig(cfg)
 	h.stores[key] = ps
