@@ -103,7 +103,7 @@ func New(cfg Config) (*Host, error) {
 		mode = "onnx"
 		onnxPath = path
 		log.Printf("mcphost: embeddings=onnx path=%s dim=%d persist_embeddings=%s dual_write=off not_memory_ga=true",
-			path, dim, persistEmbeddingsHonesty(mode))
+			path, dim, persistEmbeddingsState(mode, path, batchFn))
 	} else {
 		// Explicit hash path; NewPalaceStoreWithConfig also defaults EmbeddingFunc.
 		embedFn = palace.GenerateSimpleEmbedding
@@ -140,13 +140,15 @@ func (h *Host) EmbeddingMode() string {
 	return h.cfg.EmbeddingMode
 }
 
-// PersistEmbeddingsHonesty is "on" only when embeddings are onnx and
-// MEMORY_PERSIST_EMBEDDINGS is on. Default "off". Hash never persists (kernel #45).
+// PersistEmbeddingsHonesty is "on" only when a real ONNX embedder is loaded
+// (model path + batch func) and MEMORY_PERSIST_EMBEDDINGS is on. Default "off".
+// Hash never persists (kernel #45) — injected EmbeddingMode=onnx without a
+// model path must not persist GenerateSimpleEmbedding vectors.
 func (h *Host) PersistEmbeddingsHonesty() string {
 	if h == nil {
 		return "off"
 	}
-	return persistEmbeddingsHonesty(h.EmbeddingMode())
+	return persistEmbeddingsState(h.EmbeddingMode(), h.onnxPath, h.batchFn)
 }
 
 func envPersistEmbeddings() bool {
@@ -158,12 +160,21 @@ func envPersistEmbeddings() bool {
 	}
 }
 
-func persistEmbeddingsEnabled(mode string) bool {
-	return envPersistEmbeddings() && strings.EqualFold(strings.TrimSpace(mode), "onnx")
+func persistEmbeddingsEnabled(mode, onnxPath string, batchFn palace.BatchEmbeddingFunc) bool {
+	if !envPersistEmbeddings() {
+		return false
+	}
+	if !strings.EqualFold(strings.TrimSpace(mode), "onnx") {
+		return false
+	}
+	if strings.TrimSpace(onnxPath) == "" || batchFn == nil {
+		return false
+	}
+	return true
 }
 
-func persistEmbeddingsHonesty(mode string) string {
-	if persistEmbeddingsEnabled(mode) {
+func persistEmbeddingsState(mode, onnxPath string, batchFn palace.BatchEmbeddingFunc) string {
+	if persistEmbeddingsEnabled(mode, onnxPath, batchFn) {
 		return "on"
 	}
 	return "off"
@@ -255,7 +266,7 @@ func (h *Host) Store(tenant string) *palace.PalaceStore {
 		BaseDir:            base,
 		EmbeddingFunc:      h.embedFn,
 		BatchEmbeddingFunc: h.batchFn,
-		PersistEmbeddings:  persistEmbeddingsEnabled(mode),
+		PersistEmbeddings:  persistEmbeddingsEnabled(mode, h.onnxPath, h.batchFn),
 		EmbeddingModel:     palaceEmbeddingModel(mode, h.onnxPath),
 		EmbeddingDim:       embedDim,
 	}

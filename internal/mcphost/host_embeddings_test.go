@@ -100,7 +100,7 @@ func TestStore_PersistEmbeddingsONNXInjectEnvOff(t *testing.T) {
 	}
 }
 
-func TestStore_PersistEmbeddingsONNXInjectEnvOn(t *testing.T) {
+func TestStore_PersistEmbeddingsONNXInjectEnvOnWithoutModelStaysOff(t *testing.T) {
 	t.Setenv("MEMORY_ONNX_MODEL_PATH", "")
 	t.Setenv(EnvPersistEmbeddings, "true")
 	h, err := New(Config{
@@ -111,10 +111,39 @@ func TestStore_PersistEmbeddingsONNXInjectEnvOn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if h.EmbeddingMode() != "onnx" {
-		t.Fatalf("mode=%q want onnx", h.EmbeddingMode())
+	ps := h.Store("t")
+	if ps == nil {
+		t.Fatal("store nil")
 	}
+	if ps.Config.PersistEmbeddings {
+		t.Fatal("injected onnx mode without model path/batchFn must not persist (hash embedder)")
+	}
+	if h.PersistEmbeddingsHonesty() != "off" {
+		t.Fatalf("persist_embeddings=%q want off", h.PersistEmbeddingsHonesty())
+	}
+}
+
+func TestStore_PersistEmbeddingsONNXInjectEnvOn(t *testing.T) {
+	t.Setenv("MEMORY_ONNX_MODEL_PATH", "")
+	t.Setenv(EnvPersistEmbeddings, "true")
+	h, err := New(Config{
+		PalaceRoot:    t.TempDir(),
+		DefaultTenant: "t",
+		EmbeddingMode: "onnx",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Stand in for a loaded ONNX session: path + batch func required (hash never persists).
+	h.onnxPath = "bge-small-en-v1.5"
 	h.embedDim = 384
+	h.batchFn = func(texts []string, dim int) ([][]float32, error) {
+		out := make([][]float32, len(texts))
+		for i := range texts {
+			out[i] = make([]float32, dim)
+		}
+		return out, nil
+	}
 	if h.PersistEmbeddingsHonesty() != "on" {
 		t.Fatalf("persist_embeddings=%q want on", h.PersistEmbeddingsHonesty())
 	}
@@ -123,7 +152,7 @@ func TestStore_PersistEmbeddingsONNXInjectEnvOn(t *testing.T) {
 		t.Fatal("store nil")
 	}
 	if !ps.Config.PersistEmbeddings {
-		t.Fatal("onnx + MEMORY_PERSIST_EMBEDDINGS must set PersistEmbeddings true")
+		t.Fatal("onnx path+batch + MEMORY_PERSIST_EMBEDDINGS must set PersistEmbeddings true")
 	}
 	if ps.Config.EmbeddingModel == "" || strings.EqualFold(ps.Config.EmbeddingModel, "hash") {
 		t.Fatalf("onnx EmbeddingModel=%q want non-hash id", ps.Config.EmbeddingModel)
