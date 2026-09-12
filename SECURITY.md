@@ -31,7 +31,7 @@ We aim to acknowledge reports within **72 hours** and provide a remediation time
 ## Threat model (edge Memory MCP host)
 
 `github.com/iome-sh/iomesh-memory-mcp` is a **local-primary MCP host** over the Palace kernel.
-It exposes tools over **stdio** or **streamable HTTP**. It is **not product Memory GA**.
+It exposes tools over **stdio** or **streamable HTTP**.
 
 | Trust boundary | Posture |
 |----------------|---------|
@@ -39,32 +39,32 @@ It exposes tools over **stdio** or **streamable HTTP**. It is **not product Memo
 | Tenant subdirectory (`MEMORY_TENANT` / tool `tenant`) | **Path-based isolation only** — same process residual; not cloud multi-tenant security. Omitted tool tenant fail-closes (does not write `$PALACE_ROOT/default`). `.`, `..`, and separators fail closed. |
 | Shared palace root | **Single-writer contract** — one host process per `PALACE_ROOT`. Multi-process writers are unsupported (last-write-wins). Path tenancy is not cloud isolation. |
 | Streamable HTTP (`MEMORY_MCP_HTTP_ADDR`) | Network-exposed MCP. Default bind is loopback (`:8080` → `127.0.0.1:8080`). `0.0.0.0` / non-loopback requires `-allow-non-loopback` / `MEMORY_MCP_HTTP_ALLOW_NON_LOOPBACK`. Optional shared secret (`MEMORY_MCP_HTTP_SECRET` / `X-Memory-MCP-Secret` or `Authorization: Bearer`) fail-closes MCP when set. `GET /healthz` stays open. Unauthenticated HTTP remains residual when the secret is unset. |
-| dual_write / audit | **OFF by default**. Lean v1 does not enable mesh audit publish. Optional dual_write is residual / later. |
+| Mesh audit publish | **Off by default**. Lean v1 does not enable mesh audit publish. Optional `dual_write` is residual / later. |
 | Kernel embeddings | Default hash/simple embedding path; optional ONNX residual via kernel — not required for dogfood. |
 
-### Residual risks (honest)
+### Residual risks
 
 - **HTTP unauthenticated lean v1** unless optional shared secret is set — do not expose to untrusted networks. Loopback is the default bind; `0.0.0.0` is refused without an explicit allow flag.  
 - **Host-side DLP is residual heuristics** — ingest/write redacts common paste shapes (`ghp_` / `sk-` / AWS `AKIA` / Slack `xox*` / PEM / JWT-shaped). Not commercial DLP, not hardware-bound keys, not default envelope encryption.  
 - **Path-based tenancy ≠ multi-tenant cloud isolation** — one process, shared code. Omitted and invalid tenant fail closed so list/write stay under `$PALACE_ROOT/<tenant>/` and never share `$PALACE_ROOT/default`. `GET /healthz` does not leak tenant or org. Organization isolation for the I/O Mesh broker is a separate HTTP header (`X-IOMesh-Org`) on mesh clients; this host does not implement that.  
 - **Single-writer contract** — one host process per palace root. Multi-process writers on a shared root remain unsupported. That is the product contract, not a defect to hide. In-process kernel `writeMu` is not flock and not a tenancy boundary.  
 - **Palace FS is user data** — encryption at rest, backup, and OS permissions are operator responsibilities.  
-- **Not Memory GA** — no hosted Palace SLA.  
-- **dual_write OFF** — no default mesh audit side effects.
+- **No hosted Palace SLA.**  
+- **No default mesh audit side effects.**
 
 ### What this is *not*
 
 - Not multitenant hosted Memory  
 - Not a freemium cloud Palace  
 - Not a mesh control plane  
-- Not automatic dual_write / billing / plan gates  
+- Not automatic mesh audit publish / billing / plan gates  
 
 ## Hardening checklist for operators
 
 1. Point `PALACE_ROOT` at a directory with appropriate OS permissions  
 2. Prefer **stdio** for local TUI attach; if HTTP, keep the loopback default (or set `MEMORY_MCP_HTTP_SECRET`) and use a reverse proxy with auth for non-loopback  
 3. Do not commit palace contents, `.env`, or API keys  
-4. Keep dual_write OFF unless you deliberately wire a future audit adapter  
+4. Keep mesh audit publish off unless you deliberately wire a future audit adapter  
 5. Run `make vuln` / CI govulncheck on PRs  
 
 ## Dependency security

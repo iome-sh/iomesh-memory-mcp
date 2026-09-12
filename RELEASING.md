@@ -2,11 +2,11 @@
 
 Ship from `main` via PR; cut annotated semver tags for binary/image consumers.
 
-**Current honesty:** `v0.1.0` is the first public annotated `v*` tag / GitHub
+`v0.1.0` is the first public annotated `v*` tag / GitHub
 Release. Pin
 `go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.1.1`
 (or a later published tag). `@latest` / floating `main` are not production pins.
-Do **not** auto-tag. Do not invent forever-green cosign or Memory GA.
+Do **not** auto-tag.
 
 ## When to bump and tag
 
@@ -16,7 +16,7 @@ minor/major capability set, cut a release in the same delivery loop (or immediat
 | Trigger | Bump | Examples |
 |---------|------|----------|
 | New MCP tools / CLI flags / HTTP surface | **minor** within `v0.x` while pre-1.0 | `memory_list`, HTTP path |
-| Breaking tool schemas | **minor** (pre-1.0 honesty) or document migration | Rename tool input fields |
+| Breaking tool schemas | **minor** (pre-1.0) or document migration | Rename tool input fields |
 | Docs-only / OSS process bar | usually **no** tag | SECURITY, OPEN_SOURCE_AUDIT, readiness residual |
 | Security fix | **patch** | CVE follow-up |
 
@@ -33,7 +33,7 @@ Checklist items that must move with the tag:
 2. [ ] GitHub Actions **ci-success** green on the release commit  
 3. [ ] [CHANGELOG.md](CHANGELOG.md) updated (move Unreleased → version section)  
 4. [ ] No secrets or palace data in tree  
-5. [ ] Honesty locks intact: dual_write OFF · not Memory GA · naming **iomesh-memory-mcp**  
+5. [ ] Naming **iomesh-memory-mcp**; `GET /healthz` still reports `"dual_write":"off"`  
 6. [ ] **Kernel public prerequisite met:** `github.com/iome-sh/memory` is public — no `GOPRIVATE` / PAT for consumers or release CI  
 7. [ ] Default `ServerVersion` string matches the tag family (GoReleaser ldflags set `v{{.Version}}`)  
 8. [ ] Annotated tag `vX.Y.Z` pushed (GoReleaser **release** workflow green; assets on GitHub Release) — **no auto-tag**; maintainers cut tags deliberately
@@ -91,8 +91,8 @@ cosign verify-blob \
 ## M5 signing / matrix (post-public residual)
 
 Packaging and verify docs for the public binary host **`iomesh-memory-mcp`**.
-`v0.1.0` is the first public tag. **Does not** invent forever-green signed CI
-or Memory GA. Later tags still need a deliberate maintainer cut.
+`v0.1.0` is the first public tag. A published tag is not a standing signed-release
+SLA. Later tags still need a deliberate maintainer cut.
 
 ### Release matrix
 
@@ -119,30 +119,29 @@ make release-snapshot   # → dist/ multi-arch; no GitHub publish
 Snapshot CI path: Actions **workflow_dispatch** with `snapshot: true` →
 `goreleaser release --snapshot --clean --skip=sign`.
 
-### M5 honesty locks (non-claims)
+### M5 non-claims
 
-- A published tag **≠ invent forever-green signed releases**
-- residual PASS **≠ invent forever-green signed releases** · residual PASS **≠ invent M5 complete**
-- dual_write **OFF** · **not Memory GA** · no invent GA
+- A published tag is not a standing signed-release SLA
 - Product binary name **`iomesh-memory-mcp`**
 - **Kernel public prerequisite met** (`github.com/iome-sh/memory` public; no release PAT)
 - **no auto-tag releases**
+- `GET /healthz` reports `"dual_write":"off"`
 
-## Image name honesty
+## Image name
 
-Product edge image (when published — **optional**, do not invent green):
+Product edge image (when published — **optional**, do not treat local compose as green):
 **`ghcr.io/iome-sh/iomesh-memory-mcp`**  
 Local dogfood image remains `iomesh-memory-mcp:local` (compose PASS ≠ public registry).
 
 ## Versioning policy
 
-- **0.x** — pre-stability lean host; additive tools preferred; breaking changes allowed with CHANGELOG honesty  
+- **0.x** — pre-stability lean host; additive tools preferred; breaking changes allowed with CHANGELOG notes  
 - **1.0+** — SemVer; breaking tool/CLI changes require major bump  
 - Module path: `github.com/iome-sh/iomesh-memory-mcp`  
 
 ## Support / version policy
 
-Support + version policy for the public binary host **`iomesh-memory-mcp`**. Docs only; **does not** invent forever-green signed releases, a successful production tag already shipped for all consumers, or **Edge Memory GA**.
+Support + version policy for the public binary host **`iomesh-memory-mcp`**. Docs only; a support page is not a signed-release SLA.
 
 Kernel semver remains owned by [`github.com/iome-sh/memory`](https://github.com/iome-sh/memory) (library · tag + `go get`; no GoReleaser there).
 
@@ -180,13 +179,8 @@ go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.1.1
 make release-snapshot   # → dist/ · no GitHub publish · no cosign
 ```
 
-### Honesty locks (non-claims)
-
-- residual PASS **≠ invent forever-green signed releases**
-- residual PASS **≠ invent Edge Memory GA** · residual PASS ≠ invent bare Memory GA · residual PASS ≠ invent hosted Memory GA
-- Support policy present **≠** invent Edge Memory GA declared
-- dual_write **OFF** · **not Memory GA** · product name **`iomesh-memory-mcp`**
-- **no auto-tag** · compose/local image ≠ public registry invent green
+- Product name **`iomesh-memory-mcp`**
+- **no auto-tag** · compose/local image ≠ public registry
 
 See also [SUPPORT.md](SUPPORT.md) (issues · security · scope) and [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) (install matrix · operator runbook).
 
@@ -197,7 +191,7 @@ See also [SUPPORT.md](SUPPORT.md) (issues · security · scope) and [docs/EDGE_D
 | GitHub Release assets | GoReleaser on each deliberate `v*` tag (primary binary packaging) |
 | `go install …@vX.Y.Z` | Works with a Go toolchain; public kernel — no GOPRIVATE |
 | CI `build` job | linux/amd64 smoke on main / PR |
-| GHCR image | Optional deliberate publish — not invent green on readiness residual |
+| GHCR image | Optional deliberate publish — not claimed green from readiness residual |
 
 ```bash
 make build                 # → bin/iomesh-memory-mcp (VERSION= from git describe)
@@ -205,11 +199,8 @@ make release-snapshot      # → dist/ (local multi-arch, no publish)
 go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@vX.Y.Z
 ```
 
-## Honesty locks (non-claims)
-
-- dual_write **OFF** · not product Memory GA  
 - Product name **iomesh-memory-mcp**  
 - Kernel public prerequisite **met** · host is public  
-- residual PASS ≠ invent signed release forever-green · published tag ≠ invent forever-green signed CI  
-- M5 packaging residual present ≠ invent M5 complete · release packaging present ≠ invent GHCR green  
+- A published tag is not a standing signed-release SLA  
+- M5 packaging residual present ≠ M5 complete · release packaging present ≠ GHCR green  
 - **no auto-tag**  

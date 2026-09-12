@@ -324,52 +324,52 @@ func (h *Host) NewSDKServer() *mcp.Server {
 func (h *Host) Register(sdkServer *mcp.Server) {
 	mcp.AddTool(sdkServer, &mcp.Tool{
 		Name:        "memory_ingest_turn",
-		Description: "Ingest a conversation turn into the local tenant palace FS (role=user|assistant|tool). Optional source_hint (mesh|private or kernel-classifiable alias); omit keeps private. dual_write OFF · not Memory GA",
+		Description: "Ingest a conversation turn into the local tenant palace FS (role=user|assistant|tool). Optional source_hint (mesh|private or kernel-classifiable alias); omit keeps private.",
 	}, h.handleIngestTurn)
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
 		Name:        "memory_extract_facts",
-		Description: "Optional HITL extract-after-persist: write turn_fact children from a durable parent (HITL facts or kernel ExtractAtomicFacts). Does not rewrite the parent and is not called from ingest. dual_write OFF · not NLP · not Memory GA",
+		Description: "Optional HITL extract-after-persist: write turn_fact children from a durable parent (HITL facts or kernel ExtractAtomicFacts). Does not rewrite the parent and is not called from ingest. Structural extract, not NLP.",
 	}, h.handleExtractFacts)
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
 		Name:        "memory_write",
-		Description: "Write a durable fact to the local palace FS via kernel Write (optional WriteAndSupersede when entity_key set). dual_write OFF · not Memory GA",
+		Description: "Write a durable fact to the local palace FS via kernel Write (optional WriteAndSupersede when entity_key set).",
 	}, h.handleWrite)
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
 		Name:        "memory_retrieve",
-		Description: "Read/search the local palace FS (SearchMemoryWithOptions; keyword + optional vector re-rank). Does not ingest. dual_write OFF · not Memory GA",
+		Description: "Read/search the local palace FS (SearchMemoryWithOptions; keyword + optional vector re-rank). Does not ingest.",
 	}, h.handleRetrieve)
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
 		Name:        "memory_search_semantic",
-		Description: "Read/search local tier-4 semantic facts (hybrid; no Qdrant). Does not ingest. dual_write OFF · not Memory GA",
+		Description: "Read/search local tier-4 semantic facts (hybrid; no Qdrant). Does not ingest.",
 	}, h.handleSearchSemantic)
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
 		Name:        "memory_list",
-		Description: "List local palace FS entries by event time. Read/list only; does not ingest. dual_write OFF · not Memory GA",
+		Description: "List local palace FS entries by event time. Read/list only; does not ingest.",
 	}, h.handleList)
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
 		Name:        "memory_compact_status",
-		Description: "Local palace FS tier counts (GetStats). Does not ingest. dual_write OFF · not Memory GA",
+		Description: "Local palace FS tier counts (GetStats). Does not ingest.",
 	}, h.handleCompactStatus)
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
 		Name:        "memory_facts_as_of",
-		Description: "List local facts valid at as_of (bi-temporal lite; not full dual-clock KG). Does not ingest. not Memory GA",
+		Description: "List local facts valid at as_of (bi-temporal lite; not full dual-clock KG). Does not ingest.",
 	}, h.handleFactsAsOf)
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
 		Name:        "memory_related",
-		Description: "Multi-hop lite retrieve on local FS (entity BFS). Does not ingest. dual_write OFF · not Memory GA",
+		Description: "Multi-hop lite retrieve on local FS (entity BFS). Does not ingest.",
 	}, h.handleRelated)
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
 		Name:        "memory_supersede_entity",
-		Description: "Close open facts for an entity key on the local palace FS (SupersedeEntityFacts). Mutating; HITL stays at the client. dual_write OFF · not Memory GA",
+		Description: "Close open facts for an entity key on the local palace FS (SupersedeEntityFacts). Mutating; HITL stays at the client.",
 	}, h.handleSupersedeEntity)
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
@@ -378,7 +378,7 @@ func (h *Host) Register(sdkServer *mcp.Server) {
 			"Receipts from memory_list with source-class diversity when mesh and private both exist in-window; patterns stay empty (insufficient-signal OK). " +
 			"source_hint is palace_timeline for local/private entries; mesh only when the entry is mesh-sourced — never invented. " +
 			"Receipts also carry palace provenance.source_hint and tags so TUI ClassifyDigestReceipt can see mesh. " +
-			"Does not ingest. dual_write OFF · not Memory GA · catalog ≠ connected",
+			"Does not ingest.",
 	}, h.handleOpsDigestExport)
 
 	log.Printf("mcphost: registered tools=%d server=%s version=%s dual_write=off not_memory_ga=true",

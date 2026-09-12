@@ -1,11 +1,11 @@
 # Public-flip readiness / post-flip SSOT (iomesh-memory-mcp)
 
-**Not current operator documentation.** Visibility is already **public MIT**. This file is a **maintainer residual** kept so `make public-flip-readiness-gate` still has an offline SSOT. It is **not** a how-to-go-public guide, **not** a product claim, and **not Memory GA**. Operators read [README.md](../README.md), [SECURITY.md](../SECURITY.md), and [CONTRIBUTING.md](../CONTRIBUTING.md).
+**Not current operator documentation.** Visibility is already **public MIT**. This file is a **maintainer residual** kept so `make public-flip-readiness-gate` still has an offline SSOT. It is **not** a how-to-go-public guide and **not** a product claim. Operators read [README.md](../README.md), [SECURITY.md](../SECURITY.md), and [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 **Status: FLIP COMPLETE (public)** — `github.com/iome-sh/memory` is **public**; this host is **public**.  
-CI no longer requires `GOPRIVATE` / `IOMESH_CI_PAT`. **dual_write OFF** · **not Memory GA**.
+CI no longer requires `GOPRIVATE` / `IOMESH_CI_PAT`.
 
-> **Hard non-claims:** Public OSS ≠ invent Memory GA · dual_write OFF · residual PASS ≠ live dogfood invent · residual PASS ≠ full platform sidecar parity · compose PASS ≠ public registry · offline dogfood tip ≠ invent live dogfood green · readiness residual history ≠ invent GA.
+> Public OSS is not a product close · residual PASS ≠ live dogfood invent · residual PASS ≠ full platform sidecar parity · compose PASS ≠ public registry · offline dogfood tip ≠ invent live dogfood green · readiness residual history ≠ product close.
 
 ## Flip order (completed)
 
@@ -34,7 +34,7 @@ make public-flip-readiness-gate
 # scripts/public_flip_readiness_gate.sh
 ```
 
-Gate is offline greps only · residual PASS ≠ invent Memory GA · does not flip visibility (already public).
+Gate is offline greps only · residual PASS ≠ public flip · does not flip visibility (already public).
 
 ## Pre-flight archive (what we required before flip)
 
@@ -42,7 +42,7 @@ Gate is offline greps only · residual PASS ≠ invent Memory GA · does not fli
 2. CONTRIBUTING **Public repository policy**  
 3. GoReleaser + `.github/workflows/release.yml`  
 4. Branch protection **ci-success** · Private vulnerability reporting · homepage/topics/delete-branch-on-merge  
-5. dual_write OFF · not Memory GA · naming **iomesh-memory-mcp**  
+5. Naming **iomesh-memory-mcp**; `GET /healthz` reports `"dual_write":"off"`  
 6. edge-dogfood-gate offline dogfood SSOT  
 7. GHCR `ghcr.io/iome-sh/iomesh-memory-mcp` optional · **not invent green** until publish  
 
@@ -52,19 +52,18 @@ Gate is offline greps only · residual PASS ≠ invent Memory GA · does not fli
 - Private vulnerability reporting ON  
 - Optional CodeQL / Dependabot security updates  
 - Optional release tags + GHCR publish (not invent green)  
-- Ready for deliberate public flip was the pre-flip verdict; **flip is done** · readiness ≠ invent flip was historical honesty  
+- Ready for deliberate public flip was the pre-flip verdict; **flip is done** · readiness ≠ invent flip was historical  
 
-## Honesty locks
+## Process checks
 
-| Lock | Status |
+| Check | Status |
 |------|--------|
-| dual_write OFF | Pass |
-| not Memory GA | Pass |
 | public (host + kernel) | Pass |
-| residual PASS ≠ public flip (historical residual) | Pass as process honesty |
+| residual PASS ≠ public flip (historical residual) | Pass as process residual |
 | compose PASS ≠ public registry | Pass |
 | offline dogfood ≠ live invent | Pass |
 | full platform sidecar parity | Not claimed |
+| `dual_write` healthz field off | Pass |
 
 ## Related
 

@@ -26,7 +26,7 @@ type ingestTurnInput struct {
 	Tier       int    `json:"tier,omitempty" jsonschema:"optional MemoryTier 1..4 (default working=1)"`
 	// SourceHint is optional (mesh, private, or a kernel-classifiable alias).
 	// When omitted or empty, kernel IngestTurn stamps private. Do not invent mesh
-	// from session_id. dual_write OFF · not Memory GA.
+	// from session_id.
 	SourceHint string `json:"source_hint,omitempty" jsonschema:"optional mesh|private or kernel-classifiable alias; omit keeps private default — do not invent mesh"`
 }
 
@@ -114,7 +114,7 @@ func (h *Host) handleIngestTurn(_ context.Context, _ *mcp.CallToolRequest, in in
 
 const (
 	extractFactsSourceStep = "mcp_memory_extract_facts"
-	extractFactsNote       = "structural extract (rule-based ExtractAtomicFacts or HITL facts); not NLP; dual_write off; not Memory GA"
+	extractFactsNote       = "structural extract (rule-based ExtractAtomicFacts or HITL facts); not NLP"
 )
 
 type extractFactsInput struct {
@@ -553,7 +553,7 @@ func (h *Host) handleSearchSemantic(_ context.Context, _ *mcp.CallToolRequest, i
 	out := searchSemanticOutput{
 		Facts:  facts,
 		Tenant: tenant,
-		Note:   "semantic_tier_hybrid; default hash · optional ONNX via MEMORY_ONNX_MODEL_PATH · Qdrant not wired lean host; not Memory GA",
+		Note:   "semantic_tier_hybrid; default hash · optional ONNX via MEMORY_ONNX_MODEL_PATH · Qdrant not wired lean host",
 	}
 	return toolJSON(out), out, nil
 }
@@ -694,7 +694,7 @@ func (h *Host) handleFactsAsOf(_ context.Context, _ *mcp.CallToolRequest, in fac
 		Facts:  hits,
 		Tenant: tenant,
 		AsOf:   asOf.UTC().Format(time.RFC3339),
-		Note:   "bi-temporal lite (valid_from/valid_until tags); not full Graphiti dual-clock KG; not Memory GA",
+		Note:   "bi-temporal lite (valid_from/valid_until tags); not full Graphiti dual-clock KG",
 	}
 	return toolJSON(out), out, nil
 }
@@ -761,7 +761,7 @@ func (h *Host) handleRelated(_ context.Context, _ *mcp.CallToolRequest, in relat
 	out := relatedOutput{
 		Memories: hits,
 		Tenant:   tenant,
-		Note:     "multi-hop lite (BFS entity tags / RelatedConcepts); not full graph RAG; dual_write off; not Memory GA",
+		Note:     "multi-hop lite (BFS entity tags / RelatedConcepts); not full graph RAG",
 	}
 	return toolJSON(out), out, nil
 }
@@ -809,7 +809,7 @@ func (h *Host) handleSupersedeEntity(_ context.Context, _ *mcp.CallToolRequest, 
 		AsOf:      asOf.UTC().Format(time.RFC3339),
 		Audited:   false,
 		DualWrite: "off",
-		Note:      "closes open facts for entity_key (valid_until); does not delete; HITL stays at the client; dual_write off; not Memory GA",
+		Note:      "closes open facts for entity_key (valid_until); does not delete; HITL stays at the client",
 	}
 	return toolJSON(out), out, nil
 }

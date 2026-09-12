@@ -18,22 +18,20 @@
 - Security fixes on the default branch when feasible
 - **No cloud Memory SLA** — local-primary edge host, not hosted Palace
 
-Packaging honesty: GoReleaser + SBOM + keyless cosign on tag releases (see [RELEASING.md](RELEASING.md)).  
-**Pin versions for production**; **snapshot ≠ production release**.  
-residual PASS ≠ invent forever-green signed releases · residual PASS ≠ invent Edge Memory GA.
+Packaging: GoReleaser + SBOM + keyless cosign on tag releases (see [RELEASING.md](RELEASING.md)).  
+**Pin versions for production**; **snapshot ≠ production release**.
 
 ## What we do not provide here
 
 - Hosted Palace / multitenant cloud Memory onboarding  
-- Product **Memory GA** install guarantees (this host is edge-only; **not Memory GA**)  
-- **Edge Memory GA** declaration (candidacy docs only — residual PASS ≠ invent Edge Memory GA declared)  
+- Cloud Memory install SLAs (this host is local-primary edge)  
 - Mesh control-plane / broker support via this binary  
-- Default dual_write / audit mesh side effects  
+- Default mesh audit publish from this host  
 
 ## Before filing an issue
 
 1. Run `make check` or note CI failures  
 2. Redact API keys, palace contents, and private paths from logs  
 3. Include binary version (`iomesh-memory-mcp` / `v0.1.0` or `git describe`) or commit SHA and OS  
-4. Confirm the report is about the **edge MCP host** — not a request to invent hosted Memory GA or Edge Memory GA  
+4. Confirm the report is about the **edge MCP host**  
 5. For install/attach questions, cite which matrix row you used (stdio · HTTP · Compose · TUI) from [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md)  

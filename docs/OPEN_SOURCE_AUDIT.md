@@ -1,6 +1,6 @@
 # Open-source readiness audit
 
-**Maintainer process residual** — not a product spec and not a user guide. Visibility is already **public MIT**. **Public MIT ≠ Memory GA.** Flip is complete. Operators: [README.md](../README.md) · [SECURITY.md](../SECURITY.md) · [CONTRIBUTING.md](../CONTRIBUTING.md).
+**Maintainer process residual** — not a product spec and not a user guide. Visibility is already **public MIT**. Flip is complete. Operators: [README.md](../README.md) · [SECURITY.md](../SECURITY.md) · [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 Checklist for the OSS **process bar** of **github.com/iome-sh/iomesh-memory-mcp**
 (lean edge Memory MCP host) vs public **iomesh-tui** (binary product) and public
@@ -16,7 +16,6 @@ each major release.
 |-------|--------|
 | Repository visibility | **Public** (MIT · flipped deliberately). Kernel (`github.com/iome-sh/memory`) is public first; this host is public. |
 | Private vulnerability reporting path documented | Pass (SECURITY.md · security@iome.sh · advisory) |
-| No accidental “we are public Memory GA” claims | Pass (honesty locks below) |
 | public-flip-readiness residual | Pass (docs + offline gate; **not** a visibility flip) |
 | residual PASS ≠ public flip | Pass (explicit non-claim) |
 
@@ -28,18 +27,17 @@ each major release.
 | Local Palace FS treated as user data in SECURITY.md | Pass |
 | Path-based tenant **not** claimed as cloud multi-tenant isolation | Pass |
 | HTTP mode auth residual documented (lean v1: loopback default + optional secret; unauthenticated when secret unset) | Pass |
-| dual_write OFF residual documented | Pass |
+| `dual_write` healthz field documented off | Pass |
 | govulncheck in CI | Pass |
 | Residual: private dep on `github.com/iome-sh/memory` until kernel public flip | **Resolved** — kernel is public; module fetch is public; no PAT required |
 
-## Honesty locks (product narrative)
+## Product narrative
 
 | Claim | Status |
 |-------|--------|
-| Edge host · **not product Memory GA** | Pass |
-| Local-primary Palace path | Pass |
-| dual_write OFF by default | Pass |
-| Naming honesty: **iomesh-memory-mcp** | Pass |
+| Edge host · local-primary Palace path | Pass |
+| Mesh audit publish (`dual_write`) off by default | Pass |
+| Naming: **iomesh-memory-mcp** | Pass |
 | Qdrant/ONNX not required for default path | Pass |
 | Path isolation `PALACE_ROOT/<tenant>/` ≠ cloud multi-tenant | Pass |
 | Kernel public first (hard flip order) | Pass (documented · both public) |
@@ -55,7 +53,7 @@ each major release.
 | SECURITY | Present |
 | SUPPORT | Present |
 | CHANGELOG | Present |
-| RELEASING (GoReleaser + cosign verify + honesty locks) | Present |
+| RELEASING (GoReleaser + cosign verify) | Present |
 | PR template | Present |
 | Issue templates + security contact + docs contact_link | Present |
 | CI (lint/gofmt, test, build, govulncheck, ci-success) | Present |
@@ -63,7 +61,7 @@ each major release.
 | Makefile `ci` / `check` / `vuln` / `fmt-check` / `release-snapshot` | Present |
 | Dependabot (gomod + actions) | Present |
 | Dockerfile + docker-compose | Present |
-| README badges + honesty locks + quick start | Present |
+| README badges + quick start | Present |
 | Edge dogfood SSOT + offline gate | Present ([EDGE_DOGFOOD.md](EDGE_DOGFOOD.md)) |
 | Public-flip readiness SSOT + offline gate | Present ([PUBLIC_FLIP_READINESS.md](PUBLIC_FLIP_READINESS.md)) |
 
@@ -76,7 +74,7 @@ each major release.
 | CI token residual while kernel private | **Resolved** | No `IOMESH_CI_PAT` / `GO_MODULE_TOKEN` required for this host; do not invent a token requirement |
 | HTTP unauthenticated lean v1 | Residual | Loopback default + optional shared secret; still unauthenticated when secret unset; bind localhost / proxy |
 | Path tenancy same-process | Residual | Documented |
-| dual_write optional later | Residual | Interface not wired; default OFF |
+| `dual_write` optional later | Residual | Interface not wired; default OFF |
 | GHCR publish green | **Not claimed** | Optional deliberate act; do not invent |
 
 ## Maintainer actions (visibility already public)
@@ -90,7 +88,7 @@ See [PUBLIC_FLIP_READINESS.md](PUBLIC_FLIP_READINESS.md) post-flip steps. Summar
 5. No private module CI secret required  
 6. Optional: publish GHCR image as **`ghcr.io/iome-sh/iomesh-memory-mcp`** only (not invent green)  
 7. Keep private ledger serials off the public PR/CHANGELOG surface per CONTRIBUTING policy  
-8. Do **not** invent Memory GA or default dual_write ON  
+8. Do **not** enable default mesh audit publish  
 
 ## Out of scope for this host
 
@@ -108,13 +106,12 @@ See [PUBLIC_FLIP_READINESS.md](PUBLIC_FLIP_READINESS.md) post-flip steps. Summar
 | Process bar vs memory | **Pass** (artifacts + CI spirit aligned) |
 | Public-flip readiness residual (docs + offline gate) | **Pass** — readiness only |
 | Residual private kernel dep | **Resolved** (kernel public) |
-| Visibility public flip | **Done** — public MIT · residual PASS ≠ invent Memory GA · readiness ≠ invent flip (historical) |
-| Product honesty | **Pass** |
+| Visibility public flip | **Done** — public MIT · readiness ≠ invent flip (historical) |
 | Lean extract | **Pass** |
 
-**Overall:** **Public** (host + kernel) · dual_write OFF · not Memory GA · no GOPRIVATE required ·
+**Overall:** **Public** (host + kernel) · no GOPRIVATE required ·
 Ready for deliberate public flip was the pre-flip verdict · readiness ≠ invent flip.
-residual PASS ≠ public flip · dual_write OFF · not Memory GA · naming iomesh-memory-mcp · kernel first.
+residual PASS ≠ public flip · naming iomesh-memory-mcp · kernel first.
 
 
 ## Public import (post-flip)
