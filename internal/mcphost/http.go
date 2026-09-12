@@ -28,6 +28,9 @@ type HealthzResponse struct {
 	NotMemoryGA bool   `json:"not_memory_ga"`
 	// Embeddings: "hash" (default) or "onnx" when MEMORY_ONNX_MODEL_PATH is set at process start.
 	Embeddings string `json:"embeddings"`
+	// PersistEmbeddings: "on" only when embeddings are onnx and MEMORY_PERSIST_EMBEDDINGS is on.
+	// Default "off". Hash never persists (kernel #45). Not Qdrant/usearch.
+	PersistEmbeddings string `json:"persist_embeddings"`
 	// Qdrant: lean host does not wire VectorStore into search — always "off" here (kernel residual only).
 	Qdrant  string `json:"qdrant"`
 	Version string `json:"version,omitempty"`
@@ -41,26 +44,29 @@ type HealthzResponse struct {
 // HealthzSnapshot is the residual-honest GET /healthz body used by HTTP and CLI -preflight.
 // Live EmbeddingMode when host != nil; nil → env snapshot (same as HealthzHandler).
 // tools / tool_names are compile-time registration — not a live tools/list stamp, not ingest.
-// dual_write OFF · not Memory GA · qdrant off · no hosted palace probe.
+// dual_write OFF · not Memory GA · qdrant off · persist_embeddings default off · no hosted palace probe.
 // Honesty fields are unchanged by DLP / optional HTTP secret (no dlp/auth fields).
 func HealthzSnapshot(host *Host) HealthzResponse {
 	emb := "hash"
+	persist := "off"
 	if host != nil {
 		emb = host.EmbeddingMode()
+		persist = host.PersistEmbeddingsHonesty()
 	} else if strings.TrimSpace(os.Getenv("MEMORY_ONNX_MODEL_PATH")) != "" {
 		emb = "onnx" // process env intent; host construction may still fail-open
 	}
 	names := LeanToolNames()
 	return HealthzResponse{
-		Status:      "ok",
-		Service:     ServerName,
-		DualWrite:   "off",
-		NotMemoryGA: true,
-		Embeddings:  emb,
-		Qdrant:      "off",
-		Version:     ServerVersion,
-		Tools:       len(names),
-		ToolNames:   names,
+		Status:            "ok",
+		Service:           ServerName,
+		DualWrite:         "off",
+		NotMemoryGA:       true,
+		Embeddings:        emb,
+		PersistEmbeddings: persist,
+		Qdrant:            "off",
+		Version:           ServerVersion,
+		Tools:             len(names),
+		ToolNames:         names,
 	}
 }
 

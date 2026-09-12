@@ -64,6 +64,9 @@ func TestPreflightPrintsHealthzAndExits(t *testing.T) {
 	if body.Qdrant != "off" {
 		t.Fatalf("qdrant: %q (must be off)", body.Qdrant)
 	}
+	if body.PersistEmbeddings != "off" {
+		t.Fatalf("persist_embeddings: %q (must be off)", body.PersistEmbeddings)
+	}
 	if body.Version != mcphost.ServerVersion {
 		t.Fatalf("version: %q", body.Version)
 	}
@@ -96,7 +99,8 @@ func TestPreflightPrintsHealthzAndExits(t *testing.T) {
 	}
 	want := mcphost.HealthzSnapshot(host)
 	if body.Service != want.Service || body.DualWrite != want.DualWrite || body.Qdrant != want.Qdrant ||
-		body.Tools != want.Tools || body.Version != want.Version || body.Embeddings != want.Embeddings {
+		body.Tools != want.Tools || body.Version != want.Version || body.Embeddings != want.Embeddings ||
+		body.PersistEmbeddings != want.PersistEmbeddings {
 		t.Fatalf("preflight vs HealthzSnapshot: got=%+v want=%+v", body, want)
 	}
 	if strings.Contains(stdout.String(), "Memory GA") && !body.NotMemoryGA {

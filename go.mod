@@ -3,7 +3,7 @@ module github.com/iome-sh/iomesh-memory-mcp
 go 1.27.0
 
 require (
-	github.com/iome-sh/memory v1.5.10
+	github.com/iome-sh/memory v1.5.11
 	github.com/modelcontextprotocol/go-sdk v1.7.0
 )
 
