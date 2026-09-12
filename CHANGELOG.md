@@ -7,7 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **TTFH walking-skeleton pointer:** README + EDGE_DOGFOOD E4.3 point at kernel [`docs/TTFH.md`](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md). Optional RCA-shaped ingest path (local overlay **private**; never invent mesh); retrieve / facts-as-of print `source_hint`; cite-both is a TUI session rule (`/memory digest --require-sources mesh,private`) over `ops_digest_export` receipts — honest miss is success; catalog/grant ≠ cite-both. Cost-max: hash embedder, no Qdrant, no cloud palace. **E-G1 is not closed.** dual_write OFF · not Memory GA.
+- **E4 optional extract surface:** EDGE_DOGFOOD optional table lists `memory_extract_facts` (HITL extract-after-persist; not a PalaceStore write-gate; not required for E4). dual_write OFF · not Memory GA.
+
 ### Changed
+- **Operator pin honesty:** EDGE_DOGFOOD install uses annotated **`v0.4.1`** (`go install …@v0.4.1`); drop “no annotated v* release yet”. `@main` remains a labeled non-pin tip. dual_write OFF · not Memory GA.
+- **Companion TUI pin:** README names current companion TUI **v1.3.6** (keep history: ingest+digest since v1.3.3; `/memory extract` since v1.3.4). dual_write OFF · not Memory GA.
+- **E4.4 healthz honesty:** compile-time lean `tools` currently **>= 11** (including extract); expect `persist_embeddings` default **off** (hash never persists). s1509 TUI attach `tools=6` stays historical — do not restamp as live forever-green. dual_write OFF · not Memory GA.
 - **Public-docs hygiene:** `docs/PUBLIC_FLIP_READINESS.md` and `docs/OPEN_SOURCE_AUDIT.md` marked maintainer residuals (flip complete; not operator how-tos). README / CONTRIBUTING qualify those files. EDGE_DOGFOOD serials remain historical engineering pins, not a product ledger. dual_write OFF · not Memory GA · catalog ≠ Connected · public MIT ≠ Memory GA.
 - **Public-docs hygiene:** `docs/EDGE_DOGFOOD_EVIDENCE.md` marked a maintainer residual (local evidence log; not operator how-to; not a product claim). residual PASS ≠ live dogfood. dual_write OFF · not Memory GA · catalog ≠ Connected.
 
