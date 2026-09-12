@@ -81,7 +81,7 @@ Report vulnerabilities privately — see [SECURITY.md](SECURITY.md). **Do not op
 
 - Bugs / features: use [issue templates](https://github.com/iome-sh/iomesh-memory-mcp/issues/new/choose)  
 - Support channels: [SUPPORT.md](SUPPORT.md)  
-- Docs first: [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) (operator dogfood). Flip/audit files ([docs/PUBLIC_FLIP_READINESS.md](docs/PUBLIC_FLIP_READINESS.md), [docs/OPEN_SOURCE_AUDIT.md](docs/OPEN_SOURCE_AUDIT.md)) are maintainer residuals, not operator how-tos.
+- Docs first: [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) (operator dogfood). Flip/audit/evidence files ([docs/PUBLIC_FLIP_READINESS.md](docs/PUBLIC_FLIP_READINESS.md), [docs/OPEN_SOURCE_AUDIT.md](docs/OPEN_SOURCE_AUDIT.md), [docs/EDGE_DOGFOOD_EVIDENCE.md](docs/EDGE_DOGFOOD_EVIDENCE.md)) are maintainer residuals, not operator how-tos.
 
 ## Public repository policy
 

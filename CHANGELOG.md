@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **Public-docs hygiene:** `docs/PUBLIC_FLIP_READINESS.md` and `docs/OPEN_SOURCE_AUDIT.md` marked maintainer residuals (flip complete; not operator how-tos). README / CONTRIBUTING qualify those files. EDGE_DOGFOOD serials remain historical engineering pins, not a product ledger. dual_write OFF · not Memory GA · catalog ≠ Connected · public MIT ≠ Memory GA.
+- **Public-docs hygiene:** `docs/EDGE_DOGFOOD_EVIDENCE.md` marked a maintainer residual (local evidence log; not operator how-to; not a product claim). residual PASS ≠ live dogfood. dual_write OFF · not Memory GA · catalog ≠ Connected.
 
 ## [0.4.1] — 2026-09-12
 

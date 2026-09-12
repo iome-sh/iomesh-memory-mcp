@@ -113,7 +113,7 @@ Human (or client-driven) steps for residual-honest edge dogfood.
 **This runbook documents order of operations only — residual PASS ≠ live dogfood green.** Do not treat checklist presence as invent of a recorded green run.
 
 **Local residual evidence (s1504 · s1509):** contemporaneous stamps are logged in
-[EDGE_DOGFOOD_EVIDENCE.md](EDGE_DOGFOOD_EVIDENCE.md):
+[EDGE_DOGFOOD_EVIDENCE.md](EDGE_DOGFOOD_EVIDENCE.md) (maintainer residual — local evidence log, not operator how-to; residual PASS ≠ live dogfood):
 
 | Serial | Date UTC | What was observed |
 |--------|----------|-------------------|
@@ -246,7 +246,7 @@ curl -fsS http://127.0.0.1:8080/healthz
 | **M5** signing / matrix / extensions (s1492) | Packaging residual (tip ≠ invent forever-green signed releases) |
 | **E3** install matrix | **This serial (s1500)** — documented above |
 | **E4** operator dogfood runbook | **s1500** — runbook only; residual PASS ≠ live dogfood green |
-| **E4** local residual evidence | **s1504** unit + healthz · **s1509** TUI client attach — [EDGE_DOGFOOD_EVIDENCE.md](EDGE_DOGFOOD_EVIDENCE.md); residual PASS ≠ invent Edge Memory GA · unit ≠ full MCP client attach · healthz ≠ MCP JSON-RPC tool RT · attach + tools/list ≠ invent Edge Memory GA / forever green full product dogfood |
+| **E4** local residual evidence | **s1504** unit + healthz · **s1509** TUI client attach — [EDGE_DOGFOOD_EVIDENCE.md](EDGE_DOGFOOD_EVIDENCE.md) (maintainer residual); residual PASS ≠ invent Edge Memory GA · unit ≠ full MCP client attach · healthz ≠ MCP JSON-RPC tool RT · attach + tools/list ≠ invent Edge Memory GA / forever green full product dogfood |
 | **E5** support / version policy | [RELEASING.md](../RELEASING.md) · [SUPPORT.md](../SUPPORT.md) |
 | **Edge Memory GA declared** | **Not this serial** — residual PASS ≠ invent Edge Memory GA |
 
@@ -274,7 +274,7 @@ Peers (mention only): TUI s1463 dogfood tip · private control-plane residual s1
 | [Dockerfile](../Dockerfile) | Multi-stage build → `iomesh-memory-mcp` |
 | [Makefile](../Makefile) | `edge-dogfood-gate` · `check` · `ci` |
 | [scripts/edge_dogfood_gate.sh](../scripts/edge_dogfood_gate.sh) | Offline residual greps |
-| [EDGE_DOGFOOD_EVIDENCE.md](EDGE_DOGFOOD_EVIDENCE.md) | **s1504** unit + healthz · **s1509** TUI client attach evidence |
+| [EDGE_DOGFOOD_EVIDENCE.md](EDGE_DOGFOOD_EVIDENCE.md) | Maintainer residual (local evidence log; not operator how-to) · **s1504** unit + healthz · **s1509** TUI client attach |
 | [docs/OPEN_SOURCE_AUDIT.md](OPEN_SOURCE_AUDIT.md) | Maintainer OSS process residual (not operator how-to) |
 | [docs/PUBLIC_FLIP_READINESS.md](PUBLIC_FLIP_READINESS.md) | M4 public-flip maintainer residual (flip complete; not operator how-to) |
 | [CHANGELOG.md](../CHANGELOG.md) | s1462 · s1500 · s1504 · s1509 entries |

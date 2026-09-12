@@ -1,5 +1,7 @@
 # Edge dogfood evidence log (E4 residual)
 
+**Not current operator documentation.** This file is a **maintainer residual** — a **local evidence log**, **not** a product claim, and **not Memory GA**. **residual PASS ≠ live dogfood.** Operators follow the E4 runbook in [EDGE_DOGFOOD.md](EDGE_DOGFOOD.md).
+
 Contemporaneous **local residual dogfood evidence** for **E4** progress on
 `github.com/iome-sh/iomesh-memory-mcp`.
 
