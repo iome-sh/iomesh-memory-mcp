@@ -7,14 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-09-12
+
+Optional HITL `memory_extract_facts` (#70). Compatible with [iomesh-tui **v1.3.4+**](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.4) `/memory extract`. dual_write OFF · not Memory GA · catalog ≠ connected.
+
 ### Added
-- **`memory_extract_facts`:** optional HITL extract-after-persist. Required `tenant` (omit fail-closes) and `memory_id` (parent turn already on disk); optional `facts` (HITL strings; else `palace.ExtractAtomicFacts` on a copy). Writes `turn_fact` children (`TierSemantic`, inherited tags, `provenance.source_step=mcp_memory_extract_facts`, inherited `source_hint` / private — never invent mesh, `parent_ids=[parent]`, `valid_from` stamp). Does **not** rewrite or delete the parent. Not called from `handleIngestTurn` (ingest already writes caller `ExtractedFacts` / kernel auto-extract children; extract is not a PalaceStore write-gate and never fails `memory_ingest_turn`). dual_write always off. Structural extract, not NLP / not Memory GA. Advertised in `leanToolNames` / `GET /healthz` `tool_names`. Ingest schema unchanged; TUI **v1.3.4** ignores unknown tools.
+- **`memory_extract_facts` (#70):** optional HITL extract-after-persist. Required `tenant` (omit fail-closes) and `memory_id` (parent turn already on disk); optional `facts` (HITL strings; else `palace.ExtractAtomicFacts` on a copy). Writes `turn_fact` children (`TierSemantic`, inherited tags, `provenance.source_step=mcp_memory_extract_facts`, inherited `source_hint` / private — never invent mesh, `parent_ids=[parent]`, `valid_from` stamp). Does **not** rewrite or delete the parent. Not called from `handleIngestTurn` (ingest already writes caller `ExtractedFacts` / kernel auto-extract children; extract is not a PalaceStore write-gate and never fails `memory_ingest_turn`). dual_write always off. Structural extract, not NLP / not Memory GA. Advertised in `leanToolNames` / `GET /healthz` `tool_names`. Ingest schema unchanged; TUI **v1.3.4** ignores unknown tools.
 
 ### Changed
-- **Release hygiene:** README install pin **v0.3.2** (was leftover v0.3.0); kernel pin language **v1.5.10** to match `go.mod` (was leftover v1.5.8). Default `ServerVersion` **v0.3.2**. CHANGELOG records already-cut **v0.3.1** / **v0.3.2** instead of leaving those waves under Unreleased.
-- **Single-writer contract:** README + SECURITY.md: one host process per palace root. Multi-process writers on a shared root remain unsupported (product contract). HTTP loopback default, optional shared secret, unauth-if-unset still documented.
-
-Compatible with [iomesh-tui **v1.3.3**](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.3) (cite-both on `ops_digest_export` provenance/tags + optional `source_hint` on ingest). Optional `memory_extract_facts` is unknown-tool-safe for TUI **v1.3.4** (ingest schema unchanged). dual_write OFF · not Memory GA · catalog ≠ connected.
+- **Release hygiene (#69):** README install pin **v0.3.2** (was leftover v0.3.0); kernel pin language **v1.5.10** to match `go.mod` (was leftover v1.5.8). Default `ServerVersion` **v0.3.2**. CHANGELOG records already-cut **v0.3.1** / **v0.3.2** instead of leaving those waves under Unreleased.
+- **Single-writer contract (#69):** README + SECURITY.md: one host process per palace root. Multi-process writers on a shared root remain unsupported (product contract). HTTP loopback default, optional shared secret, unauth-if-unset still documented.
 
 ## [0.3.2] — 2026-09-10
 
@@ -174,7 +176,8 @@ dual_write OFF · not Memory GA.
   - **Repository remains private** until a deliberate visibility flip
   - dual_write **OFF** · not product Memory GA · private control plane / broker stays out of this tree · no default Qdrant/ONNX requirement
 
-[Unreleased]: https://github.com/iome-sh/iomesh-memory-mcp/compare/v0.3.2...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-memory-mcp/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/iome-sh/iomesh-memory-mcp/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/iome-sh/iomesh-memory-mcp/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/iome-sh/iomesh-memory-mcp/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/iome-sh/iomesh-memory-mcp/compare/v0.2.1...v0.3.0
