@@ -42,6 +42,8 @@ Pin the latest annotated GitHub Release:
 `v0.4.2` (GoReleaser ldflags override on tagged assets).
 
 ```bash
+# Requires Go 1.27+ (same as github.com/iome-sh/memory and iomesh-tui; see go.mod).
+export PATH="$(go env GOPATH)/bin:${PATH}"
 go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.2
 ```
 
