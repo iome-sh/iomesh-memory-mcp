@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Docs:** README install names Go **1.27+** (same as memory + iomesh-tui; see `go.mod`) and prepends `$(go env GOPATH)/bin` to `PATH` so `iomesh-memory-mcp` is found after `go install`. Aligns with TUI + kernel.
 - **Docs:** README for OSS newcomers; companion TUI pin **v1.3.7**.
 
 ## [0.4.2] — 2026-09-12
