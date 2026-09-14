@@ -26,6 +26,7 @@ This host does not dual-write to a mesh. Persist embeddings default **off**; has
 
 - [Install](#install)
 - [Quick start](#quick-start)
+- [TTFH (V1.5 host path)](#ttfh-v15-host-path)
 - [Configuration](#configuration)
 - [MCP tools](#mcp-tools)
 - [Tenant layout](#tenant-layout)
@@ -188,6 +189,29 @@ MEMORY_ONNX_MODEL_PATH=/absolute/path/to/model docker compose up --build
 ```
 
 `persist_embeddings` is **on** only for ONNX + `MEMORY_PERSIST_EMBEDDINGS`; hash never persists.
+
+## TTFH (V1.5 host path)
+
+This host is **local palace MCP**. dual_write **OFF**. PersistEmbeddings default **off**. Hash embeddings are **never** stored. **Not Memory GA.**
+
+Pins (already in [Install](#install)): MCP **[v0.4.2](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.4.2)** · kernel **[v1.5.12](https://github.com/iome-sh/memory/releases/tag/v1.5.12)** · TUI **[v1.3.7](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.7)**.
+
+**Walk (TUI)** with this host attached:
+
+1. `iomesh ttfh --unit` — offline smoke (no broker)
+2. Optional `--live` — **EMPTY** unless decoded messages; never invent **PULSE**
+3. [`scripts/ttfh-demo.sh`](https://github.com/iome-sh/iomesh-tui/blob/main/scripts/ttfh-demo.sh) in iomesh-tui — unit then optional live
+4. `/memory ingest` — three RCA-shaped turns (local overlay stays **private**)
+5. `/memory digest --require-sources mesh,private` — **cite-both or explicit miss**
+6. `/memory patterns` — ops **Beta** · empty ≠ invent · never APPLY
+7. `/memory facts-as-of` — palace · not Memory GA
+8. After PULSE: `iomesh memory pull` — dual_write **OFF** · pull ≠ Connected
+
+**Tools used:** `memory_ingest_turn`, `ops_digest_export`, `memory_patterns_list` / `memory_anomalies_list` (suggestive, never APPLY), `memory_facts_as_of`, `memory_retrieve`. This lean host registers ingest / digest / facts-as-of / retrieve; patterns/anomalies apply **when present** (not on this host’s `tools/list`).
+
+**E-G1** is a **real laptop** run: **PULSE + 3 RCA + cite-both-or-miss** — **not** this README. `--unit` / `--live`, a docs PR, and CI green are not E-G1.
+
+Kernel walk: [memory `docs/TTFH.md`](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md). V1.5 tracker: `docs/planning/ttfh-pattern-search-v15-2026.md` (control-plane planning; not this host).
 
 ## Configuration
 
