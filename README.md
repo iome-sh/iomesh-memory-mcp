@@ -198,16 +198,13 @@ Pins (already in [Install](#install)): MCP **[v0.4.2](https://github.com/iome-sh
 
 **Phases (host attached, not a gate):** R0 `iomesh ttfh --unit` (offline · no mesh) → R1 optional `--live` (EMPTY unless decoded; never invent PULSE; not overlay PULSE) → R2 ingest 3 RCA + digest cite-both-or-miss + patterns Beta + facts-as-of → R3 overlay `/dashboard` PULSE **parked** (required for E-G1) → R4 `iomesh memory pull` after PULSE · dual_write **OFF**.
 
-**Walk (TUI)** with this host attached:
+**Walk (TUI)** with this host attached. This list **is** the rollout (R1 ≠ R3).
 
-1. `iomesh ttfh --unit` — offline smoke (no broker)
-2. Optional `--live` — **EMPTY** unless decoded messages; never invent **PULSE**
-3. [`scripts/ttfh-demo.sh`](https://github.com/iome-sh/iomesh-tui/blob/main/scripts/ttfh-demo.sh) in iomesh-tui — unit then optional live
-4. `/memory ingest` — three RCA-shaped turns (local overlay stays **private**)
-5. `/memory digest --require-sources mesh,private` — **cite-both or explicit miss**
-6. `/memory patterns` — ops **Beta** · empty ≠ invent · never APPLY
-7. `/memory facts-as-of` — palace · not Memory GA
-8. After PULSE: `iomesh memory pull` — dual_write **OFF** · pull ≠ Connected
+- **R0** `iomesh ttfh --unit` — offline smoke (no broker). [`scripts/ttfh-demo.sh`](https://github.com/iome-sh/iomesh-tui/blob/main/scripts/ttfh-demo.sh) in iomesh-tui — unit then optional live
+- **R1** Optional `--live` — **EMPTY** unless decoded messages; never invent **PULSE**; not overlay PULSE
+- **R2** `/memory ingest` — three RCA-shaped turns (local overlay stays **private**). `/memory digest --require-sources mesh,private` — **cite-both or explicit miss**. `/memory patterns` — ops **Beta** · empty ≠ invent · never APPLY. `/memory facts-as-of` — palace · not Memory GA
+- **R3** Overlay `/dashboard` PULSE **parked** (required for E-G1)
+- **R4** After PULSE: `iomesh memory pull` — dual_write **OFF** · pull ≠ Connected
 
 **Tools used:** `memory_ingest_turn`, `ops_digest_export`, `memory_patterns_list` / `memory_anomalies_list` (suggestive, never APPLY), `memory_facts_as_of`, `memory_retrieve`. This lean host registers ingest / digest / facts-as-of / retrieve; patterns/anomalies apply **when present** (not on this host’s `tools/list`).
 
