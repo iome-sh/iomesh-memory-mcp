@@ -196,6 +196,8 @@ This host is **local palace MCP**. dual_write **OFF**. PersistEmbeddings default
 
 Pins (already in [Install](#install)): MCP **[v0.4.2](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.4.2)** · kernel **[v1.5.12](https://github.com/iome-sh/memory/releases/tag/v1.5.12)** · TUI **[v1.3.7](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.7)**.
 
+**Phases (host attached, not a gate):** R0 `iomesh ttfh --unit` (offline · no mesh) → R1 optional `--live` (EMPTY unless decoded; never invent PULSE; not overlay PULSE) → R2 ingest 3 RCA + digest cite-both-or-miss + patterns Beta + facts-as-of → R3 overlay `/dashboard` PULSE **parked** (required for E-G1) → R4 `iomesh memory pull` after PULSE · dual_write **OFF**.
+
 **Walk (TUI)** with this host attached:
 
 1. `iomesh ttfh --unit` — offline smoke (no broker)
