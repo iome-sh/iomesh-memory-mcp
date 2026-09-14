@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Docs:** README TTFH V1.5 phased rollout sentence (R0–R4 host attached, not a gate; overlay `/dashboard` PULSE parked; dual_write OFF). Not E-G1 · not Memory GA.
 - **Docs:** README TTFH V1.5 host walk (not E-G1, not Memory GA). dual_write OFF · PersistEmbeddings default off · hash never stored.
 - **Docs:** README install names Go **1.27+** (same as memory + iomesh-tui; see `go.mod`) and prepends `$(go env GOPATH)/bin` to `PATH` so `iomesh-memory-mcp` is found after `go install`. Aligns with TUI + kernel.
 - **Docs:** README for OSS newcomers; companion TUI pin **v1.3.7**.
