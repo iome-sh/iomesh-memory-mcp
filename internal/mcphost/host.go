@@ -339,7 +339,7 @@ func (h *Host) Register(sdkServer *mcp.Server) {
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
 		Name:        "memory_retrieve",
-		Description: "Read/search the local palace FS (SearchMemoryWithOptions; keyword + optional vector re-rank). Does not ingest.",
+		Description: "Read/search the local palace FS (SearchMemoryWithOptions; keyword + optional vector re-rank). Optional tag or department (department support → Tag dept:support, not Connected). Empty = no extra filter. Does not ingest.",
 	}, h.handleRetrieve)
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
@@ -359,7 +359,7 @@ func (h *Host) Register(sdkServer *mcp.Server) {
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
 		Name:        "memory_facts_as_of",
-		Description: "List local facts valid at as_of (bi-temporal lite; not full dual-clock KG). Does not ingest.",
+		Description: "List local facts valid at as_of (bi-temporal lite; not full dual-clock KG). Optional tag or department (department support → Tag dept:support, not Connected). Empty = no extra filter. Does not ingest.",
 	}, h.handleFactsAsOf)
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
