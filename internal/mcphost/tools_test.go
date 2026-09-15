@@ -123,6 +123,12 @@ func TestIngestTurnStampsSourceHintPrivate(t *testing.T) {
 			continue
 		}
 		found = true
+		if e.SourceHint != "private" {
+			t.Fatalf("hit source_hint=%q want private (do not invent mesh): %+v", e.SourceHint, e)
+		}
+		if e.SourceStep != "mcp_memory_ingest_turn" {
+			t.Fatalf("hit source_step=%q want mcp_memory_ingest_turn: %+v", e.SourceStep, e)
+		}
 		if !hitHasTag(e, "source_hint:private") {
 			t.Fatalf("list entry missing source_hint:private (kernel v1.5.10 / memory #91): %+v", e)
 		}
@@ -201,6 +207,12 @@ func TestIngestTurnStampsSourceHintMesh(t *testing.T) {
 			continue
 		}
 		found = true
+		if e.SourceHint != "mesh" {
+			t.Fatalf("hit source_hint=%q want mesh (stamped, not invented): %+v", e.SourceHint, e)
+		}
+		if e.SourceStep != "mcp_memory_ingest_turn" {
+			t.Fatalf("hit source_step=%q want mcp_memory_ingest_turn: %+v", e.SourceStep, e)
+		}
 		if !hitHasTag(e, palace.FormatSourceHintTag("mesh")) {
 			t.Fatalf("list entry missing source_hint:mesh: %+v", e)
 		}
@@ -492,6 +504,47 @@ func TestDeptTagFiltersFactsAsOfAndRetrieve(t *testing.T) {
 	}
 	if !hitsHaveTag(factsBogus.Facts, "dept:support") || !hitsHaveTag(factsBogus.Facts, "dept:sales") {
 		t.Fatalf("invalid department must be ignored (unfiltered); got %+v", factsBogus.Facts)
+	}
+}
+
+func TestSanitizeSessionIDs(t *testing.T) {
+	if got := sanitizeSessionIDs(nil); got != nil {
+		t.Fatalf("nil: %v", got)
+	}
+	if got := sanitizeSessionIDs([]string{}); got != nil {
+		t.Fatalf("empty slice: %v", got)
+	}
+	if got := sanitizeSessionIDs([]string{"", "  "}); got != nil {
+		t.Fatalf("blank-only = no extra filter: %v", got)
+	}
+	got := sanitizeSessionIDs([]string{" sess-a ", "", "sess-b"})
+	if len(got) != 2 || got[0] != "sess-a" || got[1] != "sess-b" {
+		t.Fatalf("trim/drop empty: %v", got)
+	}
+}
+
+func TestHitFromEntrySurfacesProvenance(t *testing.T) {
+	hit := hitFromEntry(palace.MemoryEntry{
+		ID:        "mem-1",
+		SessionID: "sess-1",
+		Content:   palace.MemoryContent{Summary: "s", Full: "f"},
+		Provenance: palace.MemoryProvenance{
+			SourceHint: "private",
+			SourceStep: "mcp_memory_ingest_turn",
+		},
+	})
+	if hit.ID != "mem-1" {
+		t.Fatalf("id: %q", hit.ID)
+	}
+	if hit.SourceHint != "private" {
+		t.Fatalf("source_hint=%q want private", hit.SourceHint)
+	}
+	if hit.SourceStep != "mcp_memory_ingest_turn" {
+		t.Fatalf("source_step=%q", hit.SourceStep)
+	}
+	empty := hitFromEntry(palace.MemoryEntry{ID: "mem-empty"})
+	if empty.SourceHint != "" || empty.SourceStep != "" {
+		t.Fatalf("must not invent provenance: %+v", empty)
 	}
 }
 
@@ -838,6 +891,233 @@ func TestSessionIsolationSameTenantToken(t *testing.T) {
 	}
 	if !hitsCoverSessions(listAll.Entries, sessA, sessB) {
 		t.Fatalf("empty-session list must be unfiltered; got %+v", listAll.Entries)
+	}
+}
+
+func TestSessionIDsAnyOfRetrieveFactsAsOfAndList(t *testing.T) {
+	t.Setenv("MEMORY_ONNX_MODEL_PATH", "")
+	h, err := New(Config{PalaceRoot: t.TempDir(), DefaultTenant: "dogfood"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	if h.EmbeddingMode() != "hash" {
+		t.Fatalf("embedding mode = %q, want hash", h.EmbeddingMode())
+	}
+	ctx := context.Background()
+	const (
+		token = "zircon-session-anyof-5521"
+		sessA = "sess-alpha"
+		sessB = "sess-bravo"
+		sessC = "sess-charlie"
+	)
+	ingest := func(sess, word string) {
+		t.Helper()
+		if _, out, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+			Tenant:    "dogfood",
+			SessionID: sess,
+			Role:      "user",
+			Content:   word + " vault note " + token + " for any-of",
+		}); err != nil {
+			t.Fatalf("ingest %s: %v", sess, err)
+		} else if out.DualWrite != "off" || out.Audited {
+			t.Fatalf("dual_write must be off; do not invent Connected/Memory GA: %+v", out)
+		}
+	}
+	ingest(sessA, "alpha")
+	ingest(sessB, "bravo")
+	ingest(sessC, "charlie")
+
+	assertAnyOf := func(t *testing.T, surface string, hits []memoryHit, want []string, leakSess, leakWord string) {
+		t.Helper()
+		if len(hits) == 0 {
+			t.Fatalf("%s: expected hits for %v", surface, want)
+		}
+		if !hitsCoverSessions(hits, want...) {
+			t.Fatalf("%s missed sessions %v: %+v", surface, want, hits)
+		}
+		for _, hit := range hits {
+			if hit.SessionID == leakSess {
+				t.Fatalf("%s leaked session %q: %+v", surface, leakSess, hit)
+			}
+			blob := strings.ToLower(hit.Summary + " " + hit.Full)
+			if leakWord != "" && strings.Contains(blob, leakWord) {
+				t.Fatalf("%s leaked %q: %+v", surface, leakWord, hit)
+			}
+			if strings.Contains(blob, "cite-both") || strings.Contains(blob, "miss_class") {
+				t.Fatalf("%s must not invent cite-both/miss_class: %+v", surface, hit)
+			}
+			if hit.SourceHint == "mesh" {
+				t.Fatalf("%s must not invent mesh source_hint: %+v", surface, hit)
+			}
+		}
+	}
+
+	_, retAB, err := h.handleRetrieve(ctx, nil, retrieveInput{
+		Tenant:     "dogfood",
+		Query:      token,
+		SessionIDs: []string{sessA, sessB},
+		Limit:      20,
+	})
+	if err != nil {
+		t.Fatalf("retrieve any-of: %v", err)
+	}
+	assertAnyOf(t, "retrieve session_ids", retAB.Memories, []string{sessA, sessB}, sessC, "charlie")
+
+	_, factsAB, err := h.handleFactsAsOf(ctx, nil, factsAsOfInput{
+		Tenant:     "dogfood",
+		Query:      token,
+		SessionIDs: []string{sessA, sessB},
+		Limit:      50,
+	})
+	if err != nil {
+		t.Fatalf("facts_as_of any-of: %v", err)
+	}
+	assertAnyOf(t, "facts_as_of session_ids", factsAB.Facts, []string{sessA, sessB}, sessC, "charlie")
+
+	_, listAB, err := h.handleList(ctx, nil, listInput{
+		Tenant:     "dogfood",
+		Query:      token,
+		SessionIDs: []string{sessA, sessB},
+		Limit:      50,
+	})
+	if err != nil {
+		t.Fatalf("list any-of: %v", err)
+	}
+	assertAnyOf(t, "list session_ids", listAB.Entries, []string{sessA, sessB}, sessC, "charlie")
+
+	_, retEmpty, err := h.handleRetrieve(ctx, nil, retrieveInput{
+		Tenant:     "dogfood",
+		Query:      token,
+		SessionIDs: []string{},
+		Limit:      20,
+	})
+	if err != nil {
+		t.Fatalf("retrieve empty session_ids: %v", err)
+	}
+	if !hitsCoverSessions(retEmpty.Memories, sessA, sessB, sessC) {
+		t.Fatalf("empty session_ids retrieve must be unfiltered; got %+v", retEmpty.Memories)
+	}
+
+	_, factsBlank, err := h.handleFactsAsOf(ctx, nil, factsAsOfInput{
+		Tenant:     "dogfood",
+		Query:      token,
+		SessionIDs: []string{"", "  "},
+		Limit:      50,
+	})
+	if err != nil {
+		t.Fatalf("facts_as_of blank session_ids: %v", err)
+	}
+	if !hitsCoverSessions(factsBlank.Facts, sessA, sessB, sessC) {
+		t.Fatalf("blank session_ids facts_as_of must be unfiltered; got %+v", factsBlank.Facts)
+	}
+
+	_, retA, err := h.handleRetrieve(ctx, nil, retrieveInput{
+		Tenant:     "dogfood",
+		Query:      token,
+		SessionIDs: []string{sessA},
+		Limit:      20,
+	})
+	if err != nil {
+		t.Fatalf("retrieve session_ids=[A]: %v", err)
+	}
+	assertAnyOf(t, "retrieve session_ids=[A]", retA.Memories, []string{sessA}, sessB, "bravo")
+	for _, hit := range retA.Memories {
+		if hit.SessionID == sessC {
+			t.Fatalf("retrieve session_ids=[A] leaked C: %+v", hit)
+		}
+	}
+
+	_, retUnion, err := h.handleRetrieve(ctx, nil, retrieveInput{
+		Tenant:     "dogfood",
+		Query:      token,
+		SessionID:  sessA,
+		SessionIDs: []string{sessB},
+		Limit:      20,
+	})
+	if err != nil {
+		t.Fatalf("retrieve union: %v", err)
+	}
+	assertAnyOf(t, "retrieve session_id ∪ session_ids", retUnion.Memories, []string{sessA, sessB}, sessC, "charlie")
+}
+
+func TestRetrieveHitsIncludeStampedProvenance(t *testing.T) {
+	t.Setenv("MEMORY_ONNX_MODEL_PATH", "")
+	h, err := New(Config{PalaceRoot: t.TempDir(), DefaultTenant: "dogfood"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	ctx := context.Background()
+	const needle = "zircon-hit-provenance-8831"
+	_, out, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+		Tenant:    "dogfood",
+		SessionID: "sess-prov",
+		Role:      "user",
+		Content:   "palace cite " + needle,
+	})
+	if err != nil {
+		t.Fatalf("ingest: %v", err)
+	}
+	if out.DualWrite != "off" || out.Audited {
+		t.Fatalf("dual_write must be off; not Memory GA: %+v", out)
+	}
+
+	_, ret, err := h.handleRetrieve(ctx, nil, retrieveInput{Tenant: "dogfood", Query: needle, Limit: 10})
+	if err != nil {
+		t.Fatalf("retrieve: %v", err)
+	}
+	found := false
+	for _, m := range ret.Memories {
+		if m.ID != out.MemoryID && !hitHasToken(m, needle) {
+			continue
+		}
+		found = true
+		if m.ID == "" {
+			t.Fatalf("hit missing memory id: %+v", m)
+		}
+		if m.SourceHint != "private" {
+			t.Fatalf("hit source_hint=%q want private (cite palace; do not invent mesh): %+v", m.SourceHint, m)
+		}
+		if m.SourceStep != "mcp_memory_ingest_turn" {
+			t.Fatalf("hit source_step=%q want mcp_memory_ingest_turn: %+v", m.SourceStep, m)
+		}
+		blob := strings.ToLower(m.Summary + " " + m.Full + " " + m.SourceHint + " " + m.SourceStep)
+		if strings.Contains(blob, "cite-both") || strings.Contains(blob, "miss_class") {
+			t.Fatalf("host must not invent cite-both/miss_class: %+v", m)
+		}
+	}
+	if !found {
+		t.Fatalf("retrieve missed ingested turn: %+v", ret.Memories)
+	}
+
+	_, meshOut, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+		Tenant:     "dogfood",
+		SessionID:  "sess-prov-mesh",
+		Role:       "user",
+		Content:    "durable mesh pull " + needle + "-mesh",
+		SourceHint: "mesh",
+	})
+	if err != nil {
+		t.Fatalf("ingest mesh: %v", err)
+	}
+	_, meshRet, err := h.handleRetrieve(ctx, nil, retrieveInput{Tenant: "dogfood", Query: needle + "-mesh", Limit: 10})
+	if err != nil {
+		t.Fatalf("retrieve mesh: %v", err)
+	}
+	foundMesh := false
+	for _, m := range meshRet.Memories {
+		if m.ID != meshOut.MemoryID && !hitHasToken(m, needle+"-mesh") {
+			continue
+		}
+		foundMesh = true
+		if m.SourceHint != "mesh" {
+			t.Fatalf("stamped mesh hit source_hint=%q: %+v", m.SourceHint, m)
+		}
+		if m.SourceStep != "mcp_memory_ingest_turn" {
+			t.Fatalf("mesh hit source_step=%q: %+v", m.SourceStep, m)
+		}
+	}
+	if !foundMesh {
+		t.Fatalf("retrieve missed mesh-hinted turn: %+v", meshRet.Memories)
 	}
 }
 

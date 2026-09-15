@@ -339,7 +339,7 @@ func (h *Host) Register(sdkServer *mcp.Server) {
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
 		Name:        "memory_retrieve",
-		Description: "Read/search the local palace FS (SearchMemoryWithOptions; keyword + optional vector re-rank). Optional tag or department (department support → Tag dept:support, not Connected). Empty = no extra filter. Does not ingest.",
+		Description: "Read/search the local palace FS (SearchMemoryWithOptions; keyword + optional vector re-rank). Optional session_ids any-of (union with session_id). Optional tag or department (department support → Tag dept:support, not Connected). Empty = no extra filter. Does not ingest.",
 	}, h.handleRetrieve)
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
@@ -349,7 +349,7 @@ func (h *Host) Register(sdkServer *mcp.Server) {
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
 		Name:        "memory_list",
-		Description: "List local palace FS entries by event time. Read/list only; does not ingest.",
+		Description: "List local palace FS entries by event time. Optional session_ids any-of (union with session_id; empty = no extra filter). Read/list only; does not ingest.",
 	}, h.handleList)
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
@@ -359,12 +359,12 @@ func (h *Host) Register(sdkServer *mcp.Server) {
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
 		Name:        "memory_facts_as_of",
-		Description: "List local facts valid at as_of (bi-temporal lite; not full dual-clock KG). Optional tag or department (department support → Tag dept:support, not Connected). Empty = no extra filter. Does not ingest.",
+		Description: "List local facts valid at as_of (bi-temporal lite; not full dual-clock KG). Optional session_ids any-of (union with session_id). Optional tag or department (department support → Tag dept:support, not Connected). Empty = no extra filter. Does not ingest.",
 	}, h.handleFactsAsOf)
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
 		Name:        "memory_related",
-		Description: "Multi-hop lite retrieve on local FS (entity BFS). Does not ingest.",
+		Description: "Multi-hop lite retrieve on local FS (entity BFS). Optional session_ids any-of (union with session_id; empty = no extra filter). Does not ingest.",
 	}, h.handleRelated)
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
