@@ -28,6 +28,10 @@ type ingestTurnInput struct {
 	// When omitted or empty, kernel IngestTurn stamps private. Do not invent mesh
 	// from session_id.
 	SourceHint string `json:"source_hint,omitempty" jsonschema:"optional mesh|private or kernel-classifiable alias; omit keeps private default — do not invent mesh"`
+	// Tags are optional extra Content.Tags (TUI ingest-dir dept:{id} / scenario:{kit}).
+	// Overlay ingest stays private unless SourceHint is a classifiable mesh hint.
+	// Mesh-class tags are dropped — never invent mesh from tags or session_id.
+	Tags []string `json:"tags,omitempty" jsonschema:"optional extra tags (dept:… scenario:…); never invent mesh"`
 }
 
 type ingestTurnOutput struct {
@@ -70,6 +74,7 @@ func (h *Host) handleIngestTurn(_ context.Context, _ *mcp.CallToolRequest, in in
 	if in.SessionSeq > 0 {
 		tags = append(tags, fmt.Sprintf("session_seq:%d", in.SessionSeq))
 	}
+	tags = appendSanitizedIngestTags(tags, in.Tags)
 
 	entry := palace.MemoryEntry{
 		ID:           id,
@@ -366,6 +371,47 @@ func (h *Host) handleWrite(_ context.Context, _ *mcp.CallToolRequest, in writeIn
 		DualWrite:  "off",
 	}
 	return toolJSON(out), out, nil
+}
+
+const (
+	ingestExtraTagMax    = 16
+	ingestExtraTagMaxLen = 64
+)
+
+// appendSanitizedIngestTags appends optional extra ingest tags (dept:, scenario:, …)
+// after host defaults. Trim, skip empty, skip duplicates, cap count/length.
+// Mesh-class tags (mesh, source_hint:mesh, source:mesh, kernel aliases) are
+// dropped so overlay ingest cannot invent mesh — only SourceHint may.
+func appendSanitizedIngestTags(dst, extra []string) []string {
+	if len(extra) == 0 {
+		return dst
+	}
+	seen := make(map[string]struct{}, len(dst)+len(extra))
+	for _, t := range dst {
+		if t = strings.TrimSpace(t); t != "" {
+			seen[t] = struct{}{}
+		}
+	}
+	added := 0
+	for _, raw := range extra {
+		if added >= ingestExtraTagMax {
+			break
+		}
+		t := strings.TrimSpace(raw)
+		if t == "" || len(t) > ingestExtraTagMaxLen {
+			continue
+		}
+		if palace.ClassifyIngestSourceHint(t) == "mesh" {
+			continue
+		}
+		if _, ok := seen[t]; ok {
+			continue
+		}
+		seen[t] = struct{}{}
+		dst = append(dst, t)
+		added++
+	}
+	return dst
 }
 
 // applyIngestSourceHint stamps a caller-supplied source class before IngestTurn.

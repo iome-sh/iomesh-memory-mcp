@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -283,6 +284,105 @@ func TestIngestTurnMeshSessionWithoutHintStaysPrivate(t *testing.T) {
 	}
 	if !palaceDiskHasSourceHint(t, root, blank.MemoryID, needle+"-blank", "private") {
 		t.Fatal("whitespace source_hint must keep private default")
+	}
+}
+
+func TestIngestTurnExtraTagsDeptScenarioRoundTrip(t *testing.T) {
+	t.Setenv("MEMORY_ONNX_MODEL_PATH", "")
+	root := t.TempDir()
+	h, err := New(Config{PalaceRoot: root, DefaultTenant: "dogfood"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	ctx := context.Background()
+	const needle = "ingest-dir-dept-scenario-overlay"
+	_, out, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+		Tenant:    "dogfood",
+		SessionID: "dept.support.events.tickets",
+		Role:      "user",
+		Content:   "support overlay ticket " + needle,
+		Tags:      []string{"dept:support", "scenario:support"},
+	})
+	if err != nil {
+		t.Fatalf("ingest: %v", err)
+	}
+	if out.DualWrite != "off" || out.Audited {
+		t.Fatalf("dual_write must be off; do not invent Connected/Memory GA: %+v", out)
+	}
+
+	ps := h.Store("dogfood")
+	if ps == nil {
+		t.Fatal("nil store")
+	}
+	entry, ok := loadEntryAcrossTiers(ps, out.MemoryID)
+	if !ok {
+		t.Fatal("parent missing after ingest")
+	}
+	if !palace.EntryHasTag(entry, "dept:support") || !palace.EntryHasTag(entry, "scenario:support") {
+		t.Fatalf("palace Content.Tags missing dept:/scenario: round-trip: %v", entry.Content.Tags)
+	}
+	if palace.ClassifyIngestSourceHint(entry.Provenance.SourceHint) != "private" {
+		t.Fatalf("dept/scenario overlay must stay private, got source_hint=%q", entry.Provenance.SourceHint)
+	}
+	if palace.EntryHasTag(entry, palace.FormatSourceHintTag("mesh")) {
+		t.Fatalf("must not invent mesh from dept/scenario tags: %+v", entry)
+	}
+	if !palaceDiskHasSourceHint(t, root, out.MemoryID, needle, "private") {
+		t.Fatal("palace disk JSON missing observable source_hint=private")
+	}
+	if palaceDiskHasSourceHint(t, root, out.MemoryID, needle, "mesh") {
+		t.Fatal("must not invent mesh on disk from dept/scenario tags")
+	}
+}
+
+func TestIngestTurnTagsSourceHintMeshStaysPrivate(t *testing.T) {
+	t.Setenv("MEMORY_ONNX_MODEL_PATH", "")
+	root := t.TempDir()
+	h, err := New(Config{PalaceRoot: root, DefaultTenant: "dogfood"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	ctx := context.Background()
+	const needle = "ingest-tags-must-not-invent-mesh"
+	_, out, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+		Tenant:    "dogfood",
+		SessionID: "sess-overlay-tags",
+		Role:      "user",
+		Content:   "overlay turn " + needle,
+		Tags:      []string{"source_hint:mesh", "mesh", "source:mesh", "dept:support"},
+	})
+	if err != nil {
+		t.Fatalf("ingest: %v", err)
+	}
+	if out.DualWrite != "off" || out.Audited {
+		t.Fatalf("dual_write must be off; do not invent Connected/Memory GA: %+v", out)
+	}
+
+	ps := h.Store("dogfood")
+	if ps == nil {
+		t.Fatal("nil store")
+	}
+	entry, ok := loadEntryAcrossTiers(ps, out.MemoryID)
+	if !ok {
+		t.Fatal("parent missing after ingest")
+	}
+	if palace.ClassifyIngestSourceHint(entry.Provenance.SourceHint) == "mesh" {
+		t.Fatalf("source_hint:mesh in Tags must not make provenance mesh when SourceHint omitted: %+v", entry.Provenance)
+	}
+	if palace.ClassifyIngestSourceHint(entry.Provenance.SourceHint) != "private" {
+		t.Fatalf("omit SourceHint must stay private, got %q", entry.Provenance.SourceHint)
+	}
+	if palace.EntryHasTag(entry, palace.FormatSourceHintTag("mesh")) || palace.EntryHasTag(entry, "mesh") || palace.EntryHasTag(entry, "source:mesh") {
+		t.Fatalf("mesh-class extra tags must be dropped: %v", entry.Content.Tags)
+	}
+	if !palace.EntryHasTag(entry, "dept:support") {
+		t.Fatalf("non-mesh extra tag dept:support dropped: %v", entry.Content.Tags)
+	}
+	if !palaceDiskHasSourceHint(t, root, out.MemoryID, needle, "private") {
+		t.Fatal("palace disk JSON missing observable source_hint=private")
+	}
+	if palaceDiskHasSourceHint(t, root, out.MemoryID, needle, "mesh") {
+		t.Fatal("must not invent mesh on disk from Tags source_hint:mesh")
 	}
 }
 
@@ -685,6 +785,46 @@ func TestListAfterNewSamePalaceRoot(t *testing.T) {
 	}
 	if !hitsContainToken(again.Entries, needle) {
 		t.Fatalf("kernel #47: list after New() on same palace root missed %q: %+v", needle, again.Entries)
+	}
+}
+
+func TestAppendSanitizedIngestTags(t *testing.T) {
+	base := []string{"role:user", "source:iomesh-memory-mcp"}
+	got := appendSanitizedIngestTags(base, []string{
+		"  dept:support  ",
+		"",
+		"   ",
+		"mesh",
+		"source_hint:mesh",
+		"source:mesh",
+		"MESH",
+		"scenario:support",
+		"role:user",
+	})
+	want := []string{"role:user", "source:iomesh-memory-mcp", "dept:support", "scenario:support"}
+	if len(got) != len(want) {
+		t.Fatalf("tags=%v want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("tags[%d]=%q want %q (full %v)", i, got[i], want[i], got)
+		}
+	}
+
+	var extra []string
+	for i := 0; i < ingestExtraTagMax+4; i++ {
+		extra = append(extra, fmt.Sprintf("dept:n%d", i))
+	}
+	capped := appendSanitizedIngestTags(nil, extra)
+	if len(capped) != ingestExtraTagMax {
+		t.Fatalf("cap count: got %d want %d (%v)", len(capped), ingestExtraTagMax, capped)
+	}
+
+	longOK := strings.Repeat("y", ingestExtraTagMaxLen)
+	longSkip := strings.Repeat("x", ingestExtraTagMaxLen+1)
+	lengthed := appendSanitizedIngestTags(nil, []string{longSkip, "dept:ok", longOK})
+	if len(lengthed) != 2 || lengthed[0] != "dept:ok" || lengthed[1] != longOK {
+		t.Fatalf("length cap: got %v", lengthed)
 	}
 }
 
