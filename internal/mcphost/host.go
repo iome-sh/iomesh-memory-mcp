@@ -324,7 +324,7 @@ func (h *Host) NewSDKServer() *mcp.Server {
 func (h *Host) Register(sdkServer *mcp.Server) {
 	mcp.AddTool(sdkServer, &mcp.Tool{
 		Name:        "memory_ingest_turn",
-		Description: "Ingest a conversation turn into the local tenant palace FS (role=user|assistant|tool). Optional source_hint (mesh|private or kernel-classifiable alias); omit keeps private.",
+		Description: "Ingest a conversation turn into the local tenant palace FS (role=user|assistant|tool). Optional source_hint (mesh|private or kernel-classifiable alias); omit keeps private. Optional extra tags (dept:… scenario:…) stay private overlay — never invent mesh.",
 	}, h.handleIngestTurn)
 
 	mcp.AddTool(sdkServer, &mcp.Tool{
