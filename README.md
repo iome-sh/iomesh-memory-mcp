@@ -210,7 +210,7 @@ This list is the rollout (R1 --live ≠ R3 overlay /dashboard PULSE parked).
 
 Kernel walk: [memory `docs/TTFH.md`](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md). V1.5 tracker: `docs/planning/ttfh-pattern-search-v15-2026.md` (control-plane planning; not this host).
 
-Department overlay kit (V1.6 Wave 1, not E-G1): TUI `examples/dept-rca/support` (ticket-export + policy + macro, `source_hint=private`). Ingest via `iomesh memory ingest-dir`. ingest-dir tags `dept:` / `scenario:` are private overlay, not Connected. `/memory digest --require-sources mesh,private` → miss is success until pull. facts-as-of ticket created `2026-06-15T14:22:00Z`. Prefix `dept.support.events.*` is routing, not Connected. Kernel companion: memory `examples/dept-rca/support`. **Not Memory GA.**
+Department overlay kit (V1.6 Wave 1, not E-G1): TUI `examples/dept-rca/support` (ticket-export + policy + macro, `source_hint=private`). Ingest via `iomesh memory ingest-dir`. ingest-dir tags `dept:` / `scenario:` are private overlay, not Connected. `--department support` is Tag `dept:support`, not Connected. `/memory digest --require-sources mesh,private` → miss is success until pull. facts-as-of ticket created `2026-06-15T14:22:00Z`. Prefix `dept.support.events.*` is routing, not Connected. Kernel companion: memory `examples/dept-rca/support`. **Not Memory GA.**
 
 ## Configuration
 
@@ -246,11 +246,11 @@ discovery / compile-time registration — they are **not** ingest.
 | `memory_ingest_turn` | `IngestTurn` | Write a conversation turn; optional `source_hint`; optional extra `tags` (dept:/scenario: private overlay, not Connected); host DLP redacts common secret shapes |
 | `memory_extract_facts` | `ExtractAtomicFacts` + `Write` | HITL extract-after-persist; writes `turn_fact` children without rewriting the parent |
 | `memory_write` | `Write` / `WriteAndSupersede` | Write a durable fact (same DLP as ingest) |
-| `memory_retrieve` | `SearchMemoryWithOptions` | Keyword + optional vector re-rank; does not ingest |
+| `memory_retrieve` | `SearchMemoryWithOptions` | Keyword + optional vector re-rank; optional `tag` / `department` (`--department support` is Tag `dept:support`, not Connected); does not ingest |
 | `memory_search_semantic` | Hybrid search on semantic tier | Hybrid semantic search; Qdrant not wired |
 | `memory_list` | `ListMemoryWithOptions` | List by event time; does not ingest |
 | `memory_compact_status` | `GetStats` | Local palace stats; does not ingest |
-| `memory_facts_as_of` | `ListFactsAsOf` | Facts valid at `as_of`; does not ingest |
+| `memory_facts_as_of` | `ListFactsAsOf` | Facts valid at `as_of`; optional `tag` / `department` (`--department support` is Tag `dept:support`, not Connected); does not ingest |
 | `memory_related` | `MultiHopRetrieve` | Entity BFS lite; does not ingest |
 | `memory_supersede_entity` | `SupersedeEntityFacts` | Close open facts for an entity key |
 | `ops_digest_export` | `ListMemoryWithOptions` window | Local receipts for TUI `/memory digest`; does not ingest |

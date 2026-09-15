@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **`memory_facts_as_of` / `memory_retrieve` optional `tag` / `department`:** `--department support` is Tag `dept:support`, not Connected. Empty tag/department = no extra filter (honest empty, never invent). Invalid department ids are ignored. Kernel v1.5.12 has no `FactsAsOfOptions.Tag` / `SearchMemoryOptions.Tag`; host filters with `EntryHasTag` after `ListFactsAsOf` / `SearchMemoryWithOptions` (Limit may underfill). dual_write OFF · PersistEmbeddings default off · hash never stored. Not Memory GA · not E-G1.
 - **`memory_ingest_turn` optional `tags`:** TUI ingest-dir can stamp `dept:{id}` / `scenario:{kit}` on private overlay. Mesh-class tags (`mesh`, `source_hint:mesh`, `source:mesh`) are dropped — never invent mesh from overlay tags or session_id; omit `source_hint` keeps kernel private. dual_write OFF · PersistEmbeddings default off · hash never stored. Not Memory GA · not E-G1.
 
 ### Changed

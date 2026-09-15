@@ -386,6 +386,148 @@ func TestIngestTurnTagsSourceHintMeshStaysPrivate(t *testing.T) {
 	}
 }
 
+func TestDeptTagFiltersFactsAsOfAndRetrieve(t *testing.T) {
+	t.Setenv("MEMORY_ONNX_MODEL_PATH", "")
+	root := t.TempDir()
+	h, err := New(Config{PalaceRoot: root, DefaultTenant: "dogfood"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	ctx := context.Background()
+	const (
+		token   = "dept-filter-shared-needle-4419"
+		support = "support-ticket-hmac"
+		sales   = "sales-quota-pipeline"
+	)
+	if _, out, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+		Tenant:    "dogfood",
+		SessionID: "sess-dept-support",
+		Role:      "user",
+		Content:   "support overlay ticket " + token + " " + support,
+		Tags:      []string{"dept:support"},
+	}); err != nil {
+		t.Fatalf("ingest support: %v", err)
+	} else if out.DualWrite != "off" || out.Audited {
+		t.Fatalf("dual_write must be off; do not invent Connected/Memory GA: %+v", out)
+	}
+	if _, out, err := h.handleIngestTurn(ctx, nil, ingestTurnInput{
+		Tenant:    "dogfood",
+		SessionID: "sess-dept-sales",
+		Role:      "user",
+		Content:   "sales overlay ticket " + token + " " + sales,
+		Tags:      []string{"dept:sales"},
+	}); err != nil {
+		t.Fatalf("ingest sales: %v", err)
+	} else if out.DualWrite != "off" || out.Audited {
+		t.Fatalf("dual_write must be off; do not invent Connected/Memory GA: %+v", out)
+	}
+
+	assertDeptHits := func(t *testing.T, surface string, hits []memoryHit, wantTag, leakTag, wantWord, leakWord string) {
+		t.Helper()
+		if len(hits) == 0 {
+			t.Fatalf("%s: expected hits for %s", surface, wantTag)
+		}
+		foundWant := false
+		for _, hit := range hits {
+			if hitHasTag(hit, leakTag) {
+				t.Fatalf("%s leaked %s: %+v", surface, leakTag, hit)
+			}
+			blob := strings.ToLower(hit.Summary + " " + hit.Full)
+			if leakWord != "" && strings.Contains(blob, leakWord) {
+				t.Fatalf("%s leaked %q: %+v", surface, leakWord, hit)
+			}
+			if hitHasTag(hit, wantTag) || (wantWord != "" && strings.Contains(blob, wantWord)) {
+				foundWant = true
+			}
+		}
+		if !foundWant {
+			t.Fatalf("%s missed %s: %+v", surface, wantTag, hits)
+		}
+	}
+
+	_, factsSupport, err := h.handleFactsAsOf(ctx, nil, factsAsOfInput{
+		Tenant:     "dogfood",
+		Department: "support",
+		Limit:      50,
+	})
+	if err != nil {
+		t.Fatalf("facts_as_of department=support: %v", err)
+	}
+	assertDeptHits(t, "facts_as_of department=support", factsSupport.Facts, "dept:support", "dept:sales", support, sales)
+
+	_, retSupport, err := h.handleRetrieve(ctx, nil, retrieveInput{
+		Tenant: "dogfood",
+		Query:  token,
+		Tag:    "dept:support",
+		Limit:  20,
+	})
+	if err != nil {
+		t.Fatalf("retrieve tag=dept:support: %v", err)
+	}
+	assertDeptHits(t, "retrieve tag=dept:support", retSupport.Memories, "dept:support", "dept:sales", support, sales)
+
+	_, factsAll, err := h.handleFactsAsOf(ctx, nil, factsAsOfInput{Tenant: "dogfood", Limit: 50})
+	if err != nil {
+		t.Fatalf("facts_as_of unfiltered: %v", err)
+	}
+	if !hitsHaveTag(factsAll.Facts, "dept:support") || !hitsHaveTag(factsAll.Facts, "dept:sales") {
+		t.Fatalf("omitted department facts_as_of must be unfiltered; got %+v", factsAll.Facts)
+	}
+
+	_, retAll, err := h.handleRetrieve(ctx, nil, retrieveInput{Tenant: "dogfood", Query: token, Limit: 20})
+	if err != nil {
+		t.Fatalf("retrieve unfiltered: %v", err)
+	}
+	if !hitsHaveTag(retAll.Memories, "dept:support") || !hitsHaveTag(retAll.Memories, "dept:sales") {
+		t.Fatalf("omitted department retrieve must be unfiltered; got %+v", retAll.Memories)
+	}
+
+	_, factsBogus, err := h.handleFactsAsOf(ctx, nil, factsAsOfInput{
+		Tenant:     "dogfood",
+		Department: "Support!!",
+		Limit:      50,
+	})
+	if err != nil {
+		t.Fatalf("invalid department must not error invent: %v", err)
+	}
+	if !hitsHaveTag(factsBogus.Facts, "dept:support") || !hitsHaveTag(factsBogus.Facts, "dept:sales") {
+		t.Fatalf("invalid department must be ignored (unfiltered); got %+v", factsBogus.Facts)
+	}
+}
+
+func TestSanitizeDeptAndResolvePalaceTag(t *testing.T) {
+	if got := sanitizeDept("SUPPORT"); got != "support" {
+		t.Fatalf("lowercase: %q", got)
+	}
+	if got := sanitizeDept("  sales-west_1  "); got != "sales-west_1" {
+		t.Fatalf("trim: %q", got)
+	}
+	if got := sanitizeDept("dept:support"); got != "" {
+		t.Fatalf("colon must ignore: %q", got)
+	}
+	if got := sanitizeDept("Support Dept"); got != "" {
+		t.Fatalf("space must ignore: %q", got)
+	}
+	if got := sanitizeDept(strings.Repeat("a", 33)); got != "" {
+		t.Fatalf("len 33 must ignore")
+	}
+	if got := sanitizeDept(strings.Repeat("b", 32)); got != strings.Repeat("b", 32) {
+		t.Fatalf("len 32 must keep")
+	}
+	if got := resolvePalaceTag("dept:support", "sales"); got != "dept:support" {
+		t.Fatalf("tag wins: %q", got)
+	}
+	if got := resolvePalaceTag("", "support"); got != "dept:support" {
+		t.Fatalf("department maps: %q", got)
+	}
+	if got := resolvePalaceTag("  ", "  "); got != "" {
+		t.Fatalf("empty = no extra filter: %q", got)
+	}
+	if got := resolvePalaceTag("", "NOPE!"); got != "" {
+		t.Fatalf("invalid department ignored: %q", got)
+	}
+}
+
 func TestRetrieveHashKeepsHyphenNeedle(t *testing.T) {
 	t.Setenv("MEMORY_ONNX_MODEL_PATH", "")
 	h, err := New(Config{PalaceRoot: t.TempDir(), DefaultTenant: "dogfood"})
@@ -890,6 +1032,15 @@ func hitHasToken(h memoryHit, token string) bool {
 func hitHasTag(h memoryHit, tag string) bool {
 	for _, t := range h.Tags {
 		if t == tag {
+			return true
+		}
+	}
+	return false
+}
+
+func hitsHaveTag(hits []memoryHit, tag string) bool {
+	for _, h := range hits {
+		if hitHasTag(h, tag) {
 			return true
 		}
 	}

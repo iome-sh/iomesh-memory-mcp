@@ -445,12 +445,14 @@ func entityTag(key string) string {
 // --- memory_retrieve ---
 
 type retrieveInput struct {
-	Tenant    string `json:"tenant" jsonschema:"required tenant subdirectory under palace root; omit fail-closes"`
-	Query     string `json:"query" jsonschema:"recall query text"`
-	Limit     int    `json:"limit,omitempty"`
-	SessionID string `json:"session_id,omitempty"`
-	Since     string `json:"since,omitempty" jsonschema:"optional RFC3339 inclusive lower bound"`
-	Until     string `json:"until,omitempty" jsonschema:"optional RFC3339 inclusive upper bound"`
+	Tenant     string `json:"tenant" jsonschema:"required tenant subdirectory under palace root; omit fail-closes"`
+	Query      string `json:"query" jsonschema:"recall query text"`
+	Limit      int    `json:"limit,omitempty"`
+	SessionID  string `json:"session_id,omitempty"`
+	Since      string `json:"since,omitempty" jsonschema:"optional RFC3339 inclusive lower bound"`
+	Until      string `json:"until,omitempty" jsonschema:"optional RFC3339 inclusive upper bound"`
+	Tag        string `json:"tag,omitempty" jsonschema:"optional palace tag exact match; empty = no extra filter"`
+	Department string `json:"department,omitempty" jsonschema:"optional department id → tag dept:{id} (not Connected); empty = no extra filter"`
 }
 
 type memoryHit struct {
@@ -502,6 +504,9 @@ func (h *Host) handleRetrieve(_ context.Context, _ *mcp.CallToolRequest, in retr
 	opts.QueryVec = h.searchQueryVec(ps, query)
 
 	entries := ps.SearchMemoryWithOptions(query, opts)
+	// Kernel v1.5.12 has no SearchMemoryOptions.Tag; host EntryHasTag after Search
+	// (Limit may underfill). Empty tag/department = no extra filter.
+	entries = filterEntriesByPalaceTag(entries, resolvePalaceTag(in.Tag, in.Department))
 	hits := make([]memoryHit, 0, len(entries))
 	for _, e := range entries {
 		hits = append(hits, hitFromEntry(e))
@@ -700,12 +705,14 @@ func (h *Host) handleCompactStatus(_ context.Context, _ *mcp.CallToolRequest, in
 // --- memory_facts_as_of ---
 
 type factsAsOfInput struct {
-	Tenant    string `json:"tenant" jsonschema:"required tenant subdirectory under palace root; omit fail-closes"`
-	AsOf      string `json:"as_of,omitempty" jsonschema:"RFC3339 validity instant (default now)"`
-	Query     string `json:"query,omitempty"`
-	SessionID string `json:"session_id,omitempty"`
-	Entity    string `json:"entity,omitempty"`
-	Limit     int    `json:"limit,omitempty"`
+	Tenant     string `json:"tenant" jsonschema:"required tenant subdirectory under palace root; omit fail-closes"`
+	AsOf       string `json:"as_of,omitempty" jsonschema:"RFC3339 validity instant (default now)"`
+	Query      string `json:"query,omitempty"`
+	SessionID  string `json:"session_id,omitempty"`
+	Entity     string `json:"entity,omitempty"`
+	Limit      int    `json:"limit,omitempty"`
+	Tag        string `json:"tag,omitempty" jsonschema:"optional palace tag exact match; empty = no extra filter"`
+	Department string `json:"department,omitempty" jsonschema:"optional department id → tag dept:{id} (not Connected); empty = no extra filter"`
 }
 
 type factsAsOfOutput struct {
@@ -732,6 +739,9 @@ func (h *Host) handleFactsAsOf(_ context.Context, _ *mcp.CallToolRequest, in fac
 		Limit:     in.Limit,
 	}
 	entries := ps.ListFactsAsOf(opts)
+	// Kernel v1.5.12 has no FactsAsOfOptions.Tag; host EntryHasTag after ListFactsAsOf
+	// (Limit may underfill). Empty tag/department = no extra filter.
+	entries = filterEntriesByPalaceTag(entries, resolvePalaceTag(in.Tag, in.Department))
 	hits := make([]memoryHit, 0, len(entries))
 	for _, e := range entries {
 		hits = append(hits, hitFromEntry(e))
@@ -901,6 +911,58 @@ func toolError(err error) *mcp.CallToolResult {
 		Content: []mcp.Content{&mcp.TextContent{Text: err.Error()}},
 		IsError: true,
 	}
+}
+
+// resolvePalaceTag prefers explicit Tag; otherwise dept:{id} from Department.
+// Empty tag and department mean no extra filter (honest empty; never invent).
+func resolvePalaceTag(tag, department string) string {
+	tag = strings.TrimSpace(tag)
+	if tag != "" {
+		return tag
+	}
+	if dept := sanitizeDept(department); dept != "" {
+		return "dept:" + dept
+	}
+	return ""
+}
+
+// sanitizeDept lowercases a department id. Non-[a-z0-9_-]{1,32} is ignored
+// (no extra filter; do not error invent). Tag is a host string, not an org id.
+func sanitizeDept(raw string) string {
+	s := strings.ToLower(strings.TrimSpace(raw))
+	if s == "" || len(s) > 32 {
+		return ""
+	}
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if c >= 'a' && c <= 'z' {
+			continue
+		}
+		if c >= '0' && c <= '9' {
+			continue
+		}
+		if c == '_' || c == '-' {
+			continue
+		}
+		return ""
+	}
+	return s
+}
+
+// filterEntriesByPalaceTag keeps entries with an exact palace tag (Content.Tags
+// or TemporalTags). Used because kernel v1.5.12 has no FactsAsOfOptions.Tag /
+// SearchMemoryOptions.Tag; host-side Limit may underfill. Prefer kernel Tag.
+func filterEntriesByPalaceTag(entries []palace.MemoryEntry, tag string) []palace.MemoryEntry {
+	if tag == "" {
+		return entries
+	}
+	out := make([]palace.MemoryEntry, 0, len(entries))
+	for _, e := range entries {
+		if palace.EntryHasTag(e, tag) {
+			out = append(out, e)
+		}
+	}
+	return out
 }
 
 func firstNonEmpty(vals ...string) string {
