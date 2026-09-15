@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Docs:** README TTFH V1.6 support dept RCA overlay kit pointer (Wave 1, not E-G1; TUI + kernel `examples/dept-rca/support`; mesh miss is success until pull; dual_write OFF). Not Memory GA.
 - **Docs:** README TTFH one walk — drop duplicate **Phases** line; R0–R4 list is the rollout (R1 `--live` ≠ R3 overlay `/dashboard` PULSE parked; dual_write OFF). Not E-G1 · not Memory GA.
 - **Docs:** README TTFH numbered walk is the R0–R4 map (this list **is** the rollout; R1 ≠ R3; overlay `/dashboard` PULSE parked; dual_write OFF). Not E-G1 · not Memory GA.
 - **Docs:** README TTFH V1.5 phased rollout sentence (R0–R4 host attached, not a gate; overlay `/dashboard` PULSE parked; dual_write OFF). Not E-G1 · not Memory GA.
