@@ -445,25 +445,28 @@ func entityTag(key string) string {
 // --- memory_retrieve ---
 
 type retrieveInput struct {
-	Tenant     string `json:"tenant" jsonschema:"required tenant subdirectory under palace root; omit fail-closes"`
-	Query      string `json:"query" jsonschema:"recall query text"`
-	Limit      int    `json:"limit,omitempty"`
-	SessionID  string `json:"session_id,omitempty"`
-	Since      string `json:"since,omitempty" jsonschema:"optional RFC3339 inclusive lower bound"`
-	Until      string `json:"until,omitempty" jsonschema:"optional RFC3339 inclusive upper bound"`
-	Tag        string `json:"tag,omitempty" jsonschema:"optional palace tag exact match; empty = no extra filter"`
-	Department string `json:"department,omitempty" jsonschema:"optional department id → tag dept:{id} (not Connected); empty = no extra filter"`
+	Tenant     string   `json:"tenant" jsonschema:"required tenant subdirectory under palace root; omit fail-closes"`
+	Query      string   `json:"query" jsonschema:"recall query text"`
+	Limit      int      `json:"limit,omitempty"`
+	SessionID  string   `json:"session_id,omitempty"`
+	SessionIDs []string `json:"session_ids,omitempty" jsonschema:"optional any-of session ids; empty = no extra filter; union with session_id"`
+	Since      string   `json:"since,omitempty" jsonschema:"optional RFC3339 inclusive lower bound"`
+	Until      string   `json:"until,omitempty" jsonschema:"optional RFC3339 inclusive upper bound"`
+	Tag        string   `json:"tag,omitempty" jsonschema:"optional palace tag exact match; empty = no extra filter"`
+	Department string   `json:"department,omitempty" jsonschema:"optional department id → tag dept:{id} (not Connected); empty = no extra filter"`
 }
 
 type memoryHit struct {
-	ID        string   `json:"id"`
-	Tier      int      `json:"tier"`
-	SessionID string   `json:"session_id,omitempty"`
-	TurnID    string   `json:"turn_id,omitempty"`
-	Summary   string   `json:"summary"`
-	Full      string   `json:"full,omitempty"`
-	Tags      []string `json:"tags,omitempty"`
-	Timestamp string   `json:"timestamp,omitempty"`
+	ID         string   `json:"id"`
+	Tier       int      `json:"tier"`
+	SessionID  string   `json:"session_id,omitempty"`
+	TurnID     string   `json:"turn_id,omitempty"`
+	Summary    string   `json:"summary"`
+	Full       string   `json:"full,omitempty"`
+	Tags       []string `json:"tags,omitempty"`
+	Timestamp  string   `json:"timestamp,omitempty"`
+	SourceHint string   `json:"source_hint,omitempty"`
+	SourceStep string   `json:"source_step,omitempty"`
 }
 
 type retrieveOutput struct {
@@ -484,8 +487,9 @@ func (h *Host) handleRetrieve(_ context.Context, _ *mcp.CallToolRequest, in retr
 	}
 
 	opts := palace.SearchMemoryOptions{
-		SessionID: strings.TrimSpace(in.SessionID),
-		Limit:     in.Limit,
+		SessionID:  strings.TrimSpace(in.SessionID),
+		SessionIDs: sanitizeSessionIDs(in.SessionIDs),
+		Limit:      in.Limit,
 	}
 	if t, ok, err := parseOptionalTime(in.Since); err != nil {
 		return toolError(err), retrieveOutput{}, err
@@ -612,16 +616,17 @@ func (h *Host) handleSearchSemantic(_ context.Context, _ *mcp.CallToolRequest, i
 // --- memory_list ---
 
 type listInput struct {
-	Tenant          string `json:"tenant" jsonschema:"required tenant subdirectory under palace root; omit fail-closes"`
-	SessionID       string `json:"session_id,omitempty"`
-	Query           string `json:"query,omitempty" jsonschema:"optional substring filter"`
-	Since           string `json:"since,omitempty" jsonschema:"RFC3339 inclusive lower bound"`
-	Until           string `json:"until,omitempty" jsonschema:"RFC3339 inclusive upper bound"`
-	Tag             string `json:"tag,omitempty"`
-	TagPrefix       string `json:"tag_prefix,omitempty"`
-	Limit           int    `json:"limit,omitempty"`
-	IncludeArchival bool   `json:"include_archival,omitempty"`
-	Ascending       bool   `json:"ascending,omitempty"`
+	Tenant          string   `json:"tenant" jsonschema:"required tenant subdirectory under palace root; omit fail-closes"`
+	SessionID       string   `json:"session_id,omitempty"`
+	SessionIDs      []string `json:"session_ids,omitempty" jsonschema:"optional any-of session ids; empty = no extra filter; union with session_id"`
+	Query           string   `json:"query,omitempty" jsonschema:"optional substring filter"`
+	Since           string   `json:"since,omitempty" jsonschema:"RFC3339 inclusive lower bound"`
+	Until           string   `json:"until,omitempty" jsonschema:"RFC3339 inclusive upper bound"`
+	Tag             string   `json:"tag,omitempty"`
+	TagPrefix       string   `json:"tag_prefix,omitempty"`
+	Limit           int      `json:"limit,omitempty"`
+	IncludeArchival bool     `json:"include_archival,omitempty"`
+	Ascending       bool     `json:"ascending,omitempty"`
 }
 
 type listOutput struct {
@@ -636,6 +641,7 @@ func (h *Host) handleList(_ context.Context, _ *mcp.CallToolRequest, in listInpu
 	}
 	opts := palace.ListMemoryOptions{
 		SessionID:       strings.TrimSpace(in.SessionID),
+		SessionIDs:      sanitizeSessionIDs(in.SessionIDs),
 		Query:           strings.TrimSpace(in.Query),
 		Tag:             strings.TrimSpace(in.Tag),
 		TagPrefix:       strings.TrimSpace(in.TagPrefix),
@@ -705,14 +711,15 @@ func (h *Host) handleCompactStatus(_ context.Context, _ *mcp.CallToolRequest, in
 // --- memory_facts_as_of ---
 
 type factsAsOfInput struct {
-	Tenant     string `json:"tenant" jsonschema:"required tenant subdirectory under palace root; omit fail-closes"`
-	AsOf       string `json:"as_of,omitempty" jsonschema:"RFC3339 validity instant (default now)"`
-	Query      string `json:"query,omitempty"`
-	SessionID  string `json:"session_id,omitempty"`
-	Entity     string `json:"entity,omitempty"`
-	Limit      int    `json:"limit,omitempty"`
-	Tag        string `json:"tag,omitempty" jsonschema:"optional palace tag exact match; empty = no extra filter"`
-	Department string `json:"department,omitempty" jsonschema:"optional department id → tag dept:{id} (not Connected); empty = no extra filter"`
+	Tenant     string   `json:"tenant" jsonschema:"required tenant subdirectory under palace root; omit fail-closes"`
+	AsOf       string   `json:"as_of,omitempty" jsonschema:"RFC3339 validity instant (default now)"`
+	Query      string   `json:"query,omitempty"`
+	SessionID  string   `json:"session_id,omitempty"`
+	SessionIDs []string `json:"session_ids,omitempty" jsonschema:"optional any-of session ids; empty = no extra filter; union with session_id"`
+	Entity     string   `json:"entity,omitempty"`
+	Limit      int      `json:"limit,omitempty"`
+	Tag        string   `json:"tag,omitempty" jsonschema:"optional palace tag exact match; empty = no extra filter"`
+	Department string   `json:"department,omitempty" jsonschema:"optional department id → tag dept:{id} (not Connected); empty = no extra filter"`
 }
 
 type factsAsOfOutput struct {
@@ -732,11 +739,12 @@ func (h *Host) handleFactsAsOf(_ context.Context, _ *mcp.CallToolRequest, in fac
 		return toolError(err), factsAsOfOutput{}, err
 	}
 	opts := palace.FactsAsOfOptions{
-		AsOf:      asOf,
-		Query:     strings.TrimSpace(in.Query),
-		SessionID: strings.TrimSpace(in.SessionID),
-		Entity:    strings.TrimSpace(in.Entity),
-		Limit:     in.Limit,
+		AsOf:       asOf,
+		Query:      strings.TrimSpace(in.Query),
+		SessionID:  strings.TrimSpace(in.SessionID),
+		SessionIDs: sanitizeSessionIDs(in.SessionIDs),
+		Entity:     strings.TrimSpace(in.Entity),
+		Limit:      in.Limit,
 	}
 	entries := ps.ListFactsAsOf(opts)
 	// Kernel v1.5.12 has no FactsAsOfOptions.Tag; host EntryHasTag after ListFactsAsOf
@@ -758,14 +766,15 @@ func (h *Host) handleFactsAsOf(_ context.Context, _ *mcp.CallToolRequest, in fac
 // --- memory_related (MultiHopRetrieve) ---
 
 type relatedInput struct {
-	Tenant          string `json:"tenant" jsonschema:"required tenant subdirectory under palace root; omit fail-closes"`
-	SeedEntity      string `json:"seed_entity,omitempty" jsonschema:"starting entity key"`
-	SeedQuery       string `json:"seed_query,omitempty" jsonschema:"optional search text to derive entity seeds"`
-	MaxHops         int    `json:"max_hops,omitempty" jsonschema:"default 2, clamped 1..4"`
-	Limit           int    `json:"limit,omitempty"`
-	SessionID       string `json:"session_id,omitempty"`
-	AsOf            string `json:"as_of,omitempty" jsonschema:"optional RFC3339 validity instant"`
-	IncludeArchival bool   `json:"include_archival,omitempty"`
+	Tenant          string   `json:"tenant" jsonschema:"required tenant subdirectory under palace root; omit fail-closes"`
+	SeedEntity      string   `json:"seed_entity,omitempty" jsonschema:"starting entity key"`
+	SeedQuery       string   `json:"seed_query,omitempty" jsonschema:"optional search text to derive entity seeds"`
+	MaxHops         int      `json:"max_hops,omitempty" jsonschema:"default 2, clamped 1..4"`
+	Limit           int      `json:"limit,omitempty"`
+	SessionID       string   `json:"session_id,omitempty"`
+	SessionIDs      []string `json:"session_ids,omitempty" jsonschema:"optional any-of session ids; empty = no extra filter; union with session_id"`
+	AsOf            string   `json:"as_of,omitempty" jsonschema:"optional RFC3339 validity instant"`
+	IncludeArchival bool     `json:"include_archival,omitempty"`
 }
 
 type relatedOutput struct {
@@ -791,6 +800,7 @@ func (h *Host) handleRelated(_ context.Context, _ *mcp.CallToolRequest, in relat
 		MaxHops:         in.MaxHops,
 		Limit:           in.Limit,
 		SessionID:       strings.TrimSpace(in.SessionID),
+		SessionIDs:      sanitizeSessionIDs(in.SessionIDs),
 		IncludeArchival: in.IncludeArchival,
 	}
 	if t, ok, err := parseOptionalTime(in.AsOf); err != nil {
@@ -882,15 +892,35 @@ func hitFromEntry(e palace.MemoryEntry) memoryHit {
 		tsStr = ts.UTC().Format(time.RFC3339)
 	}
 	return memoryHit{
-		ID:        e.ID,
-		Tier:      int(e.Tier),
-		SessionID: e.SessionID,
-		TurnID:    e.TurnID,
-		Summary:   e.Content.Summary,
-		Full:      firstNonEmpty(e.Content.Full, e.OriginalText),
-		Tags:      e.Content.Tags,
-		Timestamp: tsStr,
+		ID:         e.ID,
+		Tier:       int(e.Tier),
+		SessionID:  e.SessionID,
+		TurnID:     e.TurnID,
+		Summary:    e.Content.Summary,
+		Full:       firstNonEmpty(e.Content.Full, e.OriginalText),
+		Tags:       e.Content.Tags,
+		Timestamp:  tsStr,
+		SourceHint: e.Provenance.SourceHint,
+		SourceStep: e.Provenance.SourceStep,
 	}
+}
+
+// sanitizeSessionIDs trims and drops empty ids. Empty result = no extra filter
+// (honest empty; kernel SessionIDs any-of is a no-op when len==0).
+func sanitizeSessionIDs(ids []string) []string {
+	if len(ids) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(ids))
+	for _, raw := range ids {
+		if id := strings.TrimSpace(raw); id != "" {
+			out = append(out, id)
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
 
 func toolJSON(v any) *mcp.CallToolResult {

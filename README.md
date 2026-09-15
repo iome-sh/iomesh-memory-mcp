@@ -246,12 +246,12 @@ discovery / compile-time registration — they are **not** ingest.
 | `memory_ingest_turn` | `IngestTurn` | Write a conversation turn; optional `source_hint`; optional extra `tags` (dept:/scenario: private overlay, not Connected); host DLP redacts common secret shapes |
 | `memory_extract_facts` | `ExtractAtomicFacts` + `Write` | HITL extract-after-persist; writes `turn_fact` children without rewriting the parent |
 | `memory_write` | `Write` / `WriteAndSupersede` | Write a durable fact (same DLP as ingest) |
-| `memory_retrieve` | `SearchMemoryWithOptions` | Keyword + optional vector re-rank; optional `tag` / `department` (`--department support` is Tag `dept:support`, not Connected); does not ingest |
+| `memory_retrieve` | `SearchMemoryWithOptions` | Keyword + optional vector re-rank; optional `session_ids` any-of (union with `session_id`; empty = no extra filter); optional `tag` / `department` (`--department support` is Tag `dept:support`, not Connected); hits include `source_hint` / `source_step` when stamped; does not ingest |
 | `memory_search_semantic` | Hybrid search on semantic tier | Hybrid semantic search; Qdrant not wired |
-| `memory_list` | `ListMemoryWithOptions` | List by event time; does not ingest |
+| `memory_list` | `ListMemoryWithOptions` | List by event time; optional `session_ids` any-of (union with `session_id`; empty = no extra filter); does not ingest |
 | `memory_compact_status` | `GetStats` | Local palace stats; does not ingest |
-| `memory_facts_as_of` | `ListFactsAsOf` | Facts valid at `as_of`; optional `tag` / `department` (`--department support` is Tag `dept:support`, not Connected); does not ingest |
-| `memory_related` | `MultiHopRetrieve` | Entity BFS lite; does not ingest |
+| `memory_facts_as_of` | `ListFactsAsOf` | Facts valid at `as_of`; optional `session_ids` any-of (union with `session_id`; empty = no extra filter); optional `tag` / `department` (`--department support` is Tag `dept:support`, not Connected); does not ingest |
+| `memory_related` | `MultiHopRetrieve` | Entity BFS lite; optional `session_ids` any-of (union with `session_id`; empty = no extra filter); does not ingest |
 | `memory_supersede_entity` | `SupersedeEntityFacts` | Close open facts for an entity key |
 | `ops_digest_export` | `ListMemoryWithOptions` window | Local receipts for TUI `/memory digest`; does not ingest |
 
