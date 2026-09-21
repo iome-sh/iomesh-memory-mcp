@@ -60,7 +60,7 @@ make release-snapshot           # local GoReleaser snapshot (needs goreleaser + 
 | Package / surface | Focus |
 |-------------------|--------|
 | `internal/mcphost` tools | Temp palace dirs; ingest / retrieve / list / facts_as_of |
-| `internal/mcphost` HTTP | `/healthz` `dual_write` field · tools count · version stamp · loopback bind · non-loopback requires shared secret before listen |
+| `internal/mcphost` HTTP | `/healthz` `dual_write` field · `/ready` writer probe (unauthenticated; 200 vs 503) · tools count · version stamp · loopback bind · non-loopback requires shared secret before listen |
 | `internal/mcphost` DLP | ingest/write redact `ghp_` / `sk-` before palace write |
 | CLI / flags | stdio vs HTTP mode selection; `MEMORY_MCP_*` only (no leftover product-plane env aliases) |
 

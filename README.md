@@ -96,7 +96,9 @@ iomesh-memory-mcp \
 
 curl -fsS http://127.0.0.1:8080/healthz
 # persist_embeddings=off (default) · qdrant=off · tools>=11 (compile-time)
-# /healthz stays open even if MEMORY_MCP_HTTP_SECRET is set
+curl -fsS http://127.0.0.1:8080/ready
+# writer ready: palace writable + wal/pending recoverable; 503 if not
+# /healthz ≠ /ready. Both stay open even if MEMORY_MCP_HTTP_SECRET is set
 ```
 
 ### Cursor / Claude Desktop
@@ -130,7 +132,7 @@ Put that block in the client’s MCP config (`~/.cursor/mcp.json`, Claude Deskto
 **HTTP** (streamable MCP). Start the host with `-http-addr :8080 -http-path /mcp`.
 Loopback may omit the secret. Non-loopback requires `MEMORY_MCP_HTTP_SECRET`
 (fatal before listen). When set, the secret fail-closes the MCP path
-(`X-Memory-MCP-Secret` or `Authorization: Bearer`); `/healthz` stays open. Then:
+(`X-Memory-MCP-Secret` or `Authorization: Bearer`); `/healthz` and `/ready` stay open. Then:
 
 ```json
 {
@@ -143,7 +145,8 @@ Loopback may omit the secret. Non-loopback requires `MEMORY_MCP_HTTP_SECRET`
 ```
 
 `GET /healthz` 200 means the process is up. `tools` / `tool_names` are compile-time
-registration, not a live MCP `tools/list`.
+registration, not a live MCP `tools/list`. `GET /ready` 200 means the writer palace
+is writable and `wal/pending` is recoverable — not ingest, not Memory GA.
 
 ### iomesh-tui
 
@@ -221,9 +224,9 @@ Department overlay kit (V1.6 Wave 1, not E-G1): TUI `examples/dept-rca/support` 
 | `-tenant` | `MEMORY_TENANT` | empty | Process label only (validated if set). Tool `tenant` is required; omit fail-closes. **Required** with `-cloud` |
 | `-cloud` | `MEMORY_CLOUD` | false | Dedicated-tenant cloud mode: one PalaceStore, second tool tenant is 400, `palace.lock` PID lock, `PalaceConfig.TransactionalIngest=true`. Local-dev map remains when false (TransactionalIngest default false / partial persist) |
 | `-http-addr` | `MEMORY_MCP_HTTP_ADDR` | empty = **stdio** | e.g. `:8080` (forced to `127.0.0.1:8080`) |
-| `-http-path` | `MEMORY_MCP_HTTP_PATH` | `/mcp` | Streamable MCP path (`/healthz` is fixed) |
+| `-http-path` | `MEMORY_MCP_HTTP_PATH` | `/mcp` | Streamable MCP path (`/healthz` and `/ready` are fixed) |
 | `-allow-non-loopback` | `MEMORY_MCP_HTTP_ALLOW_NON_LOOPBACK` | false | Required to bind `0.0.0.0` / `::` / LAN. Compose/image set this so host publish `127.0.0.1:8080` can reach the container. **Requires** `-http-secret` |
-| `-http-secret` | `MEMORY_MCP_HTTP_SECRET` | empty = **off** on loopback | Shared secret for MCP HTTP. **Required** for non-loopback (fatal before listen, not a request 401). Fail-closed when set. `/healthz` stays open |
+| `-http-secret` | `MEMORY_MCP_HTTP_SECRET` | empty = **off** on loopback | Shared secret for MCP HTTP. **Required** for non-loopback (fatal before listen, not a request 401). Fail-closed when set. `/healthz` and `/ready` stay open |
 | `-preflight` | — | false | Print the same JSON as `GET /healthz` and exit (no listen, no stdio MCP) |
 | (env only) | `MEMORY_ONNX_MODEL_PATH` | empty = **hash** embeddings | Optional ONNX model dir/file · see [memory](https://github.com/iome-sh/memory) |
 | (env only) | `MEMORY_PERSIST_EMBEDDINGS` | unset = **off** | Opt-in ONNX vector persist (`1`/`true`/`on`/`yes`, case-insensitive). Ignored on hash (never persist hash) |
@@ -283,7 +286,7 @@ enforces that in-process: `Host.stores` length 1, required `MEMORY_TENANT`,
 `PalaceConfig.TransactionalIngest=true` (`wal/pending` intent log; not flock).
 Local-dev leaves TransactionalIngest **false** (partial persist). HTTP defaults
 to loopback; non-loopback requires `MEMORY_MCP_HTTP_SECRET` before listen;
-`/healthz` stays open. Unauthenticated HTTP remains the residual on loopback
+`/healthz` and `/ready` stay open (`/healthz` ≠ `/ready`). Unauthenticated HTTP remains the residual on loopback
 when the secret is unset. dual_write OFF · PersistEmbeddings default off · not Memory GA.
 
 ## Development
