@@ -3,7 +3,7 @@
 // Default transport is stdio; set -http-addr (or MEMORY_MCP_HTTP_ADDR) for
 // streamable HTTP. :port binds 127.0.0.1 unless -allow-non-loopback.
 // Non-loopback HTTP requires MEMORY_MCP_HTTP_SECRET / -http-secret (fatal before listen).
-// /healthz stays open. -cloud / MEMORY_CLOUD=1 is dedicated-tenant (one store, PID lock,
+// /healthz and /ready stay open (/healthz ≠ /ready). -cloud / MEMORY_CLOUD=1 is dedicated-tenant (one store, PID lock,
 // PalaceConfig.TransactionalIngest=true). Local-dev leaves TransactionalIngest false.
 // -preflight prints the same JSON as GET /healthz and exits
 // (no listen, no stdio MCP). Does not import private control-plane/broker packages.
@@ -54,11 +54,11 @@ func run(args []string, stdout io.Writer) error {
 	httpAddr := fs.String("http-addr", envOr("MEMORY_MCP_HTTP_ADDR", ""),
 		"listen address for streamable HTTP (e.g. :8080 → 127.0.0.1:8080); empty = stdio mode")
 	httpPath := fs.String("http-path", envOr("MEMORY_MCP_HTTP_PATH", "/mcp"),
-		"URL path for the MCP streamable HTTP endpoint (healthz always at /healthz)")
+		"URL path for the MCP streamable HTTP endpoint (healthz always at /healthz; ready always at /ready)")
 	allowNonLoopback := fs.Bool("allow-non-loopback", envTruthy("MEMORY_MCP_HTTP_ALLOW_NON_LOOPBACK"),
 		"allow HTTP bind on 0.0.0.0 / :: / non-loopback (required for container publish). Default: :port is forced to 127.0.0.1; 0.0.0.0 is refused. Non-loopback requires -http-secret")
 	httpSecret := fs.String("http-secret", envOr("MEMORY_MCP_HTTP_SECRET", ""),
-		"shared secret for streamable HTTP MCP (X-Memory-MCP-Secret or Authorization: Bearer). Required for non-loopback (fatal before listen). Empty = off on loopback. Fail-closed when set. /healthz stays open. stdio unchanged")
+		"shared secret for streamable HTTP MCP (X-Memory-MCP-Secret or Authorization: Bearer). Required for non-loopback (fatal before listen). Empty = off on loopback. Fail-closed when set. /healthz and /ready stay open. stdio unchanged")
 	preflight := fs.Bool("preflight", false,
 		"print the same JSON as GET /healthz and exit (no listen, no stdio MCP; not tools/list, not ingest)")
 

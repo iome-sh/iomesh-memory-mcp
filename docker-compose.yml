@@ -31,6 +31,7 @@ services:
       # - ${MEMORY_ONNX_HOST_PATH:-./models}:/models:ro
     # distroless has no curl/wget — probe from host:
     #   curl -fsS http://127.0.0.1:8080/healthz
+    #   curl -fsS http://127.0.0.1:8080/ready   # writer readiness; /healthz ≠ /ready
     restart: unless-stopped
 
 volumes:

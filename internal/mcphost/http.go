@@ -22,10 +22,11 @@ import (
 var ErrHTTPSecretRequired = errors.New("http secret required for non-loopback bind")
 
 // MCPSecretHeader is the optional shared-secret header for streamable HTTP MCP.
-// Also accepted: Authorization: Bearer <secret>. GET /healthz stays open.
+// Also accepted: Authorization: Bearer <secret>. GET /healthz and GET /ready stay open.
 const MCPSecretHeader = "X-Memory-MCP-Secret"
 
-// HealthzResponse is the JSON body for GET /healthz.
+// HealthzResponse is the JSON body for GET /healthz (process-up).
+// Do not add /ready writer fields here — /healthz ≠ /ready.
 type HealthzResponse struct {
 	Status      string `json:"status"`
 	Service     string `json:"service"`
@@ -78,6 +79,7 @@ func HealthzSnapshot(host *Host) HealthzResponse {
 // HealthzHandler returns 200 JSON honesty locks for edge probes.
 // Optional host argument reports live embedding mode; nil → env snapshot.
 // Always unauthenticated (honesty unchanged when an MCP shared secret is set).
+// Does not probe palace writability (that is GET /ready).
 func HealthzHandler(hosts ...*Host) http.HandlerFunc {
 	var host *Host
 	if len(hosts) > 0 {
@@ -102,11 +104,13 @@ func HealthzHandler(hosts ...*Host) http.HandlerFunc {
 type HTTPConfig struct {
 	Addr string
 	Path string
-	// Host optional — when set, /healthz reports live EmbeddingMode.
-	// tools / tool_names are always compile-time lean registration.
+	// Host optional — when set, /healthz reports live EmbeddingMode and
+	// /ready probes the configured palace store. tools / tool_names are
+	// always compile-time lean registration.
 	Host *Host
 	// SharedSecret, when non-empty, fail-closes MCP HTTP without a matching
-	// X-Memory-MCP-Secret or Authorization: Bearer header. /healthz stays open.
+	// X-Memory-MCP-Secret or Authorization: Bearer header. /healthz and
+	// /ready stay open (probes must work without the MCP secret).
 	// Required (fatal before listen) when the normalized bind is not loopback.
 	SharedSecret string
 	// AllowNonLoopback permits 0.0.0.0 / :: / non-loopback binds.
@@ -115,9 +119,10 @@ type HTTPConfig struct {
 	AllowNonLoopback bool
 }
 
-// RunHTTP serves streamable MCP at Path with GET /healthz and graceful shutdown.
-// Listen address is normalized (loopback default). Optional shared secret wraps MCP only.
-// Non-loopback bind with an empty SharedSecret is fatal before ListenAndServe (S5).
+// RunHTTP serves streamable MCP at Path with GET /healthz, GET /ready, and graceful shutdown.
+// Listen address is normalized (loopback default). Optional shared secret wraps MCP only
+// (does not wrap /healthz or /ready). Non-loopback bind with an empty SharedSecret is
+// fatal before ListenAndServe (S5).
 func RunHTTP(ctx context.Context, sdk *mcp.Server, cfg HTTPConfig) error {
 	addr, err := NormalizeListenAddr(cfg.Addr, cfg.AllowNonLoopback)
 	if err != nil {
@@ -139,6 +144,7 @@ func RunHTTP(ctx context.Context, sdk *mcp.Server, cfg HTTPConfig) error {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", HealthzHandler(cfg.Host))
+	mux.HandleFunc("/ready", ReadyHandler(cfg.Host))
 	if path == "/" {
 		mux.Handle("/", handler)
 	} else {
@@ -159,7 +165,7 @@ func RunHTTP(ctx context.Context, sdk *mcp.Server, cfg HTTPConfig) error {
 
 	errCh := make(chan error, 1)
 	go func() {
-		log.Printf("%s mode=http addr=%s path=%s healthz=/healthz secret=%s allow_non_loopback=%v tools=%d dual_write=off not_memory_ga=true version=%s (stateless+json)",
+		log.Printf("%s mode=http addr=%s path=%s healthz=/healthz ready=/ready secret=%s allow_non_loopback=%v tools=%d dual_write=off not_memory_ga=true version=%s (stateless+json)",
 			ServerName, addr, path, secretState, cfg.AllowNonLoopback, len(leanToolNames), ServerVersion)
 		if err := httpSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			errCh <- err
@@ -246,7 +252,7 @@ func splitListenAddr(addr string) (host, port string, err error) {
 }
 
 // requireHTTPSecret fails closed before listen when addr is not loopback and secret is empty.
-// Loopback (127.0.0.1 / ::1 / localhost) may run without a secret. /healthz stays open either way.
+// Loopback (127.0.0.1 / ::1 / localhost) may run without a secret. /healthz and /ready stay open either way.
 func requireHTTPSecret(addr, secret string) error {
 	if strings.TrimSpace(secret) != "" {
 		return nil
@@ -284,7 +290,7 @@ func classifyListenHost(host string) (loopback, unspecifiedAll, unspecifiedEmpty
 }
 
 // WithOptionalSharedSecret wraps MCP HTTP. Empty secret is a no-op.
-// When set, missing/wrong secret → 401 (fail-closed). Does not wrap /healthz.
+// When set, missing/wrong secret → 401 (fail-closed). Does not wrap /healthz or /ready.
 func WithOptionalSharedSecret(secret string, next http.Handler) http.Handler {
 	want := strings.TrimSpace(secret)
 	if want == "" || next == nil {

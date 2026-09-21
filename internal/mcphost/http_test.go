@@ -8,6 +8,9 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -442,5 +445,484 @@ func TestHealthzHead(t *testing.T) {
 	if len(b) != 0 {
 		// HEAD may still encode; accept empty or body depending on encoder.
 		t.Logf("HEAD body len=%d", len(b))
+	}
+}
+
+func TestReadyWritablePalace200(t *testing.T) {
+	root := t.TempDir()
+	h, err := New(Config{PalaceRoot: root, DefaultTenant: "t1"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	rr := httptest.NewRecorder()
+	ReadyHandler(h).ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "/ready", nil))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status: %d body=%s", rr.Code, rr.Body.String())
+	}
+	if ct := rr.Header().Get("Content-Type"); ct != "application/json" {
+		t.Fatalf("content-type: %q", ct)
+	}
+	var body ReadyResponse
+	if err := json.Unmarshal(rr.Body.Bytes(), &body); err != nil {
+		t.Fatalf("json: %v body=%s", err, rr.Body.String())
+	}
+	assertReadyHonesty(t, body)
+	if body.Status != "ok" {
+		t.Fatalf("status field: %q", body.Status)
+	}
+	if !body.PalaceWritable {
+		t.Fatal("palace_writable")
+	}
+	if !body.WALPendingRecoverable {
+		t.Fatal("wal_pending_recoverable")
+	}
+	if body.WALPending != 0 {
+		t.Fatalf("wal_pending: %d", body.WALPending)
+	}
+	raw := rr.Body.Bytes()
+	assertReadyDoesNotLeak(t, raw, "t1")
+	assertReadyJSONKeys(t, raw)
+}
+
+func TestReadyCloudWritable200(t *testing.T) {
+	t.Setenv("MEMORY_CLOUD", "")
+	t.Setenv("MEMORY_PERSIST_EMBEDDINGS", "")
+	root := t.TempDir()
+	h, err := New(Config{PalaceRoot: root, DefaultTenant: "ws-1", Cloud: true})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	defer func() { _ = h.Close() }()
+	rr := httptest.NewRecorder()
+	ReadyHandler(h).ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "/ready", nil))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status: %d body=%s", rr.Code, rr.Body.String())
+	}
+	var body ReadyResponse
+	if err := json.Unmarshal(rr.Body.Bytes(), &body); err != nil {
+		t.Fatalf("json: %v", err)
+	}
+	assertReadyHonesty(t, body)
+	if !body.PalaceWritable || !body.WALPendingRecoverable || body.Status != "ok" {
+		t.Fatalf("cloud ready: %+v", body)
+	}
+	assertReadyDoesNotLeak(t, rr.Body.Bytes(), "ws-1")
+}
+
+func TestReadyDoesNotInventDefaultTenant(t *testing.T) {
+	root := t.TempDir()
+	h, err := New(Config{PalaceRoot: root})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	rr := httptest.NewRecorder()
+	ReadyHandler(h).ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "/ready", nil))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status: %d body=%s", rr.Code, rr.Body.String())
+	}
+	if _, err := os.Stat(filepath.Join(root, "default")); !os.IsNotExist(err) {
+		t.Fatalf("must not invent a default tenant write: %v", err)
+	}
+}
+
+func TestReadyNotWritable503HealthzStill200(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("chmod 0555 not a write barrier on windows")
+	}
+	root := t.TempDir()
+	h, err := New(Config{PalaceRoot: root, DefaultTenant: "t1"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	probe := filepath.Join(root, "t1")
+	if err := os.MkdirAll(probe, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(probe, 0o555); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(probe, 0o700) })
+
+	readyRR := httptest.NewRecorder()
+	ReadyHandler(h).ServeHTTP(readyRR, httptest.NewRequest(http.MethodGet, "/ready", nil))
+	if readyRR.Code != http.StatusServiceUnavailable {
+		t.Fatalf("ready status: %d body=%s", readyRR.Code, readyRR.Body.String())
+	}
+	var ready ReadyResponse
+	if err := json.Unmarshal(readyRR.Body.Bytes(), &ready); err != nil {
+		t.Fatalf("ready json: %v", err)
+	}
+	assertReadyHonesty(t, ready)
+	if ready.Status != "not_ready" {
+		t.Fatalf("status field: %q", ready.Status)
+	}
+	if ready.PalaceWritable {
+		t.Fatal("palace_writable must be false")
+	}
+
+	healthRR := httptest.NewRecorder()
+	HealthzHandler(h).ServeHTTP(healthRR, httptest.NewRequest(http.MethodGet, "/healthz", nil))
+	if healthRR.Code != http.StatusOK {
+		t.Fatalf("healthz must stay 200: %d body=%s", healthRR.Code, healthRR.Body.String())
+	}
+	var health HealthzResponse
+	if err := json.Unmarshal(healthRR.Body.Bytes(), &health); err != nil {
+		t.Fatalf("healthz json: %v", err)
+	}
+	assertHealthzHonesty(t, health)
+	assertHealthzOmitsReadyFields(t, healthRR.Body.Bytes())
+}
+
+func TestReadyMissingRoot503(t *testing.T) {
+	root := t.TempDir()
+	notDir := filepath.Join(root, "not-a-dir")
+	if err := os.WriteFile(notDir, []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	h, err := New(Config{PalaceRoot: notDir, DefaultTenant: "t1"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	rr := httptest.NewRecorder()
+	ReadyHandler(h).ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "/ready", nil))
+	if rr.Code != http.StatusServiceUnavailable {
+		t.Fatalf("status: %d body=%s", rr.Code, rr.Body.String())
+	}
+	var body ReadyResponse
+	if err := json.Unmarshal(rr.Body.Bytes(), &body); err != nil {
+		t.Fatalf("json: %v", err)
+	}
+	if body.Status != "not_ready" || body.PalaceWritable {
+		t.Fatalf("want not_ready unwritable, got %+v", body)
+	}
+	healthRR := httptest.NewRecorder()
+	HealthzHandler(h).ServeHTTP(healthRR, httptest.NewRequest(http.MethodGet, "/healthz", nil))
+	if healthRR.Code != http.StatusOK {
+		t.Fatalf("healthz: %d", healthRR.Code)
+	}
+}
+
+func TestReadyNilHostNotReady(t *testing.T) {
+	rr := httptest.NewRecorder()
+	ReadyHandler().ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "/ready", nil))
+	if rr.Code != http.StatusServiceUnavailable {
+		t.Fatalf("status: %d body=%s", rr.Code, rr.Body.String())
+	}
+	var body ReadyResponse
+	if err := json.Unmarshal(rr.Body.Bytes(), &body); err != nil {
+		t.Fatalf("json: %v", err)
+	}
+	assertReadyHonesty(t, body)
+	if body.Status != "not_ready" {
+		t.Fatalf("status: %q", body.Status)
+	}
+	if body.PalaceWritable || body.WALPendingRecoverable {
+		t.Fatalf("nil host must fail closed: %+v", body)
+	}
+}
+
+func TestReadyWALPendingLeftoverRecoverable(t *testing.T) {
+	root := t.TempDir()
+	h, err := New(Config{PalaceRoot: root, DefaultTenant: "t1"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	pending := filepath.Join(root, "t1", filepath.FromSlash(walPendingRelDir))
+	if err := os.MkdirAll(pending, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(pending, "leftover.json"), []byte(`{"turn_id":"x"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	rr := httptest.NewRecorder()
+	ReadyHandler(h).ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "/ready", nil))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status: %d body=%s", rr.Code, rr.Body.String())
+	}
+	var body ReadyResponse
+	if err := json.Unmarshal(rr.Body.Bytes(), &body); err != nil {
+		t.Fatalf("json: %v", err)
+	}
+	if body.WALPending != 1 {
+		t.Fatalf("wal_pending: %d", body.WALPending)
+	}
+	if !body.WALPendingRecoverable || body.Status != "ok" {
+		t.Fatalf("leftover regular file must be recoverable: %+v", body)
+	}
+}
+
+func TestReadyWALPendingNestedDirNotRecoverable(t *testing.T) {
+	root := t.TempDir()
+	h, err := New(Config{PalaceRoot: root, DefaultTenant: "t1"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	nested := filepath.Join(root, "t1", filepath.FromSlash(walPendingRelDir), "nested")
+	if err := os.MkdirAll(nested, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	rr := httptest.NewRecorder()
+	ReadyHandler(h).ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "/ready", nil))
+	if rr.Code != http.StatusServiceUnavailable {
+		t.Fatalf("status: %d body=%s", rr.Code, rr.Body.String())
+	}
+	var body ReadyResponse
+	if err := json.Unmarshal(rr.Body.Bytes(), &body); err != nil {
+		t.Fatalf("json: %v", err)
+	}
+	if body.WALPendingRecoverable || body.Status != "not_ready" {
+		t.Fatalf("nested pending dir must not be recoverable: %+v", body)
+	}
+	if !body.PalaceWritable {
+		t.Fatal("palace still writable")
+	}
+}
+
+func TestReadyLastIngestUnix(t *testing.T) {
+	root := t.TempDir()
+	h, err := New(Config{PalaceRoot: root, DefaultTenant: "t1"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	destDir := filepath.Join(root, "t1", "tier-2-contextual")
+	if err := os.MkdirAll(destDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	dest := filepath.Join(destDir, "mem-1.json")
+	if err := os.WriteFile(dest, []byte(`{"id":"mem-1"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	st, err := os.Stat(dest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := st.ModTime().Unix()
+	rr := httptest.NewRecorder()
+	ReadyHandler(h).ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "/ready", nil))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status: %d body=%s", rr.Code, rr.Body.String())
+	}
+	var body ReadyResponse
+	if err := json.Unmarshal(rr.Body.Bytes(), &body); err != nil {
+		t.Fatalf("json: %v", err)
+	}
+	if body.LastIngestUnix < want {
+		t.Fatalf("last_ingest_unix=%d want >= %d", body.LastIngestUnix, want)
+	}
+}
+
+func TestReadyDoesNotLeakTenantOrOrg(t *testing.T) {
+	h, err := New(Config{PalaceRoot: t.TempDir(), DefaultTenant: "secret-tenant"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	rr := httptest.NewRecorder()
+	ReadyHandler(h).ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "/ready", nil))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status: %d body=%s", rr.Code, rr.Body.String())
+	}
+	assertReadyDoesNotLeak(t, rr.Body.Bytes(), "secret-tenant")
+}
+
+func TestReadyMethodNotAllowed(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "/ready", nil)
+	rr := httptest.NewRecorder()
+	ReadyHandler().ServeHTTP(rr, req)
+	if rr.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("status: %d", rr.Code)
+	}
+}
+
+func TestReadyHead(t *testing.T) {
+	h, err := New(Config{PalaceRoot: t.TempDir(), DefaultTenant: "t1"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	rr := httptest.NewRecorder()
+	ReadyHandler(h).ServeHTTP(rr, httptest.NewRequest(http.MethodHead, "/ready", nil))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status: %d", rr.Code)
+	}
+}
+
+func TestHealthzJSONOmitsReadyFields(t *testing.T) {
+	h, err := New(Config{PalaceRoot: t.TempDir(), DefaultTenant: "t1"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	rr := httptest.NewRecorder()
+	HealthzHandler(h).ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "/healthz", nil))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status: %d", rr.Code)
+	}
+	var body HealthzResponse
+	if err := json.Unmarshal(rr.Body.Bytes(), &body); err != nil {
+		t.Fatalf("json: %v", err)
+	}
+	assertHealthzHonesty(t, body)
+	assertHealthzOmitsReadyFields(t, rr.Body.Bytes())
+}
+
+func TestRunHTTPSecretDoesNotWrapReady(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	addr := ln.Addr().String()
+	_ = ln.Close()
+
+	h, err := New(Config{PalaceRoot: t.TempDir(), DefaultTenant: "t1"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	sdk := h.NewSDKServer()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- RunHTTP(ctx, sdk, HTTPConfig{
+			Addr:         addr,
+			Path:         "/mcp",
+			Host:         h,
+			SharedSecret: "unit-test-shared-secret",
+		})
+	}()
+
+	var lastErr error
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) {
+		readyResp, getErr := http.Get("http://" + addr + "/ready")
+		if getErr != nil {
+			lastErr = getErr
+			time.Sleep(20 * time.Millisecond)
+			continue
+		}
+		readyRaw, _ := io.ReadAll(readyResp.Body)
+		_ = readyResp.Body.Close()
+		if readyResp.StatusCode != http.StatusOK {
+			t.Fatalf("ready without secret: %d body=%s", readyResp.StatusCode, readyRaw)
+		}
+		var ready ReadyResponse
+		if err := json.Unmarshal(readyRaw, &ready); err != nil {
+			t.Fatalf("ready json: %v", err)
+		}
+		assertReadyHonesty(t, ready)
+		if ready.DualWrite != "off" || !ready.NotMemoryGA {
+			t.Fatalf("ready honesty: %+v", ready)
+		}
+
+		healthResp, healthErr := http.Get("http://" + addr + "/healthz")
+		if healthErr != nil {
+			t.Fatalf("healthz: %v", healthErr)
+		}
+		healthRaw, _ := io.ReadAll(healthResp.Body)
+		_ = healthResp.Body.Close()
+		if healthResp.StatusCode != http.StatusOK {
+			t.Fatalf("healthz without secret: %d body=%s", healthResp.StatusCode, healthRaw)
+		}
+		var health HealthzResponse
+		if err := json.Unmarshal(healthRaw, &health); err != nil {
+			t.Fatalf("healthz json: %v", err)
+		}
+		assertHealthzHonesty(t, health)
+		assertHealthzOmitsReadyFields(t, healthRaw)
+
+		mcpReq, _ := http.NewRequest(http.MethodPost, "http://"+addr+"/mcp", strings.NewReader(`{}`))
+		mcpReq.Header.Set("Content-Type", "application/json")
+		mcpResp, mcpErr := http.DefaultClient.Do(mcpReq)
+		if mcpErr != nil {
+			t.Fatalf("mcp: %v", mcpErr)
+		}
+		_ = mcpResp.Body.Close()
+		if mcpResp.StatusCode != http.StatusUnauthorized {
+			t.Fatalf("mcp without secret must 401, got %d", mcpResp.StatusCode)
+		}
+
+		cancel()
+		select {
+		case <-errCh:
+		case <-time.After(3 * time.Second):
+			t.Fatal("RunHTTP did not exit")
+		}
+		return
+	}
+	cancel()
+	t.Fatalf("ready never came up on %s: %v", addr, lastErr)
+}
+
+func assertReadyJSONKeys(t *testing.T, raw []byte) {
+	t.Helper()
+	var body map[string]any
+	if err := json.Unmarshal(raw, &body); err != nil {
+		t.Fatalf("json: %v", err)
+	}
+	for _, k := range []string{
+		"status", "service", "dual_write", "not_memory_ga",
+		"palace_writable", "wal_pending", "wal_pending_recoverable",
+		"last_ingest_unix", "rss_bytes", "cgroup_memory_bytes",
+	} {
+		if _, ok := body[k]; !ok {
+			t.Fatalf("ready missing %q: %s", k, raw)
+		}
+	}
+	for _, k := range []string{
+		"embeddings", "persist_embeddings", "qdrant", "version", "tools", "tool_names",
+	} {
+		if _, ok := body[k]; ok {
+			t.Fatalf("ready must not include healthz field %q: %s", k, raw)
+		}
+	}
+}
+
+func assertReadyHonesty(t *testing.T, body ReadyResponse) {
+	t.Helper()
+	if body.Service != ServerName {
+		t.Fatalf("service: %q", body.Service)
+	}
+	if body.DualWrite != "off" {
+		t.Fatalf("dual_write: %q", body.DualWrite)
+	}
+	if !body.NotMemoryGA {
+		t.Fatal("not_memory_ga must be true")
+	}
+	if body.Status != "ok" && body.Status != "not_ready" {
+		t.Fatalf("status: %q", body.Status)
+	}
+}
+
+func assertReadyDoesNotLeak(t *testing.T, raw []byte, tenant string) {
+	t.Helper()
+	s := string(raw)
+	if tenant != "" && strings.Contains(s, tenant) {
+		t.Fatalf("ready leaked process tenant: %s", s)
+	}
+	var body map[string]any
+	if err := json.Unmarshal(raw, &body); err != nil {
+		t.Fatalf("json: %v", err)
+	}
+	for _, leak := range []string{"tenant", "org", "organization"} {
+		if _, ok := body[leak]; ok {
+			t.Fatalf("ready must not include %q: %s", leak, s)
+		}
+	}
+	if strings.Contains(s, "secret") || strings.Contains(s, "dlp") {
+		t.Fatalf("ready must not leak secret/dlp fields: %s", s)
+	}
+}
+
+func assertHealthzOmitsReadyFields(t *testing.T, raw []byte) {
+	t.Helper()
+	var body map[string]any
+	if err := json.Unmarshal(raw, &body); err != nil {
+		t.Fatalf("json: %v", err)
+	}
+	for _, k := range []string{
+		"palace_writable", "wal_pending", "wal_pending_recoverable",
+		"last_ingest_unix", "rss_bytes", "cgroup_memory_bytes",
+	} {
+		if _, ok := body[k]; ok {
+			t.Fatalf("healthz must not include ready field %q: %s", k, raw)
+		}
 	}
 }
