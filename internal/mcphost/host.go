@@ -9,7 +9,8 @@
 //   - not product Memory GA
 //   - does not import private control-plane/broker packages
 //   - path-based multi-tenant FS isolation only (same process residual)
-//   - cloud mode (Config.Cloud / MEMORY_CLOUD): one store, required tenant, PID lock
+//   - cloud mode (Config.Cloud / MEMORY_CLOUD): one store, required tenant, PID lock,
+//     PalaceConfig.TransactionalIngest=true (local-dev default false / partial persist)
 package mcphost
 
 import (
@@ -65,8 +66,10 @@ type Config struct {
 	// Qdrant is NOT wired into lean host search (kernel VectorStore residual only).
 	EmbeddingMode string
 	// Cloud is dedicated-tenant mode (ECM-1 S2): MEMORY_TENANT required, Host.stores
-	// length stays 1, a second tool tenant is 400, palace.lock PID lock under PalaceRoot.
-	// Flag -cloud / MEMORY_CLOUD=1. Local-dev (false) keeps map[string]*PalaceStore.
+	// length stays 1, a second tool tenant is 400, palace.lock PID lock under PalaceRoot,
+	// PalaceConfig.TransactionalIngest=true (wal/pending intent log; not flock).
+	// Flag -cloud / MEMORY_CLOUD=1. Local-dev (false) keeps map[string]*PalaceStore
+	// and TransactionalIngest default false (partial persist).
 	Cloud bool
 }
 
@@ -84,7 +87,8 @@ type Host struct {
 
 // New constructs a Host. PalaceRoot must be non-empty.
 // Cloud (cfg.Cloud or MEMORY_CLOUD): DefaultTenant required, stores map length 1,
-// palace.lock PID lock. Does not set MEMORY_PERSIST_EMBEDDINGS.
+// palace.lock PID lock, PalaceConfig.TransactionalIngest=true on store construction.
+// Does not set MEMORY_PERSIST_EMBEDDINGS. Local-dev leaves TransactionalIngest false.
 // Optional advanced embeddings: set MEMORY_ONNX_MODEL_PATH to an ONNX model dir/file
 // (see github.com/iome-sh/memory README). Empty path keeps hash embeddings (default).
 // MEMORY_PERSIST_EMBEDDINGS is opt-in and ONNX-only (default off). Hash never persists.
@@ -326,6 +330,7 @@ func (h *Host) TenantDir(tenant string) string {
 // Invalid tenant (not a single path segment) returns nil.
 // Embeddings: hash default · optional ONNX when host was constructed with MEMORY_ONNX_MODEL_PATH.
 // PersistEmbeddings is ONNX-only and opt-in via MEMORY_PERSIST_EMBEDDINGS (default off).
+// Cloud sets PalaceConfig.TransactionalIngest; local-dev leaves it false.
 // Qdrant is not attached here (lean FS hybrid + EmbeddingFunc re-rank only).
 func (h *Host) Store(tenant string) *palace.PalaceStore {
 	key, err := h.ResolveTenant(tenant)
@@ -361,12 +366,13 @@ func (h *Host) openStoreLocked(key string) *palace.PalaceStore {
 		embedDim = h.embedDim
 	}
 	cfg := palace.PalaceConfig{
-		BaseDir:            base,
-		EmbeddingFunc:      h.embedFn,
-		BatchEmbeddingFunc: h.batchFn,
-		PersistEmbeddings:  persistEmbeddingsEnabled(mode, h.onnxPath, h.batchFn),
-		EmbeddingModel:     palaceEmbeddingModel(mode, h.onnxPath),
-		EmbeddingDim:       embedDim,
+		BaseDir:             base,
+		EmbeddingFunc:       h.embedFn,
+		BatchEmbeddingFunc:  h.batchFn,
+		PersistEmbeddings:   persistEmbeddingsEnabled(mode, h.onnxPath, h.batchFn),
+		EmbeddingModel:      palaceEmbeddingModel(mode, h.onnxPath),
+		EmbeddingDim:        embedDim,
+		TransactionalIngest: h.cfg.Cloud,
 	}
 	ps := palace.NewPalaceStoreWithConfig(cfg)
 	h.stores[key] = ps

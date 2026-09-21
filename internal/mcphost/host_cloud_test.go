@@ -122,6 +122,68 @@ func TestLocalDevAllowsMultipleTenants(t *testing.T) {
 	}
 }
 
+func TestCloudStoreSetsTransactionalIngest(t *testing.T) {
+	t.Setenv("MEMORY_CLOUD", "")
+	t.Setenv("MEMORY_PERSIST_EMBEDDINGS", "")
+	h, err := New(Config{PalaceRoot: t.TempDir(), DefaultTenant: "ws-1", Cloud: true})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	defer func() { _ = h.Close() }()
+	ps := h.Store("ws-1")
+	if ps == nil {
+		t.Fatal("store")
+	}
+	if !ps.Config.TransactionalIngest {
+		t.Fatal("cloud store must set TransactionalIngest")
+	}
+	if ps.Config.PersistEmbeddings {
+		t.Fatal("must not set PersistEmbeddings (E-G4)")
+	}
+}
+
+func TestCloudEnvSetsTransactionalIngest(t *testing.T) {
+	t.Setenv("MEMORY_CLOUD", "1")
+	t.Setenv("MEMORY_PERSIST_EMBEDDINGS", "")
+	h, err := New(Config{PalaceRoot: t.TempDir(), DefaultTenant: "ws-1"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	defer func() { _ = h.Close() }()
+	if !h.Cloud() {
+		t.Fatal("MEMORY_CLOUD=1 should enable cloud")
+	}
+	ps := h.Store("ws-1")
+	if ps == nil {
+		t.Fatal("store")
+	}
+	if !ps.Config.TransactionalIngest {
+		t.Fatal("MEMORY_CLOUD store must set TransactionalIngest")
+	}
+	if ps.Config.PersistEmbeddings {
+		t.Fatal("must not set PersistEmbeddings (E-G4)")
+	}
+}
+
+func TestLocalDevTransactionalIngestDefaultFalse(t *testing.T) {
+	t.Setenv("MEMORY_CLOUD", "")
+	t.Setenv("MEMORY_PERSIST_EMBEDDINGS", "")
+	h, err := New(Config{PalaceRoot: t.TempDir(), DefaultTenant: "dogfood"})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	ps := h.Store("dogfood")
+	if ps == nil {
+		t.Fatal("store")
+	}
+	if ps.Config.TransactionalIngest {
+		t.Fatal("local-dev TransactionalIngest must stay false (partial persist)")
+	}
+	if ps.Config.PersistEmbeddings {
+		t.Fatal("must not set PersistEmbeddings")
+	}
+}
+
 func TestCloudPIDLockRejectsLivePID(t *testing.T) {
 	t.Setenv("MEMORY_CLOUD", "")
 	root := t.TempDir()
@@ -203,5 +265,8 @@ func TestCloudDoesNotSetPersistEmbeddings(t *testing.T) {
 	}
 	if ps.Config.PersistEmbeddings {
 		t.Fatal("must not set PersistEmbeddings (E-G4)")
+	}
+	if !ps.Config.TransactionalIngest {
+		t.Fatal("cloud store must set TransactionalIngest")
 	}
 }
