@@ -92,7 +92,7 @@ iomesh-memory-mcp \
   -tenant default \
   -http-addr :8080 \
   -http-path /mcp
-# :8080 is forced to 127.0.0.1:8080. 0.0.0.0 requires -allow-non-loopback.
+# :8080 is forced to 127.0.0.1:8080. 0.0.0.0 requires -allow-non-loopback and -http-secret.
 
 curl -fsS http://127.0.0.1:8080/healthz
 # persist_embeddings=off (default) · qdrant=off · tools>=11 (compile-time)
@@ -128,8 +128,9 @@ Put that block in the client’s MCP config (`~/.cursor/mcp.json`, Claude Deskto
 `iomesh-memory-mcp` is not on `PATH`.
 
 **HTTP** (streamable MCP). Start the host with `-http-addr :8080 -http-path /mcp`.
-Optional `MEMORY_MCP_HTTP_SECRET` fail-closes the MCP path when set
-(`X-Memory-MCP-Secret` or `Authorization: Bearer`). Then:
+Loopback may omit the secret. Non-loopback requires `MEMORY_MCP_HTTP_SECRET`
+(fatal before listen). When set, the secret fail-closes the MCP path
+(`X-Memory-MCP-Secret` or `Authorization: Bearer`); `/healthz` stays open. Then:
 
 ```json
 {
@@ -217,11 +218,12 @@ Department overlay kit (V1.6 Wave 1, not E-G1): TUI `examples/dept-rca/support` 
 | Flag | Environment | Default | Notes |
 |------|-------------|---------|--------|
 | `-palace-root` | `PALACE_ROOT` | `./data/memory-palaces` (or `/data/memory-palaces` in image) | Base directory for tenants |
-| `-tenant` | `MEMORY_TENANT` | empty | Process label only (validated if set). Tool `tenant` is required; omit fail-closes |
+| `-tenant` | `MEMORY_TENANT` | empty | Process label only (validated if set). Tool `tenant` is required; omit fail-closes. **Required** with `-cloud` |
+| `-cloud` | `MEMORY_CLOUD` | false | Dedicated-tenant cloud mode: one PalaceStore, second tool tenant is 400, `palace.lock` PID lock. Local-dev map remains when false |
 | `-http-addr` | `MEMORY_MCP_HTTP_ADDR` | empty = **stdio** | e.g. `:8080` (forced to `127.0.0.1:8080`) |
 | `-http-path` | `MEMORY_MCP_HTTP_PATH` | `/mcp` | Streamable MCP path (`/healthz` is fixed) |
-| `-allow-non-loopback` | `MEMORY_MCP_HTTP_ALLOW_NON_LOOPBACK` | false | Required to bind `0.0.0.0` / `::` / LAN. Compose/image set this so host publish `127.0.0.1:8080` can reach the container |
-| `-http-secret` | `MEMORY_MCP_HTTP_SECRET` | empty = **off** | Optional shared secret for MCP HTTP. Fail-closed when set. `/healthz` stays open |
+| `-allow-non-loopback` | `MEMORY_MCP_HTTP_ALLOW_NON_LOOPBACK` | false | Required to bind `0.0.0.0` / `::` / LAN. Compose/image set this so host publish `127.0.0.1:8080` can reach the container. **Requires** `-http-secret` |
+| `-http-secret` | `MEMORY_MCP_HTTP_SECRET` | empty = **off** on loopback | Shared secret for MCP HTTP. **Required** for non-loopback (fatal before listen, not a request 401). Fail-closed when set. `/healthz` stays open |
 | `-preflight` | — | false | Print the same JSON as `GET /healthz` and exit (no listen, no stdio MCP) |
 | (env only) | `MEMORY_ONNX_MODEL_PATH` | empty = **hash** embeddings | Optional ONNX model dir/file · see [memory](https://github.com/iome-sh/memory) |
 | (env only) | `MEMORY_PERSIST_EMBEDDINGS` | unset = **off** | Opt-in ONNX vector persist (`1`/`true`/`on`/`yes`, case-insensitive). Ignored on hash (never persist hash) |
@@ -275,9 +277,12 @@ Path isolation is not cloud multi-tenant security. This host does not implement
 the mesh-client `X-IOMesh-Org` header.
 
 **Supported topology:** **one host process per palace root.** Multi-process writers
-on a shared root remain unsupported. HTTP defaults to loopback; optional
-`MEMORY_MCP_HTTP_SECRET`; unauthenticated HTTP remains the residual when the
-secret is unset.
+on a shared root remain unsupported. Cloud mode (`-cloud` / `MEMORY_CLOUD=1`)
+enforces that in-process: `Host.stores` length 1, required `MEMORY_TENANT`,
+`palace.lock` PID lock, second tool tenant is 400. HTTP defaults to loopback;
+non-loopback requires `MEMORY_MCP_HTTP_SECRET` before listen; `/healthz` stays
+open. Unauthenticated HTTP remains the residual on loopback when the secret is
+unset. dual_write OFF · PersistEmbeddings default off · not Memory GA.
 
 ## Development
 

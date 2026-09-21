@@ -146,6 +146,43 @@ func TestUnknownFlagDoesNotStart(t *testing.T) {
 	}
 }
 
+func TestCloudRequiresTenant(t *testing.T) {
+	t.Setenv("MEMORY_CLOUD", "")
+	t.Setenv("MEMORY_TENANT", "")
+	err := run([]string{"-cloud", "-preflight", "-palace-root", t.TempDir()}, &bytes.Buffer{})
+	if err == nil {
+		t.Fatal("expected cloud without tenant to fail")
+	}
+	if !strings.Contains(err.Error(), "tenant") {
+		t.Fatalf("err: %v", err)
+	}
+}
+
+func TestCloudEnvRequiresTenant(t *testing.T) {
+	t.Setenv("MEMORY_CLOUD", "1")
+	t.Setenv("MEMORY_TENANT", "")
+	err := run([]string{"-preflight", "-palace-root", t.TempDir()}, &bytes.Buffer{})
+	if err == nil {
+		t.Fatal("expected MEMORY_CLOUD=1 without tenant to fail")
+	}
+}
+
+func TestHTTPNonLoopbackWithoutSecretFailsBeforeListen(t *testing.T) {
+	t.Setenv("MEMORY_MCP_HTTP_ALLOW_NON_LOOPBACK", "")
+	t.Setenv("MEMORY_MCP_HTTP_SECRET", "")
+	err := run([]string{
+		"-palace-root", t.TempDir(),
+		"-http-addr", "0.0.0.0:8080",
+		"-allow-non-loopback",
+	}, &bytes.Buffer{})
+	if err == nil {
+		t.Fatal("expected non-loopback without secret to fail")
+	}
+	if !strings.Contains(err.Error(), "secret") {
+		t.Fatalf("want secret required before listen, got %v", err)
+	}
+}
+
 func TestPreflightRequiresPalaceRoot(t *testing.T) {
 	t.Setenv("PALACE_ROOT", "")
 	err := run([]string{"-preflight", "-palace-root", ""}, &bytes.Buffer{})

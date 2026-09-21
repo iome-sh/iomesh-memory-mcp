@@ -57,7 +57,7 @@ Supported install / attach surfaces for the **local-primary** edge host. All pat
 | Mode | How | When to use |
 |------|-----|-------------|
 | **stdio** | `./bin/iomesh-memory-mcp -palace-root … -tenant …` (default when `-http-addr` empty) | Local MCP clients (TUI, Claude Desktop, Cursor, etc.) |
-| **HTTP** | `-http-addr :8080 -http-path /mcp` + `GET /healthz` (`:8080` → `127.0.0.1:8080`; optional `MEMORY_MCP_HTTP_SECRET`) | Streamable MCP over URL; health probes |
+| **HTTP** | `-http-addr :8080 -http-path /mcp` + `GET /healthz` (`:8080` → `127.0.0.1:8080`; non-loopback requires `MEMORY_MCP_HTTP_SECRET` before listen) | Streamable MCP over URL; health probes |
 | **Docker Compose** | `docker compose up --build` → image **`iomesh-memory-mcp:local`** | Reproducible local HTTP dogfood (daemon required for this path only) |
 | **TUI attach** | MCP client config `command` + `args` pointing at the binary | Product tip path with [iomesh-tui](https://github.com/iome-sh/iomesh-tui) (peer serial **s1463**, mention only) |
 
@@ -191,7 +191,7 @@ A docs PR, a green gate, or a TUI slash-command name is not a laptop PULSE run.
   -tenant default \
   -http-addr :8080 \
   -http-path /mcp
-# :8080 binds 127.0.0.1:8080. 0.0.0.0 needs -allow-non-loopback.
+# :8080 binds 127.0.0.1:8080. 0.0.0.0 needs -allow-non-loopback and -http-secret.
 
 curl -fsS http://127.0.0.1:8080/healthz
 # expect JSON with:
@@ -219,7 +219,7 @@ http://127.0.0.1:8080/mcp
 Env equivalents: `MEMORY_MCP_HTTP_ADDR=:8080` · `MEMORY_MCP_HTTP_PATH=/mcp`.
 `:8080` is forced to `127.0.0.1:8080` unless `MEMORY_MCP_HTTP_ALLOW_NON_LOOPBACK` is set
 (compose/image set that for container publish; host mapping stays `127.0.0.1:8080`).
-Optional `MEMORY_MCP_HTTP_SECRET` fail-closes MCP HTTP when set; `/healthz` stays open.
+Non-loopback requires `MEMORY_MCP_HTTP_SECRET` (fatal before listen). When set, the secret fail-closes MCP HTTP; `/healthz` stays open.
 
 ### E4.5 Optional Docker Compose (local image only)
 

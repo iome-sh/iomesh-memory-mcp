@@ -27,6 +27,8 @@ WORKDIR /
 COPY --from=build /out/iomesh-memory-mcp /iomesh-memory-mcp
 USER nonroot:nonroot
 EXPOSE 8080
+# Non-loopback :8080 requires MEMORY_MCP_HTTP_SECRET at runtime (fatal before listen).
+# /healthz stays unauthenticated. Do not bake a default secret into the image.
 ENV PALACE_ROOT=/data/memory-palaces \
     MEMORY_MCP_HTTP_ADDR=:8080 \
     MEMORY_MCP_HTTP_PATH=/mcp \

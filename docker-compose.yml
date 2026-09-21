@@ -19,6 +19,8 @@ services:
       MEMORY_MCP_HTTP_PATH: /mcp
       # Container must bind :8080 for host publish 127.0.0.1:8080. Host publish stays loopback.
       MEMORY_MCP_HTTP_ALLOW_NON_LOOPBACK: "1"
+      # Non-loopback bind is fatal without a secret (ECM-1 S5). Local default is not for production.
+      MEMORY_MCP_HTTP_SECRET: ${MEMORY_MCP_HTTP_SECRET:-local-dogfood-not-for-production}
       # Optional advanced embeddings (empty = hash). Mount model + set path for onnx.
       MEMORY_ONNX_MODEL_PATH: ${MEMORY_ONNX_MODEL_PATH:-}
       MEMORY_EMBEDDING_STRICT: ${MEMORY_EMBEDDING_STRICT:-}
