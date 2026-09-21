@@ -219,7 +219,7 @@ Department overlay kit (V1.6 Wave 1, not E-G1): TUI `examples/dept-rca/support` 
 |------|-------------|---------|--------|
 | `-palace-root` | `PALACE_ROOT` | `./data/memory-palaces` (or `/data/memory-palaces` in image) | Base directory for tenants |
 | `-tenant` | `MEMORY_TENANT` | empty | Process label only (validated if set). Tool `tenant` is required; omit fail-closes. **Required** with `-cloud` |
-| `-cloud` | `MEMORY_CLOUD` | false | Dedicated-tenant cloud mode: one PalaceStore, second tool tenant is 400, `palace.lock` PID lock. Local-dev map remains when false |
+| `-cloud` | `MEMORY_CLOUD` | false | Dedicated-tenant cloud mode: one PalaceStore, second tool tenant is 400, `palace.lock` PID lock, `PalaceConfig.TransactionalIngest=true`. Local-dev map remains when false (TransactionalIngest default false / partial persist) |
 | `-http-addr` | `MEMORY_MCP_HTTP_ADDR` | empty = **stdio** | e.g. `:8080` (forced to `127.0.0.1:8080`) |
 | `-http-path` | `MEMORY_MCP_HTTP_PATH` | `/mcp` | Streamable MCP path (`/healthz` is fixed) |
 | `-allow-non-loopback` | `MEMORY_MCP_HTTP_ALLOW_NON_LOOPBACK` | false | Required to bind `0.0.0.0` / `::` / LAN. Compose/image set this so host publish `127.0.0.1:8080` can reach the container. **Requires** `-http-secret` |
@@ -279,10 +279,12 @@ the mesh-client `X-IOMesh-Org` header.
 **Supported topology:** **one host process per palace root.** Multi-process writers
 on a shared root remain unsupported. Cloud mode (`-cloud` / `MEMORY_CLOUD=1`)
 enforces that in-process: `Host.stores` length 1, required `MEMORY_TENANT`,
-`palace.lock` PID lock, second tool tenant is 400. HTTP defaults to loopback;
-non-loopback requires `MEMORY_MCP_HTTP_SECRET` before listen; `/healthz` stays
-open. Unauthenticated HTTP remains the residual on loopback when the secret is
-unset. dual_write OFF · PersistEmbeddings default off · not Memory GA.
+`palace.lock` PID lock, second tool tenant is 400, and
+`PalaceConfig.TransactionalIngest=true` (`wal/pending` intent log; not flock).
+Local-dev leaves TransactionalIngest **false** (partial persist). HTTP defaults
+to loopback; non-loopback requires `MEMORY_MCP_HTTP_SECRET` before listen;
+`/healthz` stays open. Unauthenticated HTTP remains the residual on loopback
+when the secret is unset. dual_write OFF · PersistEmbeddings default off · not Memory GA.
 
 ## Development
 

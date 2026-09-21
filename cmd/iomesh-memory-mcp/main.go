@@ -3,7 +3,8 @@
 // Default transport is stdio; set -http-addr (or MEMORY_MCP_HTTP_ADDR) for
 // streamable HTTP. :port binds 127.0.0.1 unless -allow-non-loopback.
 // Non-loopback HTTP requires MEMORY_MCP_HTTP_SECRET / -http-secret (fatal before listen).
-// /healthz stays open. -cloud / MEMORY_CLOUD=1 is dedicated-tenant (one store, PID lock).
+// /healthz stays open. -cloud / MEMORY_CLOUD=1 is dedicated-tenant (one store, PID lock,
+// PalaceConfig.TransactionalIngest=true). Local-dev leaves TransactionalIngest false.
 // -preflight prints the same JSON as GET /healthz and exits
 // (no listen, no stdio MCP). Does not import private control-plane/broker packages.
 package main
@@ -49,7 +50,7 @@ func run(args []string, stdout io.Writer) error {
 	palaceRoot := fs.String("palace-root", defaultPalace, "tenant palace root base directory")
 	tenant := fs.String("tenant", envOr("MEMORY_TENANT", ""), "process tenant label (validated if set; tool tenant is required — omit fail-closes). Required when -cloud")
 	cloud := fs.Bool("cloud", envTruthy("MEMORY_CLOUD"),
-		"dedicated-tenant cloud mode (ECM-1 S2): MEMORY_TENANT required, one PalaceStore, second tool tenant is 400, palace.lock PID lock. Local-dev map remains when false")
+		"dedicated-tenant cloud mode (ECM-1 S2): MEMORY_TENANT required, one PalaceStore, second tool tenant is 400, palace.lock PID lock, PalaceConfig.TransactionalIngest=true. Local-dev map remains when false (TransactionalIngest default false)")
 	httpAddr := fs.String("http-addr", envOr("MEMORY_MCP_HTTP_ADDR", ""),
 		"listen address for streamable HTTP (e.g. :8080 → 127.0.0.1:8080); empty = stdio mode")
 	httpPath := fs.String("http-path", envOr("MEMORY_MCP_HTTP_PATH", "/mcp"),
