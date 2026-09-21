@@ -3,7 +3,9 @@ package mcphost
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -305,6 +307,128 @@ func TestRunHTTPHealthzLive(t *testing.T) {
 	case <-time.After(3 * time.Second):
 		t.Fatal("RunHTTP did not exit after cancel")
 	}
+}
+
+func TestRequireHTTPSecretNonLoopback(t *testing.T) {
+	if err := requireHTTPSecret("127.0.0.1:8080", ""); err != nil {
+		t.Fatalf("loopback without secret: %v", err)
+	}
+	if err := requireHTTPSecret("localhost:9090", ""); err != nil {
+		t.Fatalf("localhost without secret: %v", err)
+	}
+	if err := requireHTTPSecret("[::1]:8080", ""); err != nil {
+		t.Fatalf("::1 without secret: %v", err)
+	}
+	if err := requireHTTPSecret("0.0.0.0:8080", "unit-secret"); err != nil {
+		t.Fatalf("non-loopback with secret: %v", err)
+	}
+	for _, addr := range []string{"0.0.0.0:8080", ":8080", "[::]:8080", "192.168.1.10:8080"} {
+		err := requireHTTPSecret(addr, "")
+		if err == nil || !errors.Is(err, ErrHTTPSecretRequired) {
+			t.Fatalf("%s without secret: %v", addr, err)
+		}
+	}
+}
+
+func TestRunHTTPNonLoopbackWithoutSecretFailsBeforeListen(t *testing.T) {
+	h, err := New(Config{PalaceRoot: t.TempDir()})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	sdk := h.NewSDKServer()
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	const addr = "0.0.0.0:18764"
+	start := time.Now()
+	err = RunHTTP(ctx, sdk, HTTPConfig{
+		Addr:             addr,
+		Path:             "/mcp",
+		Host:             h,
+		AllowNonLoopback: true,
+		SharedSecret:     "",
+	})
+	if err == nil {
+		t.Fatal("expected secret required before listen")
+	}
+	if !errors.Is(err, ErrHTTPSecretRequired) {
+		t.Fatalf("got %v want ErrHTTPSecretRequired", err)
+	}
+	if time.Since(start) > 500*time.Millisecond {
+		t.Fatalf("must fail before ListenAndServe, took %s", time.Since(start))
+	}
+	c, dialErr := net.DialTimeout("tcp", "127.0.0.1:18764", 80*time.Millisecond)
+	if dialErr == nil {
+		_ = c.Close()
+		t.Fatal("must not listen when secret is missing")
+	}
+}
+
+func TestRunHTTPLoopbackWithoutSecretHealthzOpen(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	addr := ln.Addr().String()
+	_ = ln.Close()
+
+	h, err := New(Config{PalaceRoot: t.TempDir()})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	sdk := h.NewSDKServer()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- RunHTTP(ctx, sdk, HTTPConfig{
+			Addr:         addr,
+			Path:         "/mcp",
+			Host:         h,
+			SharedSecret: "",
+		})
+	}()
+
+	var lastErr error
+	var body HealthzResponse
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) {
+		resp, getErr := http.Get("http://" + addr + "/healthz")
+		if getErr != nil {
+			lastErr = getErr
+			time.Sleep(20 * time.Millisecond)
+			continue
+		}
+		raw, _ := io.ReadAll(resp.Body)
+		_ = resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			t.Fatalf("healthz status %d body=%s", resp.StatusCode, raw)
+		}
+		if err := json.Unmarshal(raw, &body); err != nil {
+			t.Fatalf("healthz json: %v", err)
+		}
+		assertHealthzHonesty(t, body)
+		mcpReq, _ := http.NewRequest(http.MethodPost, "http://"+addr+"/mcp", strings.NewReader(`{}`))
+		mcpReq.Header.Set("Content-Type", "application/json")
+		mcpResp, mcpErr := http.DefaultClient.Do(mcpReq)
+		if mcpErr != nil {
+			t.Fatalf("mcp without secret: %v", mcpErr)
+		}
+		_ = mcpResp.Body.Close()
+		if mcpResp.StatusCode == http.StatusUnauthorized {
+			t.Fatal("loopback without secret must not 401 MCP")
+		}
+		cancel()
+		select {
+		case <-errCh:
+		case <-time.After(3 * time.Second):
+			t.Fatal("RunHTTP did not exit")
+		}
+		return
+	}
+	cancel()
+	t.Fatalf("healthz never came up on %s: %v", addr, lastErr)
 }
 
 func TestHealthzHead(t *testing.T) {

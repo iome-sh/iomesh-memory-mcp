@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -15,6 +16,10 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
+
+// ErrHTTPSecretRequired is fatal before ListenAndServe when the bind is not loopback
+// and SharedSecret is empty. Missing secret is not a request 401 after bind.
+var ErrHTTPSecretRequired = errors.New("http secret required for non-loopback bind")
 
 // MCPSecretHeader is the optional shared-secret header for streamable HTTP MCP.
 // Also accepted: Authorization: Bearer <secret>. GET /healthz stays open.
@@ -102,17 +107,23 @@ type HTTPConfig struct {
 	Host *Host
 	// SharedSecret, when non-empty, fail-closes MCP HTTP without a matching
 	// X-Memory-MCP-Secret or Authorization: Bearer header. /healthz stays open.
+	// Required (fatal before listen) when the normalized bind is not loopback.
 	SharedSecret string
 	// AllowNonLoopback permits 0.0.0.0 / :: / non-loopback binds.
 	// :port with this false is forced to 127.0.0.1:port.
+	// Non-loopback also requires SharedSecret.
 	AllowNonLoopback bool
 }
 
 // RunHTTP serves streamable MCP at Path with GET /healthz and graceful shutdown.
 // Listen address is normalized (loopback default). Optional shared secret wraps MCP only.
+// Non-loopback bind with an empty SharedSecret is fatal before ListenAndServe (S5).
 func RunHTTP(ctx context.Context, sdk *mcp.Server, cfg HTTPConfig) error {
 	addr, err := NormalizeListenAddr(cfg.Addr, cfg.AllowNonLoopback)
 	if err != nil {
+		return err
+	}
+	if err := requireHTTPSecret(addr, cfg.SharedSecret); err != nil {
 		return err
 	}
 	path := NormalizeMCPPath(cfg.Path)
@@ -232,6 +243,27 @@ func splitListenAddr(addr string) (host, port string, err error) {
 		return "", "", fmt.Errorf("invalid http listen address %q", addr)
 	}
 	return host, port, nil
+}
+
+// requireHTTPSecret fails closed before listen when addr is not loopback and secret is empty.
+// Loopback (127.0.0.1 / ::1 / localhost) may run without a secret. /healthz stays open either way.
+func requireHTTPSecret(addr, secret string) error {
+	if strings.TrimSpace(secret) != "" {
+		return nil
+	}
+	if listenAddrIsLoopback(addr) {
+		return nil
+	}
+	return fmt.Errorf("%w: set MEMORY_MCP_HTTP_SECRET or -http-secret before ListenAndServe (not a request 401)", ErrHTTPSecretRequired)
+}
+
+func listenAddrIsLoopback(addr string) bool {
+	host, _, err := splitListenAddr(addr)
+	if err != nil {
+		return false
+	}
+	loopback, _, _ := classifyListenHost(host)
+	return loopback
 }
 
 func classifyListenHost(host string) (loopback, unspecifiedAll, unspecifiedEmpty bool) {

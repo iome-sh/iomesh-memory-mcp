@@ -9,6 +9,7 @@
 //   - not product Memory GA
 //   - does not import private control-plane/broker packages
 //   - path-based multi-tenant FS isolation only (same process residual)
+//   - cloud mode (Config.Cloud / MEMORY_CLOUD): one store, required tenant, PID lock
 package mcphost
 
 import (
@@ -28,12 +29,20 @@ import (
 // Fail-closed: do not write PALACE_ROOT/default or DefaultTenant.
 var ErrTenantRequired = errors.New("tenant required")
 
+// ErrCloudTenantRejected is a 400: cloud host is dedicated-tenant (stores map size 1).
+var ErrCloudTenantRejected = errors.New("cloud host rejects a second tenant (400)")
+
+// CloudTenantRejectStatus is the HTTP status for ErrCloudTenantRejected.
+const CloudTenantRejectStatus = 400
+
 const (
 	// ServerName is the MCP implementation name (product edge honesty).
 	ServerName = "iomesh-memory-mcp"
 	// EnvPersistEmbeddings opts into PalaceConfig.PersistEmbeddings.
 	// Default unset = off. ONNX only; hash vectors are never persisted (kernel #45).
 	EnvPersistEmbeddings = "MEMORY_PERSIST_EMBEDDINGS"
+	// EnvCloud enables dedicated-tenant cloud mode (one process, one root).
+	EnvCloud = "MEMORY_CLOUD"
 )
 
 // ServerVersion is the default MCP implementation version stamp.
@@ -55,6 +64,10 @@ type Config struct {
 	// Tests may set "onnx" without a model to exercise PalaceConfig.PersistEmbeddings.
 	// Qdrant is NOT wired into lean host search (kernel VectorStore residual only).
 	EmbeddingMode string
+	// Cloud is dedicated-tenant mode (ECM-1 S2): MEMORY_TENANT required, Host.stores
+	// length stays 1, a second tool tenant is 400, palace.lock PID lock under PalaceRoot.
+	// Flag -cloud / MEMORY_CLOUD=1. Local-dev (false) keeps map[string]*PalaceStore.
+	Cloud bool
 }
 
 // Host owns per-tenant PalaceStore instances and MCP registration.
@@ -66,9 +79,12 @@ type Host struct {
 	batchFn  palace.BatchEmbeddingFunc
 	embedDim int
 	onnxPath string
+	lockPath string
 }
 
 // New constructs a Host. PalaceRoot must be non-empty.
+// Cloud (cfg.Cloud or MEMORY_CLOUD): DefaultTenant required, stores map length 1,
+// palace.lock PID lock. Does not set MEMORY_PERSIST_EMBEDDINGS.
 // Optional advanced embeddings: set MEMORY_ONNX_MODEL_PATH to an ONNX model dir/file
 // (see github.com/iome-sh/memory README). Empty path keeps hash embeddings (default).
 // MEMORY_PERSIST_EMBEDDINGS is opt-in and ONNX-only (default off). Hash never persists.
@@ -78,7 +94,11 @@ func New(cfg Config) (*Host, error) {
 	if root == "" {
 		return nil, fmt.Errorf("mcphost: palace root required")
 	}
+	cloud := cfg.Cloud || envTruthy(EnvCloud)
 	defTenant := strings.TrimSpace(cfg.DefaultTenant)
+	if cloud && defTenant == "" {
+		return nil, fmt.Errorf("mcphost: cloud mode requires MEMORY_TENANT / -tenant")
+	}
 	if defTenant != "" {
 		if err := validateTenantSegment(defTenant); err != nil {
 			return nil, fmt.Errorf("mcphost: default tenant: %w", err)
@@ -118,18 +138,62 @@ func New(cfg Config) (*Host, error) {
 			}
 		}
 	}
-	return &Host{
+	lockPath := ""
+	if cloud {
+		p, err := acquirePalaceLock(root)
+		if err != nil {
+			return nil, fmt.Errorf("mcphost: %w", err)
+		}
+		lockPath = p
+	}
+	h := &Host{
 		cfg: Config{
 			PalaceRoot:    root,
 			DefaultTenant: defTenant,
 			EmbeddingMode: mode,
+			Cloud:         cloud,
 		},
 		stores:   make(map[string]*palace.PalaceStore),
 		embedFn:  embedFn,
 		batchFn:  batchFn,
 		embedDim: dim,
 		onnxPath: onnxPath,
-	}, nil
+		lockPath: lockPath,
+	}
+	if cloud {
+		if h.openConfiguredStore() == nil {
+			_ = h.Close()
+			return nil, fmt.Errorf("mcphost: cloud store open failed")
+		}
+	}
+	return h, nil
+}
+
+// Close releases the cloud PID lock when this process still owns it.
+func (h *Host) Close() error {
+	if h == nil {
+		return nil
+	}
+	h.mu.Lock()
+	path := h.lockPath
+	h.lockPath = ""
+	h.mu.Unlock()
+	return releasePalaceLock(path, os.Getpid())
+}
+
+// Cloud reports dedicated-tenant mode (stores map length stays 1).
+func (h *Host) Cloud() bool {
+	return h != nil && h.cfg.Cloud
+}
+
+// StoreCount is the in-process PalaceStore map size (cloud must stay 1).
+func (h *Host) StoreCount() int {
+	if h == nil {
+		return 0
+	}
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return len(h.stores)
 }
 
 // EmbeddingMode returns residual-honest embedding backend for healthz / operators.
@@ -152,12 +216,24 @@ func (h *Host) PersistEmbeddingsHonesty() string {
 }
 
 func envPersistEmbeddings() bool {
-	switch strings.ToLower(strings.TrimSpace(os.Getenv(EnvPersistEmbeddings))) {
+	return envTruthy(EnvPersistEmbeddings)
+}
+
+func envTruthy(key string) bool {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv(key))) {
 	case "1", "true", "on", "yes":
 		return true
 	default:
 		return false
 	}
+}
+
+// ErrorHTTPStatus returns 400 for ErrCloudTenantRejected, else 0.
+func ErrorHTTPStatus(err error) int {
+	if errors.Is(err, ErrCloudTenantRejected) {
+		return CloudTenantRejectStatus
+	}
+	return 0
 }
 
 func persistEmbeddingsEnabled(mode, onnxPath string, batchFn palace.BatchEmbeddingFunc) bool {
@@ -227,6 +303,11 @@ func (h *Host) ResolveTenant(tenant string) (string, error) {
 	if err := validateTenantSegment(tenant); err != nil {
 		return "", err
 	}
+	if h != nil && h.cfg.Cloud {
+		if tenant != h.cfg.DefaultTenant {
+			return "", fmt.Errorf("%w: got %q want process tenant", ErrCloudTenantRejected, tenant)
+		}
+	}
 	return tenant, nil
 }
 
@@ -253,8 +334,25 @@ func (h *Host) Store(tenant string) *palace.PalaceStore {
 	}
 	h.mu.Lock()
 	defer h.mu.Unlock()
+	return h.openStoreLocked(key)
+}
+
+func (h *Host) openConfiguredStore() *palace.PalaceStore {
+	key := strings.TrimSpace(h.cfg.DefaultTenant)
+	if key == "" {
+		return nil
+	}
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return h.openStoreLocked(key)
+}
+
+func (h *Host) openStoreLocked(key string) *palace.PalaceStore {
 	if ps, ok := h.stores[key]; ok {
 		return ps
+	}
+	if h.cfg.Cloud && len(h.stores) >= 1 {
+		return nil
 	}
 	base := filepath.Join(h.cfg.PalaceRoot, key)
 	mode := h.EmbeddingMode()
@@ -277,12 +375,20 @@ func (h *Host) Store(tenant string) *palace.PalaceStore {
 
 // resolveStore resolves tenant then returns the palace store. Omitted or
 // invalid tenant is an error (fail closed; do not write PALACE_ROOT/default).
+// Cloud: a second tenant is ErrCloudTenantRejected (400); map length stays 1.
 func (h *Host) resolveStore(tenant string) (string, *palace.PalaceStore, error) {
 	key, err := h.ResolveTenant(tenant)
 	if err != nil {
 		return "", nil, err
 	}
-	return key, h.Store(key), nil
+	ps := h.Store(key)
+	if ps == nil {
+		if h.Cloud() {
+			return "", nil, fmt.Errorf("%w: got %q want process tenant", ErrCloudTenantRejected, key)
+		}
+		return "", nil, fmt.Errorf("palace store unavailable")
+	}
+	return key, ps, nil
 }
 
 // leanToolNames is the compile-time registered lean MCP surface.
