@@ -165,8 +165,8 @@ func RunHTTP(ctx context.Context, sdk *mcp.Server, cfg HTTPConfig) error {
 
 	errCh := make(chan error, 1)
 	go func() {
-		log.Printf("%s mode=http addr=%s path=%s healthz=/healthz ready=/ready secret=%s allow_non_loopback=%v tools=%d dual_write=off not_memory_ga=true version=%s (stateless+json)",
-			ServerName, addr, path, secretState, cfg.AllowNonLoopback, len(leanToolNames), ServerVersion)
+		log.Printf("%s mode=http addr=%s path=%s healthz=/healthz ready=/ready secret=%s allow_non_loopback=%v bind=%s tools=%d dual_write=off not_memory_ga=true version=%s (stateless+json)",
+			ServerName, addr, path, secretState, cfg.AllowNonLoopback, httpBindClass(addr), len(leanToolNames), ServerVersion)
 		if err := httpSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			errCh <- err
 			return
@@ -270,6 +270,16 @@ func listenAddrIsLoopback(addr string) bool {
 	}
 	loopback, _, _ := classifyListenHost(host)
 	return loopback
+}
+
+// httpBindClass is the startup-log class of a normalized listen address.
+// "loopback" when the host is 127.0.0.1, ::1, or localhost; "non-loopback"
+// otherwise, including ":8080" and 0.0.0.0. Does not rewrite the address.
+func httpBindClass(addr string) string {
+	if listenAddrIsLoopback(addr) {
+		return "loopback"
+	}
+	return "non-loopback"
 }
 
 func classifyListenHost(host string) (loopback, unspecifiedAll, unspecifiedEmpty bool) {
