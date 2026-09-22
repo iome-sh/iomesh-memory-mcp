@@ -4,7 +4,7 @@ go 1.27.0
 
 require (
 	github.com/iome-sh/memory v1.5.13-0.20260922064713-ab1ca566966f
-	github.com/modelcontextprotocol/go-sdk v1.7.0
+	github.com/modelcontextprotocol/go-sdk v1.8.0
 )
 
 require (
