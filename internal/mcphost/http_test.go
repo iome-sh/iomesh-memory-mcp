@@ -201,6 +201,58 @@ func TestNormalizeListenAddr(t *testing.T) {
 	}
 }
 
+func TestHTTPBindClass(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		addr string
+		want string
+	}{
+		{addr: "127.0.0.1:8080", want: "loopback"},
+		{addr: "[::1]:8080", want: "loopback"},
+		{addr: "localhost:9090", want: "loopback"},
+		{addr: "LOCALHOST:9090", want: "loopback"},
+		{addr: ":8080", want: "non-loopback"},
+		{addr: "0.0.0.0:8080", want: "non-loopback"},
+		{addr: "[::]:8080", want: "non-loopback"},
+		{addr: "192.168.1.10:8080", want: "non-loopback"},
+	}
+	for _, tc := range cases {
+		if got := httpBindClass(tc.addr); got != tc.want {
+			t.Errorf("httpBindClass(%q)=%q want %q", tc.addr, got, tc.want)
+		}
+	}
+
+	// Class follows the normalized address, not the allow-non-loopback flag.
+	loop, err := NormalizeListenAddr("127.0.0.1:8080", true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := httpBindClass(loop); got != "loopback" {
+		t.Fatalf("allow flag must not reclass %q: %s", loop, got)
+	}
+	open, err := NormalizeListenAddr(":8080", true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if open != ":8080" || httpBindClass(open) != "non-loopback" {
+		t.Fatalf("normalized :8080 with allow: addr=%q class=%s", open, httpBindClass(open))
+	}
+	forced, err := NormalizeListenAddr(":8080", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if forced != "127.0.0.1:8080" || httpBindClass(forced) != "loopback" {
+		t.Fatalf("forced loopback: addr=%q class=%s", forced, httpBindClass(forced))
+	}
+	all, err := NormalizeListenAddr("0.0.0.0:8080", true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if all != "0.0.0.0:8080" || httpBindClass(all) != "non-loopback" {
+		t.Fatalf("normalized 0.0.0.0: addr=%q class=%s", all, httpBindClass(all))
+	}
+}
+
 func TestOptionalSharedSecretFailClosed(t *testing.T) {
 	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
