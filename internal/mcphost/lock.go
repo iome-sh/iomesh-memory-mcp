@@ -9,8 +9,15 @@ import (
 	"time"
 )
 
+// palaceLockReuseGrace is how far a live pid's start may follow the lock
+// timestamp before the pid is treated as reused. The lock is written just
+// after the process starts, so the holder is not after this grace.
+const palaceLockReuseGrace = 2 * time.Second
+
 // PalaceLockFile is the crash-safety writer lock under PalaceRoot (cloud mode).
-// Contains pid + start time. Start fails if that pid is still alive. Not flock.
+// Contains pid + the wall time the lock was written. Start fails only when
+// that pid is still the same process. A reused pid (container pid 1 after a
+// snapshot restore) starts later than the lock time and is stale. Not flock.
 const PalaceLockFile = "palace.lock"
 
 // ErrPalaceLockHeld is returned when palace.lock names a still-alive pid.
@@ -74,7 +81,30 @@ func readPalaceLock(path string) (palaceLockRecord, bool, error) {
 	if json.Unmarshal(b, &rec) != nil || rec.PID <= 0 {
 		return palaceLockRecord{}, false, nil
 	}
-	return rec, pidAlive(rec.PID), nil
+	start, ok := processStartWall(rec.PID)
+	return rec, palaceLockHeld(rec, pidAlive(rec.PID), start, ok), nil
+}
+
+// palaceLockHeld is false when the pid is dead or when that pid started
+// after the lock was written. hasStart false keeps the old pid-alive rule.
+func palaceLockHeld(rec palaceLockRecord, pidLive bool, procStart time.Time, hasStart bool) bool {
+	if rec.PID <= 0 || !pidLive {
+		return false
+	}
+	if !hasStart {
+		return true
+	}
+	started, err := time.Parse(time.RFC3339Nano, rec.Started)
+	if err != nil {
+		started, err = time.Parse(time.RFC3339, rec.Started)
+		if err != nil {
+			return true
+		}
+	}
+	if procStart.After(started.Add(palaceLockReuseGrace)) {
+		return false
+	}
+	return true
 }
 
 func releasePalaceLock(path string, pid int) error {

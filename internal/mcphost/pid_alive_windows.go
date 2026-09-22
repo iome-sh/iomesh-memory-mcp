@@ -2,7 +2,10 @@
 
 package mcphost
 
-import "syscall"
+import (
+	"syscall"
+	"time"
+)
 
 func pidAlive(pid int) bool {
 	if pid <= 0 {
@@ -14,4 +17,8 @@ func pidAlive(pid int) bool {
 	}
 	_ = syscall.CloseHandle(h)
 	return true
+}
+
+func processStartWall(pid int) (time.Time, bool) {
+	return time.Time{}, false
 }
