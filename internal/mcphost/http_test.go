@@ -654,6 +654,43 @@ func TestReadyMissingRoot503(t *testing.T) {
 	}
 }
 
+func TestReadySnapshotNotMemoryGA(t *testing.T) {
+	if !ReadySnapshot(nil).NotMemoryGA {
+		t.Fatal("not_memory_ga must be true when MEMORY_CLOUD_GA is unset")
+	}
+
+	t.Run("one", func(t *testing.T) {
+		t.Setenv("MEMORY_CLOUD_GA", "1")
+		if ReadySnapshot(nil).NotMemoryGA {
+			t.Fatal("not_memory_ga must be false when MEMORY_CLOUD_GA=1")
+		}
+		h, err := New(Config{PalaceRoot: t.TempDir(), DefaultTenant: "t1"})
+		if err != nil {
+			t.Fatalf("New: %v", err)
+		}
+		body := ReadySnapshot(h)
+		if body.NotMemoryGA {
+			t.Fatal("writable host not_memory_ga must be false when MEMORY_CLOUD_GA=1")
+		}
+		if body.DualWrite != "off" {
+			t.Fatalf("dual_write: %q", body.DualWrite)
+		}
+		if !HealthzSnapshot(h).NotMemoryGA {
+			t.Fatal("healthz not_memory_ga must stay true")
+		}
+	})
+
+	// Not envTruthy: "true" / "yes" / "0" / empty / padded "1" do not flip.
+	for _, v := range []string{"true", "yes", "0", "", "TRUE", " 1", "1 "} {
+		t.Run("keep_"+v, func(t *testing.T) {
+			t.Setenv("MEMORY_CLOUD_GA", v)
+			if !ReadySnapshot(nil).NotMemoryGA {
+				t.Fatalf("MEMORY_CLOUD_GA=%q must not flip not_memory_ga", v)
+			}
+		})
+	}
+}
+
 func TestReadyNilHostNotReady(t *testing.T) {
 	rr := httptest.NewRecorder()
 	ReadyHandler().ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "/ready", nil))

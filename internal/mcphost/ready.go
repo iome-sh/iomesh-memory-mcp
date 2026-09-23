@@ -44,16 +44,24 @@ type ReadyResponse struct {
 	CgroupMemoryBytes uint64 `json:"cgroup_memory_bytes"`
 }
 
+// cloudMemoryGAEnv is true only when MEMORY_CLOUD_GA is exactly "1".
+// Unset, empty, "true", "yes", and "0" are not enough (no trim, no case fold).
+// OSS local memory and the dogfood image stay not-GA until a process is marked.
+func cloudMemoryGAEnv() bool {
+	return os.Getenv("MEMORY_CLOUD_GA") == "1"
+}
+
 // ReadySnapshot is the GET /ready body. HTTP 200 iff palace writable and
 // wal_pending_recoverable; otherwise status=not_ready (handler returns 503).
 // Nil host or empty palace root fail closed. Honesty fields match healthz
-// (dual_write off, not_memory_ga true) without growing HealthzResponse.
+// (dual_write off) without growing HealthzResponse. not_memory_ga stays true
+// unless MEMORY_CLOUD_GA is exactly "1".
 func ReadySnapshot(host *Host) ReadyResponse {
 	body := ReadyResponse{
 		Status:                "not_ready",
 		Service:               ServerName,
 		DualWrite:             "off",
-		NotMemoryGA:           true,
+		NotMemoryGA:           !cloudMemoryGAEnv(),
 		PalaceWritable:        false,
 		WALPendingRecoverable: false,
 		RSSBytes:              rssAllocBytes(),
