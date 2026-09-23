@@ -165,8 +165,10 @@ func RunHTTP(ctx context.Context, sdk *mcp.Server, cfg HTTPConfig) error {
 
 	errCh := make(chan error, 1)
 	go func() {
-		log.Printf("%s mode=http addr=%s path=%s healthz=/healthz ready=/ready secret=%s allow_non_loopback=%v bind=%s tools=%d dual_write=off not_memory_ga=true version=%s (stateless+json)",
-			ServerName, addr, path, secretState, cfg.AllowNonLoopback, httpBindClass(addr), len(leanToolNames), ServerVersion)
+		// Same flag as GET /ready not_memory_ga (not the /healthz literal).
+		notMemoryGA := !cloudMemoryGAEnv()
+		log.Printf("%s mode=http addr=%s path=%s healthz=/healthz ready=/ready secret=%s allow_non_loopback=%v bind=%s tools=%d dual_write=off not_memory_ga=%t version=%s (stateless+json)",
+			ServerName, addr, path, secretState, cfg.AllowNonLoopback, httpBindClass(addr), len(leanToolNames), notMemoryGA, ServerVersion)
 		if err := httpSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			errCh <- err
 			return
