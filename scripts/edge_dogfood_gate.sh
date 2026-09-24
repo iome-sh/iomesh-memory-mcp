@@ -67,7 +67,6 @@ echo "   public · PALACE_ROOT · no docker daemon required"
 echo
 
 # --- required surfaces ---
-need_file "docs/EDGE_DOGFOOD.md"
 need_file "docker-compose.yml"
 need_file "Dockerfile"
 need_file "README.md"
@@ -79,46 +78,9 @@ need_dir  "internal/mcphost"
 need_file "cmd/iomesh-memory-mcp/main.go"
 
 echo
-echo "-- docs/EDGE_DOGFOOD.md checklist --"
-need_needle "docs/EDGE_DOGFOOD.md" "s1462" "serial s1462"
-need_needle "docs/EDGE_DOGFOOD.md" "PALACE_ROOT" "PALACE_ROOT"
-need_needle "docs/EDGE_DOGFOOD.md" "dual_write" "dual_write healthz field"
-need_needle "docs/EDGE_DOGFOOD.md" "public|still private" "public (or historical still private)"
-need_needle "docs/EDGE_DOGFOOD.md" "residual PASS ≠ live dogfood|residual PASS != live dogfood" "residual ≠ live dogfood"
-need_needle "docs/EDGE_DOGFOOD.md" "residual PASS ≠ public flip|residual PASS != public flip" "residual ≠ public flip"
-need_needle "docs/EDGE_DOGFOOD.md" "full platform sidecar parity|platform sidecar parity" "no full platform sidecar parity"
-need_needle "docs/EDGE_DOGFOOD.md" "does not import private control-plane/broker packages|private control-plane / broker" "no private control-plane/broker import"
-need_needle "docs/EDGE_DOGFOOD.md" "iomesh-memory-mcp" "naming iomesh-memory-mcp"
-forbid_needle "docs/EDGE_DOGFOOD.md" 'Memory Ops Pack' "no Memory Ops Pack SKU"
-forbid_needle "docs/EDGE_DOGFOOD.md" '\$88|~\$88' "no ~\$88 mesh rate"
-forbid_needle "docs/EDGE_DOGFOOD.md" '\$119|~\$119' "no ~\$119 pack rate"
-need_needle "docs/EDGE_DOGFOOD.md" "Palace sunset|hosted Palace sunset" "Palace sunset"
-need_needle "docs/EDGE_DOGFOOD.md" "mesh optional" "mesh optional for pull"
-need_needle "docs/EDGE_DOGFOOD.md" "open boxes stay open" "open boxes stay open"
-need_needle "docs/EDGE_DOGFOOD.md" "make build|Build binary" "build path"
-need_needle "docs/EDGE_DOGFOOD.md" "stdio" "stdio attach"
-need_needle "docs/EDGE_DOGFOOD.md" "healthz" "healthz"
-need_needle "docs/EDGE_DOGFOOD.md" "/mcp" "/mcp path"
-need_needle "docs/EDGE_DOGFOOD.md" "docker compose|Docker Compose" "compose path"
-need_needle "docs/EDGE_DOGFOOD.md" "iomesh-memory-mcp:local" "local image only"
-need_needle "docs/EDGE_DOGFOOD.md" "compose PASS ≠ public registry|compose PASS != public registry" "compose ≠ public registry"
-need_needle "docs/EDGE_DOGFOOD.md" "memory_ingest_turn|ingest" "ingest tool"
-need_needle "docs/EDGE_DOGFOOD.md" "memory_retrieve|retrieve" "retrieve tool"
-need_needle "docs/EDGE_DOGFOOD.md" "memory_list|list" "list tool"
-need_needle "docs/EDGE_DOGFOOD.md" "memory_compact_status|compact_status" "compact_status"
-need_needle "docs/EDGE_DOGFOOD.md" "M4" "M4 later"
-need_needle "docs/EDGE_DOGFOOD.md" "s1463|TUI" "peer TUI s1463 mention"
-need_needle "docs/EDGE_DOGFOOD.md" "s1464" "peer private-plane residual s1464"
-need_needle "docs/EDGE_DOGFOOD.md" "edge-dogfood-gate|edge_dogfood_gate" "gate target"
-
-echo
 echo "-- README / Makefile / CHANGELOG --"
-# Public README is consumer-facing; continuum lives in docs/EDGE_DOGFOOD.md
-need_needle "README.md" "EDGE_DOGFOOD|edge-dogfood-gate|edge dogfood" "README edge dogfood docs pointer"
 need_needle "README.md" "iomesh-memory-mcp" "README naming"
 need_needle "README.md" "PALACE_ROOT" "README PALACE_ROOT"
-need_needle "docs/EDGE_DOGFOOD.md" "s1462" "EDGE_DOGFOOD continuum s1462"
-need_needle "docs/EDGE_DOGFOOD.md" "dual_write" "EDGE_DOGFOOD dual_write field"
 need_needle "Makefile" "edge-dogfood-gate" "Makefile edge-dogfood-gate"
 need_needle "Makefile" "edge_dogfood_gate\\.sh" "Makefile script path"
 need_needle "CHANGELOG.md" "s1462" "CHANGELOG s1462"
@@ -147,8 +109,6 @@ codename_pat='[Aa][Ii][Oo][Nn]'
 user_facing=(
   CONTRIBUTING.md
   NOTICE
-  docs/EDGE_DOGFOOD.md
-  docs/EDGE_DOGFOOD_EVIDENCE.md
   CHANGELOG.md
   Dockerfile
   docker-compose.yml

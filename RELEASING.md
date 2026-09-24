@@ -182,7 +182,7 @@ make release-snapshot   # → dist/ · no GitHub publish · no cosign
 - Product name **`iomesh-memory-mcp`**
 - **no auto-tag** · compose/local image ≠ public registry
 
-See also [SUPPORT.md](SUPPORT.md) (issues · security · scope) and [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) (install matrix · operator runbook).
+See also [SUPPORT.md](SUPPORT.md) (issues · security · scope).
 
 ## Artifacts
 

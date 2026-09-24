@@ -8,7 +8,6 @@
 | Security vulnerability | Private [Security Advisory](https://github.com/iome-sh/iomesh-memory-mcp/security/advisories/new) or **security@iome.sh** — see [SECURITY.md](SECURITY.md) |
 | Kernel API / library | [github.com/iome-sh/memory](https://github.com/iome-sh/memory) (related **memory kernel**) |
 | Release / version policy | [RELEASING.md](RELEASING.md) — **Support / version policy** |
-| Edge dogfood / install matrix | [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) — E3 matrix · E4 operator runbook |
 | Contributing | [CONTRIBUTING.md](CONTRIBUTING.md) |
 
 ## What we maintain
@@ -34,4 +33,4 @@ Packaging: GoReleaser + SBOM + keyless cosign on tag releases (see [RELEASING.md
 2. Redact API keys, palace contents, and private paths from logs  
 3. Include binary version (`iomesh-memory-mcp` / `v0.1.0` or `git describe`) or commit SHA and OS  
 4. Confirm the report is about the **edge MCP host**  
-5. For install/attach questions, cite which matrix row you used (stdio · HTTP · Compose · TUI) from [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md)  
+5. For install/attach questions, name the path you used (stdio, HTTP, Compose, or TUI) and the binary version  
