@@ -55,8 +55,18 @@ func TestPreflightPrintsHealthzAndExits(t *testing.T) {
 	if body.DualWrite != "off" {
 		t.Fatalf("dual_write: %q (must be off)", body.DualWrite)
 	}
-	if !body.NotMemoryGA {
-		t.Fatal("not_memory_ga must be true")
+	if _, err := json.Marshal(body); err != nil {
+		t.Fatal(err)
+	}
+	var keys map[string]any
+	if err := json.Unmarshal(raw, &keys); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := keys["not_memory_ga"]; !ok {
+		t.Fatalf("not_memory_ga key required: %s", raw)
+	}
+	if body.NotMemoryGA != mcphost.NotMemoryGA() {
+		t.Fatalf("not_memory_ga: %v want %v", body.NotMemoryGA, mcphost.NotMemoryGA())
 	}
 	if body.Embeddings != "hash" && body.Embeddings != "onnx" {
 		t.Fatalf("embeddings: %q", body.Embeddings)
@@ -100,11 +110,11 @@ func TestPreflightPrintsHealthzAndExits(t *testing.T) {
 	want := mcphost.HealthzSnapshot(host)
 	if body.Service != want.Service || body.DualWrite != want.DualWrite || body.Qdrant != want.Qdrant ||
 		body.Tools != want.Tools || body.Version != want.Version || body.Embeddings != want.Embeddings ||
-		body.PersistEmbeddings != want.PersistEmbeddings {
+		body.PersistEmbeddings != want.PersistEmbeddings || body.NotMemoryGA != want.NotMemoryGA {
 		t.Fatalf("preflight vs HealthzSnapshot: got=%+v want=%+v", body, want)
 	}
-	if strings.Contains(stdout.String(), "Memory GA") && !body.NotMemoryGA {
-		t.Fatal("must not claim Memory GA")
+	if strings.Contains(stdout.String(), "not Memory GA") || strings.Contains(stdout.String(), "ga_path") || strings.Contains(stdout.String(), "path-to-GA") {
+		t.Fatalf("preflight must not carry path-to-GA speech: %s", stdout.String())
 	}
 }
 

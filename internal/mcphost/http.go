@@ -50,8 +50,9 @@ type HealthzResponse struct {
 // HealthzSnapshot is the residual-honest GET /healthz body used by HTTP and CLI -preflight.
 // Live EmbeddingMode when host != nil; nil → env snapshot (same as HealthzHandler).
 // tools / tool_names are compile-time registration — not a live tools/list stamp, not ingest.
-// dual_write OFF · not Memory GA · qdrant off · persist_embeddings default off · no hosted palace probe.
-// Honesty fields are unchanged by DLP / optional HTTP secret (no dlp/auth fields).
+// dual_write OFF · qdrant off · persist_embeddings default off · no hosted palace probe.
+// not_memory_ga is NotMemoryGA (same gate as /ready). Honesty fields are unchanged
+// by DLP / optional HTTP secret (no dlp/auth fields).
 func HealthzSnapshot(host *Host) HealthzResponse {
 	emb := "hash"
 	persist := "off"
@@ -66,7 +67,7 @@ func HealthzSnapshot(host *Host) HealthzResponse {
 		Status:            "ok",
 		Service:           ServerName,
 		DualWrite:         "off",
-		NotMemoryGA:       true,
+		NotMemoryGA:       NotMemoryGA(),
 		Embeddings:        emb,
 		PersistEmbeddings: persist,
 		Qdrant:            "off",
@@ -165,10 +166,9 @@ func RunHTTP(ctx context.Context, sdk *mcp.Server, cfg HTTPConfig) error {
 
 	errCh := make(chan error, 1)
 	go func() {
-		// Same flag as GET /ready not_memory_ga (not the /healthz literal).
-		notMemoryGA := !cloudMemoryGAEnv()
+		// Same not_memory_ga value as GET /healthz and GET /ready.
 		log.Printf("%s mode=http addr=%s path=%s healthz=/healthz ready=/ready secret=%s allow_non_loopback=%v bind=%s tools=%d dual_write=off not_memory_ga=%t version=%s (stateless+json)",
-			ServerName, addr, path, secretState, cfg.AllowNonLoopback, httpBindClass(addr), len(leanToolNames), notMemoryGA, ServerVersion)
+			ServerName, addr, path, secretState, cfg.AllowNonLoopback, httpBindClass(addr), len(leanToolNames), NotMemoryGA(), ServerVersion)
 		if err := httpSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			errCh <- err
 			return

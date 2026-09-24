@@ -43,6 +43,9 @@ func TestHealthzDoesNotLeakTenantOrOrg(t *testing.T) {
 	if body["dual_write"] != "off" {
 		t.Fatalf("dual_write: %v", body["dual_write"])
 	}
+	if _, ok := body["not_memory_ga"]; !ok {
+		t.Fatalf("not_memory_ga key required: %s", raw)
+	}
 	if body["not_memory_ga"] != true {
 		t.Fatalf("not_memory_ga: %v", body["not_memory_ga"])
 	}
@@ -121,8 +124,8 @@ func assertHealthzHonesty(t *testing.T, body HealthzResponse) {
 	if body.DualWrite != "off" {
 		t.Fatalf("dual_write: %q", body.DualWrite)
 	}
-	if !body.NotMemoryGA {
-		t.Fatal("not_memory_ga must be true")
+	if body.NotMemoryGA != NotMemoryGA() {
+		t.Fatalf("not_memory_ga: %v want %v", body.NotMemoryGA, NotMemoryGA())
 	}
 	if body.Embeddings != "hash" && body.Embeddings != "onnx" {
 		t.Fatalf("embeddings: %q", body.Embeddings)
@@ -675,8 +678,34 @@ func TestReadySnapshotNotMemoryGA(t *testing.T) {
 		if body.DualWrite != "off" {
 			t.Fatalf("dual_write: %q", body.DualWrite)
 		}
-		if !HealthzSnapshot(h).NotMemoryGA {
-			t.Fatal("healthz not_memory_ga must stay true")
+		hz := HealthzSnapshot(h)
+		if hz.NotMemoryGA {
+			t.Fatal("healthz not_memory_ga must be false when MEMORY_CLOUD_GA=1")
+		}
+		if hz.DualWrite != "off" || hz.Version != ServerVersion {
+			t.Fatalf("healthz honesty: %+v", hz)
+		}
+		raw, err := json.Marshal(hz)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var m map[string]any
+		if err := json.Unmarshal(raw, &m); err != nil {
+			t.Fatal(err)
+		}
+		if _, ok := m["not_memory_ga"]; !ok {
+			t.Fatalf("healthz must keep not_memory_ga when false: %s", raw)
+		}
+		readyRaw, err := json.Marshal(body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var rm map[string]any
+		if err := json.Unmarshal(readyRaw, &rm); err != nil {
+			t.Fatal(err)
+		}
+		if _, ok := rm["not_memory_ga"]; !ok || rm["not_memory_ga"] != false {
+			t.Fatalf("ready must keep not_memory_ga false: %s", readyRaw)
 		}
 	})
 
@@ -684,7 +713,7 @@ func TestReadySnapshotNotMemoryGA(t *testing.T) {
 	for _, v := range []string{"true", "yes", "0", "", "TRUE", " 1", "1 "} {
 		t.Run("keep_"+v, func(t *testing.T) {
 			t.Setenv("MEMORY_CLOUD_GA", v)
-			if !ReadySnapshot(nil).NotMemoryGA {
+			if !ReadySnapshot(nil).NotMemoryGA || !HealthzSnapshot(nil).NotMemoryGA {
 				t.Fatalf("MEMORY_CLOUD_GA=%q must not flip not_memory_ga", v)
 			}
 		})
@@ -897,7 +926,7 @@ func TestRunHTTPSecretDoesNotWrapReady(t *testing.T) {
 			t.Fatalf("ready json: %v", err)
 		}
 		assertReadyHonesty(t, ready)
-		if ready.DualWrite != "off" || !ready.NotMemoryGA {
+		if ready.DualWrite != "off" || ready.NotMemoryGA != NotMemoryGA() {
 			t.Fatalf("ready honesty: %+v", ready)
 		}
 
@@ -972,8 +1001,8 @@ func assertReadyHonesty(t *testing.T, body ReadyResponse) {
 	if body.DualWrite != "off" {
 		t.Fatalf("dual_write: %q", body.DualWrite)
 	}
-	if !body.NotMemoryGA {
-		t.Fatal("not_memory_ga must be true")
+	if body.NotMemoryGA != NotMemoryGA() {
+		t.Fatalf("not_memory_ga: %v want %v", body.NotMemoryGA, NotMemoryGA())
 	}
 	if body.Status != "ok" && body.Status != "not_ready" {
 		t.Fatalf("status: %q", body.Status)

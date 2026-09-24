@@ -6,7 +6,6 @@
 //
 // Honesty locks:
 //   - dual_write OFF (no private control-plane audit publish in lean v1)
-//   - not product Memory GA
 //   - does not import private control-plane/broker packages
 //   - path-based multi-tenant FS isolation only (same process residual)
 //   - cloud mode (Config.Cloud / MEMORY_CLOUD): one store, required tenant, PID lock,
@@ -51,7 +50,8 @@ const (
 //
 //	-X github.com/iome-sh/iomesh-memory-mcp/internal/mcphost.ServerVersion=vX.Y.Z
 //
-// Default is a clean semver-ish pre-release stamp (no private ledger serial).
+// Default stays the published install pin. Module pseudo-version identity is
+// not this stamp.
 var ServerVersion = "v0.4.2"
 
 // Config configures the lean edge host.
@@ -92,7 +92,7 @@ type Host struct {
 // Optional advanced embeddings: set MEMORY_ONNX_MODEL_PATH to an ONNX model dir/file
 // (see github.com/iome-sh/memory README). Empty path keeps hash embeddings (default).
 // MEMORY_PERSIST_EMBEDDINGS is opt-in and ONNX-only (default off). Hash never persists.
-// dual_write OFF · not Memory GA · Qdrant not required / not wired for lean search.
+// dual_write OFF · Qdrant not required / not wired for lean search.
 func New(cfg Config) (*Host, error) {
 	root := strings.TrimSpace(cfg.PalaceRoot)
 	if root == "" {
@@ -126,8 +126,8 @@ func New(cfg Config) (*Host, error) {
 		}
 		mode = "onnx"
 		onnxPath = path
-		log.Printf("mcphost: embeddings=onnx path=%s dim=%d persist_embeddings=%s dual_write=off not_memory_ga=true",
-			path, dim, persistEmbeddingsState(mode, path, batchFn))
+		log.Printf("mcphost: embeddings=onnx path=%s dim=%d persist_embeddings=%s dual_write=off not_memory_ga=%t",
+			path, dim, persistEmbeddingsState(mode, path, batchFn), NotMemoryGA())
 	} else {
 		// Explicit hash path; NewPalaceStoreWithConfig also defaults EmbeddingFunc.
 		embedFn = palace.GenerateSimpleEmbedding
@@ -136,7 +136,7 @@ func New(cfg Config) (*Host, error) {
 		if strings.EqualFold(strings.TrimSpace(cfg.EmbeddingMode), "onnx") {
 			mode = "onnx"
 		} else {
-			log.Printf("mcphost: embeddings=hash (set MEMORY_ONNX_MODEL_PATH for ONNX) dual_write=off not_memory_ga=true")
+			log.Printf("mcphost: embeddings=hash (set MEMORY_ONNX_MODEL_PATH for ONNX) dual_write=off not_memory_ga=%t", NotMemoryGA())
 			if envPersistEmbeddings() {
 				log.Printf("mcphost: MEMORY_PERSIST_EMBEDDINGS ignored on hash embedder (never persist hash)")
 			}
@@ -493,6 +493,6 @@ func (h *Host) Register(sdkServer *mcp.Server) {
 			"Does not ingest.",
 	}, h.handleOpsDigestExport)
 
-	log.Printf("mcphost: registered tools=%d server=%s version=%s dual_write=off not_memory_ga=true",
-		len(leanToolNames), ServerName, ServerVersion)
+	log.Printf("mcphost: registered tools=%d server=%s version=%s dual_write=off not_memory_ga=%t",
+		len(leanToolNames), ServerName, ServerVersion, NotMemoryGA())
 }

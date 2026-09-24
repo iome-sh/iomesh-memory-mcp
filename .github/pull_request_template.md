@@ -17,7 +17,7 @@
 - [ ] `make check` or `make ci` (or CI green: lint, test, build, govulncheck)
 - [ ] New/changed behavior covered by unit tests
 - [ ] No secrets / palace data in tree
-- [ ] Honesty locks intact (edge host · dual_write OFF · not Memory GA) if docs touch product narrative
+- [ ] Honesty locks intact (edge host · dual_write OFF · Catalog ≠ Connected · `not_memory_ga` key retained) if docs touch product narrative
 
 ## Security checklist (if touching FS roots, HTTP, transports)
 

@@ -5,7 +5,7 @@
 # for release builds (aligned with ci.yml public modules). Historical IOMESH_CI_PAT
 # residual retired after public flip.
 # Keep GoReleaser + Syft SBOM + keyless cosign (id-token: write) intact.
-# residual PASS ≠ invent forever-green signed releases · dual_write OFF · not Memory GA ·
+# residual PASS ≠ invent forever-green signed releases · dual_write OFF ·
 # no auto-tag · tip ≠ invent a successful public tag release already shipped.
 name: release
 

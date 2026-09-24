@@ -18,9 +18,9 @@ const RedactPlaceholder = "[REDACTED]"
 //   - Compact JWT-shaped triples (eyJ…eyJ…)
 //
 // Not covered (do not invent): hardware-bound keys · default envelope
-// encryption · full commercial DLP · OCR / binary · Memory GA.
+// encryption · full commercial DLP · OCR / binary.
 // healthz honesty is unchanged (no DLP field).
-// dual_write OFF · not Memory GA.
+// dual_write OFF.
 var (
 	reGitHubFine = regexp.MustCompile(`github_pat_[A-Za-z0-9_]{20,}`)
 	reGitHubPAT  = regexp.MustCompile(`gh[pousr]_[A-Za-z0-9]{20,}`)
