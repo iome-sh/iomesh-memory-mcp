@@ -590,12 +590,15 @@ func assertOpsDigestHonesty(t *testing.T, h opsDigestHonesty) {
 	if h.Knowledge != "beta" || h.Analytical != "beta" {
 		t.Fatalf("knowledge/analytical must stay beta: %+v", h)
 	}
-	if h.OpsPulse == "" {
-		t.Fatal("ops_pulse required")
+	if h.OpsPulse != "cloud_memory_ga" {
+		t.Fatalf("ops_pulse: %q", h.OpsPulse)
+	}
+	if h.OpsPulse == "ga_path" {
+		t.Fatal("ops_pulse must not be ga_path")
 	}
 	note := strings.ToLower(h.Note)
-	if strings.Contains(note, "memory ga") && !strings.Contains(note, "not memory ga") {
-		t.Fatalf("must not invent Memory GA: %q", h.Note)
+	if strings.Contains(note, "not memory ga") || strings.Contains(note, "ga_path") || strings.Contains(note, "path-to-ga") {
+		t.Fatalf("digest note must not carry path-to-GA speech: %q", h.Note)
 	}
 }
 

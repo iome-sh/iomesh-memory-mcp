@@ -63,7 +63,7 @@ func TestIngestRetrieveListRoundTrip(t *testing.T) {
 	if status.TotalEntries < 1 {
 		t.Fatalf("expected total_entries >= 1, got %+v", status)
 	}
-	if status.DualWrite != "off" || !status.NotMemoryGA {
+	if status.DualWrite != "off" || status.NotMemoryGA != NotMemoryGA() {
 		t.Fatalf("honesty locks: %+v", status)
 	}
 
@@ -1058,7 +1058,7 @@ func TestRetrieveHitsIncludeStampedProvenance(t *testing.T) {
 		t.Fatalf("ingest: %v", err)
 	}
 	if out.DualWrite != "off" || out.Audited {
-		t.Fatalf("dual_write must be off; not Memory GA: %+v", out)
+		t.Fatalf("dual_write must be off: %+v", out)
 	}
 
 	_, ret, err := h.handleRetrieve(ctx, nil, retrieveInput{Tenant: "dogfood", Query: needle, Limit: 10})

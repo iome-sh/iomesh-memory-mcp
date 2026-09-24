@@ -109,8 +109,8 @@ func run(args []string, stdout io.Writer) error {
 		return nil
 	}
 
-	log.Printf("%s mode=stdio cloud=%v palace=%s tenant_process=%q embeddings=%s qdrant=off dual_write=off not_memory_ga=true version=%s",
-		mcphost.ServerName, host.Cloud(), *palaceRoot, host.ConfiguredTenant(), host.EmbeddingMode(), mcphost.ServerVersion)
+	log.Printf("%s mode=stdio cloud=%v palace=%s tenant_process=%q embeddings=%s qdrant=off dual_write=off not_memory_ga=%t version=%s",
+		mcphost.ServerName, host.Cloud(), *palaceRoot, host.ConfiguredTenant(), host.EmbeddingMode(), mcphost.NotMemoryGA(), mcphost.ServerVersion)
 	if err := sdk.Run(ctx, &mcp.StdioTransport{}); err != nil && ctx.Err() == nil {
 		return fmt.Errorf("mcp server: %w", err)
 	}

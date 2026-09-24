@@ -20,7 +20,7 @@ const readyProbePrefix = ".ready-probe-"
 
 // ReadyResponse is the JSON body for GET /ready (Cloud Memory writer readiness).
 // Distinct from HealthzResponse: process-up (/healthz) is not writer-ready (/ready).
-// dual_write OFF · not Memory GA · not tools/list · not ingest · not Fetch.
+// dual_write OFF · not tools/list · not ingest · not Fetch.
 type ReadyResponse struct {
 	Status      string `json:"status"` // "ok" | "not_ready"
 	Service     string `json:"service"`
@@ -45,23 +45,29 @@ type ReadyResponse struct {
 }
 
 // cloudMemoryGAEnv is true only when MEMORY_CLOUD_GA is exactly "1".
-// Unset, empty, "true", "yes", and "0" are not enough (no trim, no case fold).
-// OSS local memory and the dogfood image stay not-GA until a process is marked.
+// Unset, empty, "true", "yes", and "0" do not match (no trim, no case fold).
 func cloudMemoryGAEnv() bool {
 	return os.Getenv("MEMORY_CLOUD_GA") == "1"
+}
+
+// NotMemoryGA is the not_memory_ga wire value shared by GET /healthz, GET /ready,
+// memory_compact_status, and boot logs. False only when cloudMemoryGAEnv is true.
+// The JSON key stays so a ready probe that requires the field can read it.
+// It is not a separate product stamp and does not turn dual_write on.
+func NotMemoryGA() bool {
+	return !cloudMemoryGAEnv()
 }
 
 // ReadySnapshot is the GET /ready body. HTTP 200 iff palace writable and
 // wal_pending_recoverable; otherwise status=not_ready (handler returns 503).
 // Nil host or empty palace root fail closed. Honesty fields match healthz
-// (dual_write off) without growing HealthzResponse. not_memory_ga stays true
-// unless MEMORY_CLOUD_GA is exactly "1".
+// (dual_write off, NotMemoryGA) without growing HealthzResponse.
 func ReadySnapshot(host *Host) ReadyResponse {
 	body := ReadyResponse{
 		Status:                "not_ready",
 		Service:               ServerName,
 		DualWrite:             "off",
-		NotMemoryGA:           !cloudMemoryGAEnv(),
+		NotMemoryGA:           NotMemoryGA(),
 		PalaceWritable:        false,
 		WALPendingRecoverable: false,
 		RSSBytes:              rssAllocBytes(),

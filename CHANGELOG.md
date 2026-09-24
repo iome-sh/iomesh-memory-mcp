@@ -8,23 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **GET /ready (ECM-6 S8):** Cloud Memory writer readiness distinct from `GET /healthz`. JSON `status=ok` + HTTP 200 when the palace is writable and `wal/pending` is missing/empty or only regular files (kernel recover-on-open leftover is ok); otherwise `status=not_ready` + HTTP 503. Unauthenticated like `/healthz` (not wrapped by the MCP shared secret). Honesty: `dual_write=off`; `not_memory_ga` stays `true` unless `MEMORY_CLOUD_GA` is exactly `1`. `rss_bytes` is `runtime.MemStats.Alloc` (not OS RSS). `cgroup_memory_bytes` is 0 if the cgroup file is unreadable. Does not change `HealthzResponse` fields. Not `tools/list`, not ingest, not Memory GA. `/healthz` ≠ `/ready`.
-- **Cloud TransactionalIngest (ECM-1):** `-cloud` / `MEMORY_CLOUD=1` sets `PalaceConfig.TransactionalIngest=true` on store construction (kernel [memory#173](https://github.com/iome-sh/memory/pull/173) `aab7e297`, `wal/pending` intent log). Local-dev default remains **false** (partial persist). PersistEmbeddings stays default **off**. dual_write OFF · not flock · not Memory GA.
-- **Cloud dedicated-tenant mode (ECM-1 S2 + S5):** `-cloud` / `MEMORY_CLOUD=1` requires `MEMORY_TENANT` / `-tenant`, keeps `Host.stores` length 1, and returns **400** on a second tool tenant. PID lock `palace.lock` (pid + start time) under `PALACE_ROOT`; start fails if that pid is alive (crash-safety, not flock). Local-dev keeps the multi-tenant map. Non-loopback HTTP (`-allow-non-loopback`) with empty `-http-secret` / `MEMORY_MCP_HTTP_SECRET` is **fatal before listen** (not a request 401). Loopback without secret still allowed. `/healthz` stays unauthenticated; MCP still wraps with the secret when set. Does not set `MEMORY_PERSIST_EMBEDDINGS`. dual_write OFF · not Memory GA.
-- **`memory_retrieve` / `memory_list` / `memory_facts_as_of` / `memory_related` optional `session_ids`:** kernel T1 any-of (`SearchMemoryOptions.SessionIDs` / `ListMemoryOptions.SessionIDs` / `FactsAsOfOptions.SessionIDs` / `MultiHopOptions.SessionIDs`), union with singular `session_id`. Empty `session_ids` = no extra filter (honest empty, never invent). Hits surface palace `source_hint` / `source_step` (and memory id) so a host footer can cite palace without inventing mesh. dual_write OFF · PersistEmbeddings default off · hash never stored. Not Memory GA · not E-G1 · V2 ≠ E-G1.
-- **`memory_facts_as_of` / `memory_retrieve` optional `tag` / `department`:** `--department support` is Tag `dept:support`, not Connected. Empty tag/department = no extra filter (honest empty, never invent). Invalid department ids are ignored. Kernel v1.5.12 has no `FactsAsOfOptions.Tag` / `SearchMemoryOptions.Tag`; host filters with `EntryHasTag` after `ListFactsAsOf` / `SearchMemoryWithOptions` (Limit may underfill). dual_write OFF · PersistEmbeddings default off · hash never stored. Not Memory GA · not E-G1.
-- **`memory_ingest_turn` optional `tags`:** TUI ingest-dir can stamp `dept:{id}` / `scenario:{kit}` on private overlay. Mesh-class tags (`mesh`, `source_hint:mesh`, `source:mesh`) are dropped — never invent mesh from overlay tags or session_id; omit `source_hint` keeps kernel private. dual_write OFF · PersistEmbeddings default off · hash never stored. Not Memory GA · not E-G1.
+- **GET /ready (ECM-6 S8):** Cloud Memory writer readiness distinct from `GET /healthz`. JSON `status=ok` + HTTP 200 when the palace is writable and `wal/pending` is missing/empty or only regular files (kernel recover-on-open leftover is ok); otherwise `status=not_ready` + HTTP 503. Unauthenticated like `/healthz` (not wrapped by the MCP shared secret). Honesty: `dual_write=off`. `rss_bytes` is `runtime.MemStats.Alloc` (not OS RSS). `cgroup_memory_bytes` is 0 if the cgroup file is unreadable. Not `tools/list`, not ingest. `/healthz` ≠ `/ready`. The shared `not_memory_ga` gate is recorded below.
+- **Cloud TransactionalIngest (ECM-1):** `-cloud` / `MEMORY_CLOUD=1` sets `PalaceConfig.TransactionalIngest=true` on store construction (kernel [memory#173](https://github.com/iome-sh/memory/pull/173) `aab7e297`, `wal/pending` intent log). Local-dev default remains **false** (partial persist). PersistEmbeddings stays default **off**. dual_write OFF · not flock.
+- **Cloud dedicated-tenant mode (ECM-1 S2 + S5):** `-cloud` / `MEMORY_CLOUD=1` requires `MEMORY_TENANT` / `-tenant`, keeps `Host.stores` length 1, and returns **400** on a second tool tenant. PID lock `palace.lock` (pid + start time) under `PALACE_ROOT`; start fails if that pid is alive (crash-safety, not flock). Local-dev keeps the multi-tenant map. Non-loopback HTTP (`-allow-non-loopback`) with empty `-http-secret` / `MEMORY_MCP_HTTP_SECRET` is **fatal before listen** (not a request 401). Loopback without secret still allowed. `/healthz` stays unauthenticated; MCP still wraps with the secret when set. Does not set `MEMORY_PERSIST_EMBEDDINGS`. dual_write OFF.
+- **`memory_retrieve` / `memory_list` / `memory_facts_as_of` / `memory_related` optional `session_ids`:** kernel T1 any-of (`SearchMemoryOptions.SessionIDs` / `ListMemoryOptions.SessionIDs` / `FactsAsOfOptions.SessionIDs` / `MultiHopOptions.SessionIDs`), union with singular `session_id`. Empty `session_ids` = no extra filter (honest empty, never invent). Hits surface palace `source_hint` / `source_step` (and memory id) so a host footer can cite palace without inventing mesh. dual_write OFF · PersistEmbeddings default off · hash never stored. Not E-G1 · V2 ≠ E-G1.
+- **`memory_facts_as_of` / `memory_retrieve` optional `tag` / `department`:** `--department support` is Tag `dept:support`, not Connected. Empty tag/department = no extra filter (honest empty, never invent). Invalid department ids are ignored. Kernel v1.5.12 has no `FactsAsOfOptions.Tag` / `SearchMemoryOptions.Tag`; host filters with `EntryHasTag` after `ListFactsAsOf` / `SearchMemoryWithOptions` (Limit may underfill). dual_write OFF · PersistEmbeddings default off · hash never stored. Not E-G1.
+- **`memory_ingest_turn` optional `tags`:** TUI ingest-dir can stamp `dept:{id}` / `scenario:{kit}` on private overlay. Mesh-class tags (`mesh`, `source_hint:mesh`, `source:mesh`) are dropped — never invent mesh from overlay tags or session_id; omit `source_hint` keeps kernel private. dual_write OFF · PersistEmbeddings default off · hash never stored. Not E-G1.
 
 ### Changed
-- **GET /ready `not_memory_ga`:** stays `true` unless `MEMORY_CLOUD_GA` is exactly `1` (unset, empty, `true`, `yes`, `0`, and any other value do not flip it). The HTTP startup log prints that same value. `GET /healthz` stays `not_memory_ga=true`. Image env is unchanged. dual_write OFF · not a default Memory GA claim.
-- **HTTP startup log:** `mode=http` records `bind=loopback` or `bind=non-loopback` for the normalized listen address (`127.0.0.1`, `::1`, `localhost` vs `:8080`, `0.0.0.0`, and other hosts). `allow_non_loopback=` remains the permission flag and may be true while `bind=loopback`. Listen address, secret requirement, and image `MEMORY_MCP_HTTP_ALLOW_NON_LOOPBACK` are unchanged. dual_write OFF · not Memory GA.
-- **Kernel pin:** `github.com/iome-sh/memory` annotated **`v1.5.12`** → **`v1.5.13-0.20260921185325-aab7e2971dfd`** (memory [#173](https://github.com/iome-sh/memory/pull/173) `aab7e297`; `PalaceConfig.TransactionalIngest` opt-in, default false). Annotated **v1.5.13** is not tagged. PersistEmbeddings default **off**. dual_write OFF · not Memory GA.
+- **`not_memory_ga` wire (#97):** `GET /healthz` and `GET /ready` keep the JSON key (ready probes refuse a missing field). Both use `NotMemoryGA`: false only when `MEMORY_CLOUD_GA` is exactly `1`; unset, empty, `true`, `yes`, `0`, and padded values stay true. Boot logs print that same value. `memory_compact_status` uses it too. `ops_digest_export` honesty `ops_pulse` is `cloud_memory_ga` (digest label, not a Connected stamp). `dual_write` stays `off`. `ServerVersion` / healthz `version` stays `v0.4.2` unless a release ldflag overrides it. Kernel pin unchanged.
+- **HTTP startup log:** `mode=http` records `bind=loopback` or `bind=non-loopback` for the normalized listen address (`127.0.0.1`, `::1`, `localhost` vs `:8080`, `0.0.0.0`, and other hosts). `allow_non_loopback=` remains the permission flag and may be true while `bind=loopback`. Listen address, secret requirement, and image `MEMORY_MCP_HTTP_ALLOW_NON_LOOPBACK` are unchanged. dual_write OFF.
+- **Kernel pin:** `github.com/iome-sh/memory` annotated **`v1.5.12`** → **`v1.5.13-0.20260921185325-aab7e2971dfd`** (memory [#173](https://github.com/iome-sh/memory/pull/173) `aab7e297`; `PalaceConfig.TransactionalIngest` opt-in, default false). Annotated **v1.5.13** is not tagged. PersistEmbeddings default **off**. dual_write OFF.
 - **govulncheck:** bump indirect `google.golang.org/grpc` `v1.82.1` → `v1.83.1` (GO-2026-6348 HTTP/2 DATA-frame OOM). Host still does not speak gRPC; pin is transitive via the kernel/qdrant stack.
-- **Docs:** README TTFH V1.6 support dept RCA overlay kit pointer (Wave 1, not E-G1; TUI + kernel `examples/dept-rca/support`; mesh miss is success until pull; dual_write OFF). Not Memory GA.
-- **Docs:** README TTFH one walk — drop duplicate **Phases** line; R0–R4 list is the rollout (R1 `--live` ≠ R3 overlay `/dashboard` PULSE parked; dual_write OFF). Not E-G1 · not Memory GA.
-- **Docs:** README TTFH numbered walk is the R0–R4 map (this list **is** the rollout; R1 ≠ R3; overlay `/dashboard` PULSE parked; dual_write OFF). Not E-G1 · not Memory GA.
-- **Docs:** README TTFH V1.5 phased rollout sentence (R0–R4 host attached, not a gate; overlay `/dashboard` PULSE parked; dual_write OFF). Not E-G1 · not Memory GA.
-- **Docs:** README TTFH V1.5 host walk (not E-G1, not Memory GA). dual_write OFF · PersistEmbeddings default off · hash never stored.
+- **Docs:** README TTFH V1.6 support dept RCA overlay kit pointer (Wave 1, not E-G1; TUI + kernel `examples/dept-rca/support`; mesh miss is success until pull; dual_write OFF).
+- **Docs:** README TTFH one walk — drop duplicate **Phases** line; R0–R4 list is the rollout (R1 `--live` ≠ R3 overlay `/dashboard` PULSE parked; dual_write OFF). Not E-G1.
+- **Docs:** README TTFH numbered walk is the R0–R4 map (this list **is** the rollout; R1 ≠ R3; overlay `/dashboard` PULSE parked; dual_write OFF). Not E-G1.
+- **Docs:** README TTFH V1.5 phased rollout sentence (R0–R4 host attached, not a gate; overlay `/dashboard` PULSE parked; dual_write OFF). Not E-G1.
+- **Docs:** README TTFH V1.5 host walk (not E-G1). dual_write OFF · PersistEmbeddings default off · hash never stored.
 - **Docs:** README install names Go **1.27+** (same as memory + iomesh-tui; see `go.mod`) and prepends `$(go env GOPATH)/bin` to `PATH` so `iomesh-memory-mcp` is found after `go install`. Aligns with TUI + kernel.
 - **Docs:** README for OSS newcomers; companion TUI pin **v1.3.7**.
 
@@ -40,20 +40,20 @@ Kernel pin **v1.5.12** (T1 multi-session retrieve + count assembly). Persist def
 
 ## [0.4.1] — 2026-09-12
 
-Kernel pin **v1.5.11** + optional ONNX `PersistEmbeddings` (#72). dual_write OFF · not Memory GA · persist default off · hash never stored.
+Kernel pin **v1.5.11** + optional ONNX `PersistEmbeddings` (#72). dual_write OFF · persist default off · hash never stored.
 
 ### Added
-- **Optional ONNX `PersistEmbeddings` (#72):** env `MEMORY_PERSIST_EMBEDDINGS` (`1`/`true`/`on`/`yes`, case-insensitive) default **off**. `PalaceConfig.PersistEmbeddings` is true only when embeddings are **onnx** and the env is on. Hash never persists (kernel #45). `GET /healthz` reports `persist_embeddings` (`off`|`on`). Does not require Qdrant/usearch. Default write path unchanged. dual_write OFF · not Memory GA · catalog ≠ Connected.
+- **Optional ONNX `PersistEmbeddings` (#72):** env `MEMORY_PERSIST_EMBEDDINGS` (`1`/`true`/`on`/`yes`, case-insensitive) default **off**. `PalaceConfig.PersistEmbeddings` is true only when embeddings are **onnx** and the env is on. Hash never persists (kernel #45). `GET /healthz` reports `persist_embeddings` (`off`|`on`). Does not require Qdrant/usearch. Default write path unchanged. dual_write OFF · catalog ≠ Connected.
 
 ### Changed
-- **Kernel pin (#72):** `github.com/iome-sh/memory` annotated **`v1.5.10`** → annotated **`v1.5.11`** (optional ONNX vector persist, default off). dual_write OFF · not Memory GA · catalog ≠ Connected.
+- **Kernel pin (#72):** `github.com/iome-sh/memory` annotated **`v1.5.10`** → annotated **`v1.5.11`** (optional ONNX vector persist, default off). dual_write OFF · catalog ≠ Connected.
 
 ## [0.4.0] — 2026-09-12
 
-Optional HITL `memory_extract_facts` (#70). Compatible with [iomesh-tui **v1.3.4+**](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.4) `/memory extract`. dual_write OFF · not Memory GA · catalog ≠ connected.
+Optional HITL `memory_extract_facts` (#70). Compatible with [iomesh-tui **v1.3.4+**](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.4) `/memory extract`. dual_write OFF · catalog ≠ connected.
 
 ### Added
-- **`memory_extract_facts` (#70):** optional HITL extract-after-persist. Required `tenant` (omit fail-closes) and `memory_id` (parent turn already on disk); optional `facts` (HITL strings; else `palace.ExtractAtomicFacts` on a copy). Writes `turn_fact` children (`TierSemantic`, inherited tags, `provenance.source_step=mcp_memory_extract_facts`, inherited `source_hint` / private — never invent mesh, `parent_ids=[parent]`, `valid_from` stamp). Does **not** rewrite or delete the parent. Not called from `handleIngestTurn` (ingest already writes caller `ExtractedFacts` / kernel auto-extract children; extract is not a PalaceStore write-gate and never fails `memory_ingest_turn`). dual_write always off. Structural extract, not NLP / not Memory GA. Advertised in `leanToolNames` / `GET /healthz` `tool_names`. Ingest schema unchanged; TUI **v1.3.4** ignores unknown tools.
+- **`memory_extract_facts` (#70):** optional HITL extract-after-persist. Required `tenant` (omit fail-closes) and `memory_id` (parent turn already on disk); optional `facts` (HITL strings; else `palace.ExtractAtomicFacts` on a copy). Writes `turn_fact` children (`TierSemantic`, inherited tags, `provenance.source_step=mcp_memory_extract_facts`, inherited `source_hint` / private — never invent mesh, `parent_ids=[parent]`, `valid_from` stamp). Does **not** rewrite or delete the parent. Not called from `handleIngestTurn` (ingest already writes caller `ExtractedFacts` / kernel auto-extract children; extract is not a PalaceStore write-gate and never fails `memory_ingest_turn`). dual_write always off. Structural extract, not NLP. Advertised in `leanToolNames` / `GET /healthz` `tool_names`. Ingest schema unchanged; TUI **v1.3.4** ignores unknown tools.
 
 ### Changed
 - **Release hygiene (#69):** README install pin **v0.3.2** (was leftover v0.3.0); kernel pin language **v1.5.10** to match `go.mod` (was leftover v1.5.8). Default `ServerVersion` **v0.3.2**. CHANGELOG records already-cut **v0.3.1** / **v0.3.2** instead of leaving those waves under Unreleased.
@@ -61,7 +61,7 @@ Optional HITL `memory_extract_facts` (#70). Compatible with [iomesh-tui **v1.3.4
 
 ## [0.3.2] — 2026-09-10
 
-Cite-both companion to [iomesh-tui v1.3.3](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.3). dual_write OFF · not Memory GA · catalog ≠ connected.
+Cite-both companion to [iomesh-tui v1.3.3](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.3). dual_write OFF · catalog ≠ connected.
 
 ### Fixed
 - **`ops_digest_export` receipt selection (#66 / #67):** default receipts no longer drop in-window `source_hint=mesh` turns when newer private RCA fills newest-`event_time` (TUI sticky limit). Scan the window past the receipt cap, merge `source_hint:mesh` tagged entries, and prefer source-class diversity (mesh+private) when both exist — never invent mesh. Payload keeps honest `since`/`as_of` and adds `receipt_selection` (scan/class flags). Companion primary UX is [iomesh-tui#419](https://github.com/iome-sh/iomesh-tui/issues/419).
@@ -69,7 +69,7 @@ Cite-both companion to [iomesh-tui v1.3.3](https://github.com/iome-sh/iomesh-tui
 
 ## [0.3.1] — 2026-09-10
 
-Kernel v1.5.10 + optional ingest class. Compatible with TUI durable pull `source_hint=mesh` (iomesh-tui#418). dual_write OFF · not Memory GA · catalog ≠ connected.
+Kernel v1.5.10 + optional ingest class. Compatible with TUI durable pull `source_hint=mesh` (iomesh-tui#418). dual_write OFF · catalog ≠ connected.
 
 ### Added
 - **`memory_ingest_turn` optional `source_hint` (#63 / #65):** callers (durable mesh pull) can pass `mesh`, `private`, or a kernel-classifiable alias. When non-empty, the host stamps `provenance.source_hint` and tag `source_hint:<hint>` before `IngestTurn` (`FormatSourceHintTag`). When omitted or blank, kernel `ensurePrivateIngestSource` keeps today’s private default — session ids such as `dept.*.events.*` do not invent mesh. `ops_digest_export` honors a stamped mesh/private class on the entry (never invents mesh).
@@ -80,103 +80,103 @@ Kernel v1.5.10 + optional ingest class. Compatible with TUI durable pull `source
 ## [0.3.0] — 2026-09-10
 
 ### Added
-- **`ops_digest_export` (#55):** lean MCP tool for TUI `/memory digest` when sync `POST /v1|/v5/memory/ops_digest` is unavailable. Args: `window` (day|week, default day), `horizon` (ops|knowledge|analytical|all, default ops), `limit` (default 20, cap 50), optional `tenant` / `as_of`. Returns TUI `MemoryOpsDigestResult` JSON: window/horizon/as_of/since, honesty (`dual_write_default=off`, `never_invent_ga`, knowledge/analytical Beta, book_demo off), empty `patterns` (insufficient-signal OK — do not invent GA), local palace `receipts` with `source_hint=palace_timeline` (TUI-classifiable private; mesh* only when the entry is mesh-sourced — never invented), empty `decision_stub`. Advertised in `leanToolNames` / `GET /healthz` `tool_names` / `-preflight`. dual_write OFF · not Memory GA · catalog ≠ connected.
+- **`ops_digest_export` (#55):** lean MCP tool for TUI `/memory digest` when sync `POST /v1|/v5/memory/ops_digest` is unavailable. Args: `window` (day|week, default day), `horizon` (ops|knowledge|analytical|all, default ops), `limit` (default 20, cap 50), optional `tenant` / `as_of`. Returns TUI `MemoryOpsDigestResult` JSON: window/horizon/as_of/since, honesty (`dual_write_default=off`, `never_invent_ga`, knowledge/analytical Beta, book_demo off), empty `patterns` (insufficient-signal OK — do not invent GA), local palace `receipts` with `source_hint=palace_timeline` (TUI-classifiable private; mesh* only when the entry is mesh-sourced — never invented), empty `decision_stub`. Advertised in `leanToolNames` / `GET /healthz` `tool_names` / `-preflight`. dual_write OFF · catalog ≠ connected.
 
 ## [0.2.1] — 2026-09-10
 
 ### Changed
-- **Kernel pin:** `github.com/iome-sh/memory` annotated **`v1.5.8`** → annotated **`v1.5.9`** (memory #88: palace mode bits / writeMu / retrieve skip archival; hugot 0.7.8). `go` line follows the kernel (`1.26.6` → `1.27.0`). dual_write OFF · not Memory GA.
+- **Kernel pin:** `github.com/iome-sh/memory` annotated **`v1.5.8`** → annotated **`v1.5.9`** (memory #88: palace mode bits / writeMu / retrieve skip archival; hugot 0.7.8). `go` line follows the kernel (`1.26.6` → `1.27.0`). dual_write OFF.
 
 ## [0.2.0] — 2026-09-10
 
 P0 host polish (TTFH): ingest DLP, HTTP loopback + optional secret, memory
-`v1.5.8` pin. dual_write OFF · not Memory GA · Catalog ≠ Connected.
+`v1.5.8` pin. dual_write OFF · Catalog ≠ Connected.
 
 ### Added
-- **Host-side DLP on ingest (#48):** `memory_ingest_turn` and `memory_write` redact common secret-shaped tokens (`ghp_` / `sk-` / AWS `AKIA` / Slack `xox*` / PEM / JWT-shaped) to `[REDACTED]` before palace write. Residual heuristics — not commercial DLP, not hardware-bound keys, not default envelope encryption. `GET /healthz` honesty unchanged. dual_write OFF · not Memory GA.
-- **HTTP loopback default + optional shared secret (#49):** `:8080` is forced to `127.0.0.1:8080`. `0.0.0.0` / non-loopback requires `-allow-non-loopback` / `MEMORY_MCP_HTTP_ALLOW_NON_LOOPBACK`. Optional `MEMORY_MCP_HTTP_SECRET` (`X-Memory-MCP-Secret` or `Authorization: Bearer`) fail-closes MCP HTTP when set. `/healthz` stays open. stdio remains default when `-http-addr` is empty. Compose/image set the allow flag so host publish `127.0.0.1:8080` can reach the container. dual_write OFF · not Memory GA.
+- **Host-side DLP on ingest (#48):** `memory_ingest_turn` and `memory_write` redact common secret-shaped tokens (`ghp_` / `sk-` / AWS `AKIA` / Slack `xox*` / PEM / JWT-shaped) to `[REDACTED]` before palace write. Residual heuristics — not commercial DLP, not hardware-bound keys, not default envelope encryption. `GET /healthz` honesty unchanged. dual_write OFF.
+- **HTTP loopback default + optional shared secret (#49):** `:8080` is forced to `127.0.0.1:8080`. `0.0.0.0` / non-loopback requires `-allow-non-loopback` / `MEMORY_MCP_HTTP_ALLOW_NON_LOOPBACK`. Optional `MEMORY_MCP_HTTP_SECRET` (`X-Memory-MCP-Secret` or `Authorization: Bearer`) fail-closes MCP HTTP when set. `/healthz` stays open. stdio remains default when `-http-addr` is empty. Compose/image set the allow flag so host publish `127.0.0.1:8080` can reach the container. dual_write OFF.
 
 ### Changed
-- **Kernel pin (#50):** `github.com/iome-sh/memory` `v1.5.8-0.20260816062432-e1ffb9db873e` → annotated **`v1.5.8`**. Current kernel main tip `f834699` is docs-only after the tag; kernel #85/#86 (mode bits / writeMu) were still open so this hop does not wait on them. dual_write OFF · not Memory GA.
+- **Kernel pin (#50):** `github.com/iome-sh/memory` `v1.5.8-0.20260816062432-e1ffb9db873e` → annotated **`v1.5.8`**. Current kernel main tip `f834699` is docs-only after the tag; kernel #85/#86 (mode bits / writeMu) were still open so this hop does not wait on them. dual_write OFF.
 
 ## [0.1.1] — 2026-09-06
 
 Patch: leftover product-plane env alias reads (#45) and public OSS narrative
-scrub (#46). Not a new MCP tool surface. dual_write OFF · not Memory GA.
+scrub (#46). Not a new MCP tool surface. dual_write OFF.
 
 ### Changed
-- **Public OSS env scrub:** drop leftover legacy product-plane env alias reads and deprecation helpers (`firstEnvPrefer`, `warnDeprecatedEnvAliases`). Host reads `MEMORY_MCP_*` / `PALACE_ROOT` / `MEMORY_TENANT` only. Operator docs (`.env.example`, EDGE_DOGFOOD) no longer list those aliases. Does not import private control-plane/broker packages. Naming remains **iomesh-memory-mcp**. dual_write OFF · not Memory GA.
-- **Public OSS narrative scrub:** replace leftover product-codename language in docs, comments, templates, and honesty-gate needles with **private control plane / broker** wording. Gates require the new wording and forbid the old codename (they no longer require the old token to appear). Naming remains **iomesh-memory-mcp**. dual_write OFF · not Memory GA.
+- **Public OSS env scrub:** drop leftover legacy product-plane env alias reads and deprecation helpers (`firstEnvPrefer`, `warnDeprecatedEnvAliases`). Host reads `MEMORY_MCP_*` / `PALACE_ROOT` / `MEMORY_TENANT` only. Operator docs (`.env.example`, EDGE_DOGFOOD) no longer list those aliases. Does not import private control-plane/broker packages. Naming remains **iomesh-memory-mcp**. dual_write OFF.
+- **Public OSS narrative scrub:** replace leftover product-codename language in docs, comments, templates, and honesty-gate needles with **private control plane / broker** wording. Gates require the new wording and forbid the old codename (they no longer require the old token to appear). Naming remains **iomesh-memory-mcp**. dual_write OFF.
 
 ## [0.1.0] — 2026-09-04
 
 First annotated `v*` GitHub Release of this local palace MCP host. Omitted
 `tenant` fail-closes (no fallback to process `-tenant` / `MEMORY_TENANT` /
 `"default"`). Path isolation `PALACE_ROOT/<tenant>/` ≠ cloud multi-tenant.
-dual_write OFF · not Memory GA.
+dual_write OFF.
 
 ### Changed
-- **Public copy hygiene:** operator-facing README, RELEASING, SECURITY, OPEN_SOURCE_AUDIT, and public-flip notes drop internal serials and private-plane names. Path isolation `PALACE_ROOT/<tenant>/` ≠ cloud multi-tenant. dual_write OFF · not Memory GA.
-- **Omitted tenant fail-closed (#40):** tool/HTTP calls that omit `tenant` return an error (`IsError` / tenant required). They do not fall back to `-tenant` / `MEMORY_TENANT` or `"default"`, so two callers on one MCP HTTP process cannot mix in `PALACE_ROOT/default`. Invalid tenant still fail-closed. Path isolation `PALACE_ROOT/<tenant>/` unchanged. `GET /healthz` stays honest (no tenant/org leak; `dual_write=off`; `not_memory_ga=true`). dual_write OFF · not Memory GA.
-- **govulncheck:** pin indirect `golang.org/x/crypto` `v0.54.0` → `v0.56.0` (GO-2026-6354 / GO-2026-6355 via optional ONNX/`ssh.Dial` residual). Kernel pin unchanged. dual_write OFF · not Memory GA.
+- **Public copy hygiene:** operator-facing README, RELEASING, SECURITY, OPEN_SOURCE_AUDIT, and public-flip notes drop internal serials and private-plane names. Path isolation `PALACE_ROOT/<tenant>/` ≠ cloud multi-tenant. dual_write OFF.
+- **Omitted tenant fail-closed (#40):** tool/HTTP calls that omit `tenant` return an error (`IsError` / tenant required). They do not fall back to `-tenant` / `MEMORY_TENANT` or `"default"`, so two callers on one MCP HTTP process cannot mix in `PALACE_ROOT/default`. Invalid tenant still fail-closed. Path isolation `PALACE_ROOT/<tenant>/` unchanged. `GET /healthz` stays honest (no tenant/org leak; `dual_write=off`; `not_memory_ga=true`). dual_write OFF.
+- **govulncheck:** pin indirect `golang.org/x/crypto` `v0.54.0` → `v0.56.0` (GO-2026-6354 / GO-2026-6355 via optional ONNX/`ssh.Dial` residual). Kernel pin unchanged. dual_write OFF.
 
 ### Added
-- **CLI `-preflight` (#28):** constructs the host and prints the same honesty JSON as `GET /healthz` (`status`, `service`, `dual_write=off`, `not_memory_ga`, `embeddings`, `qdrant=off`, `version`, `tools`, `tool_names`), then exits without listening or running stdio MCP. Registration ≠ `tools/list` ≠ ingest. No hosted palace probe. dual_write OFF · not Memory GA.
-- **Tenant single path segment (#27):** when `tenant` is provided (tool input or `-tenant` / `MEMORY_TENANT`), it must be a single path segment (reject `.`, `..`, separators). Invalid tool tenant returns an `IsError` result; invalid default tenant fails process start. (#40 later fail-closes omitted/empty tool tenant.) Same-process path isolation only · dual_write OFF · not Memory GA.
+- **CLI `-preflight` (#28):** constructs the host and prints the same honesty JSON as `GET /healthz` (`status`, `service`, `dual_write=off`, `not_memory_ga`, `embeddings`, `qdrant=off`, `version`, `tools`, `tool_names`), then exits without listening or running stdio MCP. Registration ≠ `tools/list` ≠ ingest. No hosted palace probe. dual_write OFF.
+- **Tenant single path segment (#27):** when `tenant` is provided (tool input or `-tenant` / `MEMORY_TENANT`), it must be a single path segment (reject `.`, `..`, separators). Invalid tool tenant returns an `IsError` result; invalid default tenant fails process start. (#40 later fail-closes omitted/empty tool tenant.) Same-process path isolation only · dual_write OFF.
 
 ### Fixed
-- **Docs close-token (#38):** README and EDGE_DOGFOOD no longer use the internal workflow close-token. Operator language is human product close / still-open product gates. `GET /healthz` 200 is not Connected. dual_write OFF · not Memory GA.
-- **EDGE_DOGFOOD rates (#36):** drop priced Memory Ops Pack / ~$119 / ~$88 language. Mesh stays optional for pull/retain without a SKU. Gate forbids those needles. dual_write OFF · not Memory GA.
-- **Invalid RFC3339 time fields (#26):** `parseOptionalTime` / `parseTimeOrNow` now return an error on non-empty unparsable input instead of treating it as unset or now. `memory_ingest_turn`, `memory_retrieve`, `memory_list`, `memory_facts_as_of`, `memory_related`, and `memory_supersede_entity` fail closed. Empty still means now / omitted. dual_write OFF · not Memory GA.
-- **Post-flip honesty (#30):** CONTRIBUTING / Makefile help / compose no longer say the repo is private. Docker and `.env.example` no longer present a GitHub token as required (kernel + host are public). Compose publishes `127.0.0.1:8080` for local dogfood. `make tidy` matches public CI (no `GOPRIVATE`). dual_write OFF · not Memory GA.
+- **Docs close-token (#38):** README and EDGE_DOGFOOD no longer use the internal workflow close-token. Operator language is human product close / still-open product gates. `GET /healthz` 200 is not Connected. dual_write OFF.
+- **EDGE_DOGFOOD rates (#36):** drop priced Memory Ops Pack / ~$119 / ~$88 language. Mesh stays optional for pull/retain without a SKU. Gate forbids those needles. dual_write OFF.
+- **Invalid RFC3339 time fields (#26):** `parseOptionalTime` / `parseTimeOrNow` now return an error on non-empty unparsable input instead of treating it as unset or now. `memory_ingest_turn`, `memory_retrieve`, `memory_list`, `memory_facts_as_of`, `memory_related`, and `memory_supersede_entity` fail closed. Empty still means now / omitted. dual_write OFF.
+- **Post-flip honesty (#30):** CONTRIBUTING / Makefile help / compose no longer say the repo is private. Docker and `.env.example` no longer present a GitHub token as required (kernel + host are public). Compose publishes `127.0.0.1:8080` for local dogfood. `make tidy` matches public CI (no `GOPRIVATE`). dual_write OFF.
 
 ### Changed
-- **Tool copy (#29):** list/retrieve/search/facts_as_of/related/compact_status descriptions and the README tool table say local palace FS, read/list only, **does not ingest**. `tools/list` / `healthz.tool_names` remain discovery, not ingest. Write tools stay local FS only. dual_write OFF · not Memory GA.
-- **go-sdk v1.7.0:** bump `github.com/modelcontextprotocol/go-sdk` 1.6.1 → 1.7.0 (protocol `2026-07-28` + legacy `2025-11-25` negotiate). Streamable HTTP already sets `Stateless: true`, which is required for the new revision on HTTP; stdio/legacy clients still negotiate down. Not a protocol-only-new-clients cut. dual_write OFF · not Memory GA.
+- **Tool copy (#29):** list/retrieve/search/facts_as_of/related/compact_status descriptions and the README tool table say local palace FS, read/list only, **does not ingest**. `tools/list` / `healthz.tool_names` remain discovery, not ingest. Write tools stay local FS only. dual_write OFF.
+- **go-sdk v1.7.0:** bump `github.com/modelcontextprotocol/go-sdk` 1.6.1 → 1.7.0 (protocol `2026-07-28` + legacy `2025-11-25` negotiate). Streamable HTTP already sets `Stateless: true`, which is required for the new revision on HTTP; stdio/legacy clients still negotiate down. Not a protocol-only-new-clients cut. dual_write OFF.
 
 ### Changed
-- Pin `github.com/iome-sh/memory` to public main tip `e1ffb9d` (`v1.5.8-0.20260816062432-e1ffb9db873e`) so ONNX retrieve gets keyword-first + expanded haystack (memory #46) and list uses durable event-time snapshot (memory #47). Ingest `valid_from` + Write errors (memory #48). Hash still omits `QueryVec`. dual_write OFF · not Memory GA. Do not invent Edge Memory GA / first `v*` tag.
+- Pin `github.com/iome-sh/memory` to public main tip `e1ffb9d` (`v1.5.8-0.20260816062432-e1ffb9db873e`) so ONNX retrieve gets keyword-first + expanded haystack (memory #46) and list uses durable event-time snapshot (memory #47). Ingest `valid_from` + Write errors (memory #48). Hash still omits `QueryVec`. dual_write OFF. Do not invent Edge Memory GA / first `v*` tag.
 - Go toolchain pin `go 1.26.6` so CI `govulncheck` is clean on stdlib GO-2026-5972 / GO-2026-5026 (fixed in go1.26.6).
 
 ### Fixed
-- **`memory_retrieve` / `memory_search_semantic` (#21):** do not inject hash `QueryVec`. SHA-256 unit vectors skipped the kernel keyword path and dropped exact tokens past `Limit`. ONNX still passes a query vector. dual_write OFF · not Memory GA.
+- **`memory_retrieve` / `memory_search_semantic` (#21):** do not inject hash `QueryVec`. SHA-256 unit vectors skipped the kernel keyword path and dropped exact tokens past `Limit`. ONNX still passes a query vector. dual_write OFF.
 
 ### Added
-- **Host tests (kernel pin lock):** same-tenant session isolation on `memory_retrieve` / `memory_list` (shared token must not leak across `session_id`; empty session unfiltered). After ingest, `memory_facts_as_of` sees fact children when atoms extract (kernel #48 `valid_from`). `memory_list` after `New()` on the same palace root still lists the needle (kernel #47 durable snapshot; hash). Tests-only · go-sdk not bumped · dual_write OFF · not Memory GA.
-- **`/healthz` tools surface:** residual-honest `tools` (count) and `tool_names` for the compile-time lean registered tools. Not a live MCP `tools/list` stamp. Historical s1509 TUI attach `tools=6` at tip `f46afe2` stays contemporaneous evidence — do not restamp as live forever-green. dual_write OFF · not Memory GA.
+- **Host tests (kernel pin lock):** same-tenant session isolation on `memory_retrieve` / `memory_list` (shared token must not leak across `session_id`; empty session unfiltered). After ingest, `memory_facts_as_of` sees fact children when atoms extract (kernel #48 `valid_from`). `memory_list` after `New()` on the same palace root still lists the needle (kernel #47 durable snapshot; hash). Tests-only · go-sdk not bumped · dual_write OFF.
+- **`/healthz` tools surface:** residual-honest `tools` (count) and `tool_names` for the compile-time lean registered tools. Not a live MCP `tools/list` stamp. Historical s1509 TUI attach `tools=6` at tip `f46afe2` stays contemporaneous evidence — do not restamp as live forever-green. dual_write OFF.
 - **`memory_list` hyphen needle rank 1:** after hyphen ingest, `handleList{Query: needle, Limit: 5}` must hit rank 1. `TestRetrieveHashKeepsHyphenNeedle` kept.
-- **`memory_write` (#20):** durable fact ingest via kernel `Write`. Optional `entity_key` stamps `entity:` tags and defaults to `WriteAndSupersede`. `dual_write` OFF · `audited=false` · not Memory GA.
-- **`memory_related` / `memory_supersede_entity` (#17):** lean maps to kernel `MultiHopRetrieve` and `SupersedeEntityFacts`. Hash `SeedQuery` does not inject `QueryVec`. HITL stays at the client. dual_write OFF · not Memory GA.
-- **Other MCP clients (#18):** README stdio `mcp.json` + streamable HTTP URL attach (Cursor / generic). No TUI required. Not Memory GA.
-- **Install pin honesty (#19):** document `@main` until the first annotated `v*` GitHub Release. `@latest` is a pseudo-version today. No tag cut in this change. Not Memory GA.
+- **`memory_write` (#20):** durable fact ingest via kernel `Write`. Optional `entity_key` stamps `entity:` tags and defaults to `WriteAndSupersede`. `dual_write` OFF · `audited=false`.
+- **`memory_related` / `memory_supersede_entity` (#17):** lean maps to kernel `MultiHopRetrieve` and `SupersedeEntityFacts`. Hash `SeedQuery` does not inject `QueryVec`. HITL stays at the client. dual_write OFF.
+- **Other MCP clients (#18):** README stdio `mcp.json` + streamable HTTP URL attach (Cursor / generic). No TUI required.
+- **Install pin honesty (#19):** document `@main` until the first annotated `v*` GitHub Release. `@latest` is a pseudo-version today. No tag cut in this change.
 
 ### Changed
 - **Public OSS:** host + kernel are public — CI drops `GOPRIVATE` / private PAT requirement; pin `github.com/iome-sh/memory` to public main tip; docs visibility honesty.
 - **s1492 / M5 signing matrix residual:** [`.github/workflows/release.yml`](.github/workflows/release.yml) drops `GOPRIVATE` + private module PAT residual; public `github.com/iome-sh/memory` fetch only (aligned with public CI). GoReleaser + Syft SBOM + keyless cosign kept.
-- **s1500 / Edge Memory GA candidacy (E3–E5 docs):** [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) aligns honesty with Edge Memory GA candidacy (local-primary; residual PASS ≠ invent Edge Memory GA declared; dual_write OFF; not bare Memory GA; not hosted Memory GA); public modules; retires stale private-module install residual.
+- **s1500 / Edge Memory GA candidacy (E3–E5 docs):** [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) aligns honesty with Edge Memory GA candidacy (local-primary; residual PASS ≠ invent Edge Memory GA declared; dual_write OFF); public modules; retires stale private-module install residual.
 
 ### Added
 
-- **Optional ONNX embeddings (s1525)** — when `MEMORY_ONNX_MODEL_PATH` is set, the lean host constructs Palace stores with kernel ONNX embeddings (else hash). `/healthz` reports `embeddings` (`hash`|`onnx`) and `qdrant=off` (Qdrant not wired into lean search). dual_write OFF · not Memory GA · optional path ≠ invent platform GPU palace.
+- **Optional ONNX embeddings (s1525)** — when `MEMORY_ONNX_MODEL_PATH` is set, the lean host constructs Palace stores with kernel ONNX embeddings (else hash). `/healthz` reports `embeddings` (`hash`|`onnx`) and `qdrant=off` (Qdrant not wired into lean search). dual_write OFF · optional path ≠ invent platform GPU palace.
 
 
 - **s1509 / E4 TUI client attach residual dogfood evidence** (public binary host residual-honest):
   - [docs/EDGE_DOGFOOD_EVIDENCE.md](docs/EDGE_DOGFOOD_EVIDENCE.md) — stamp **2026-08-09T06:23:34Z** · MCP tip `f46afe2` · TUI tip `6b3958a` · healthz ok on `:18081` (`dual_write=off`, `not_memory_ga=true`) · TUI `iomesh mcp --connect` → **connected=1** **tools=6** (`memory_ingest_turn`, `memory_retrieve`, `memory_search_semantic`, `memory_list`, `memory_compact_status`, `memory_facts_as_of`)
   - [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) — E4 section peer link to s1509 client attach evidence
-  - Honesty: residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ invent forever product green · dual_write OFF · not bare Memory GA · not hosted Memory GA · **attach + tools/list ≠ invent Edge Memory GA** · **attach + tools/list ≠ invent forever green full product dogfood**
+  - Honesty: residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ invent forever product green · dual_write OFF · **attach + tools/list ≠ invent Edge Memory GA** · **attach + tools/list ≠ invent forever green full product dogfood**
 - **s1504 / E4 local residual dogfood evidence** (public binary host residual-honest):
   - [docs/EDGE_DOGFOOD_EVIDENCE.md](docs/EDGE_DOGFOOD_EVIDENCE.md) — contemporaneous stamp **2026-08-09T06:06:22Z** · tip `f46afe2` · unit `go test ./internal/mcphost/` ok · HTTP `/healthz` ok (`dual_write=off`, `not_memory_ga=true`)
   - [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) — E4 section + continuum link to evidence log
-  - Honesty: residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ invent forever product green · dual_write OFF · not bare Memory GA · not hosted Memory GA · unit ≠ full MCP client attach · healthz ≠ MCP JSON-RPC tool round-trip
+  - Honesty: residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ invent forever product green · dual_write OFF · unit ≠ full MCP client attach · healthz ≠ MCP JSON-RPC tool round-trip
 - **s1500 / E3 install matrix · E4 operator dogfood runbook · E5 support/version policy** (public binary host residual-honest):
   - [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) — E3 install matrix (stdio · HTTP · Docker Compose · TUI attach) · **E4 operator runbook** (build → stdio health → `memory_ingest_turn` → `memory_retrieve` → `memory_list` → `memory_facts_as_of` → `memory_compact_status` → optional HTTP /healthz)
   - [RELEASING.md](RELEASING.md) — **Support / version policy (E5)**: latest GitHub Release tag · GoReleaser + SBOM + keyless cosign · pin for production · snapshot ≠ production release
   - [SUPPORT.md](SUPPORT.md) — issues · security · related memory kernel · E5 pointers
   - README Documentation table pointers only
-  - Honesty: residual PASS ≠ live dogfood green · residual PASS ≠ invent forever-green signed releases · residual PASS ≠ invent Edge Memory GA · dual_write OFF · not Memory GA
+  - Honesty: residual PASS ≠ live dogfood green · residual PASS ≠ invent forever-green signed releases · residual PASS ≠ invent Edge Memory GA · dual_write OFF
 - **s1492 / Option A M5 signing/matrix tip** (public binary host residual-honest):
   - [RELEASING.md](RELEASING.md) **M5 signing / matrix** section: tag → release.yml → GoReleaser → archives + checksums + SBOM + cosign keyless · `make release-snapshot` dry-run
-  - Honesty: tip ≠ invent successful public tag release shipped · residual PASS ≠ invent forever-green signed releases · dual_write OFF · not Memory GA · naming **iomesh-memory-mcp** · kernel public prerequisite met · no auto-tag · private control plane / broker stays out of this tree
+  - Honesty: tip ≠ invent successful public tag release shipped · residual PASS ≠ invent forever-green signed releases · dual_write OFF · naming **iomesh-memory-mcp** · kernel public prerequisite met · no auto-tag · private control plane / broker stays out of this tree
   - Gate needles lightly updated for public release-path honesty
 - **s1474 / final private→public flip audit closeout (TUI binary parity)** (still private · residual PASS ≠ public flip):
   - CONTRIBUTING expanded to TUI parity: development setup (GOPRIVATE residual), coding standards, tests, security-sensitive changes, Issues, **Public repository policy**, PR + CI table + branch protection `ci-success`, MIT contribution clause
@@ -199,7 +199,7 @@ dual_write OFF · not Memory GA.
 
 ### Honesty
 
-- dual_write **OFF** · not product Memory GA · host + kernel public · residual PASS ≠ live dogfood / invent forever-green signed releases · residual PASS ≠ invent Edge Memory GA · readiness ≠ invent flip · tip ≠ invent tag release shipped · does not import private control-plane/broker packages · naming **iomesh-memory-mcp** · kernel public prerequisite met · M5 packaging residual (s1492) ≠ invent M5 complete · s1500 E3–E5 docs ≠ invent Edge Memory GA declared · s1504 local evidence ≠ invent Edge Memory GA / forever product green · s1509 client attach ≠ invent Edge Memory GA / forever green full product dogfood · healthz `tools` / `tool_names` = compile-time lean surface ≠ invent live TUI attach restamp / forever-green `tools=N` · no auto-tag
+- dual_write **OFF** · host + kernel public · residual PASS ≠ live dogfood / invent forever-green signed releases · residual PASS ≠ invent Edge Memory GA · readiness ≠ invent flip · tip ≠ invent tag release shipped · does not import private control-plane/broker packages · naming **iomesh-memory-mcp** · kernel public prerequisite met · M5 packaging residual (s1492) ≠ invent M5 complete · s1500 E3–E5 docs ≠ invent Edge Memory GA declared · s1504 local evidence ≠ invent Edge Memory GA / forever product green · s1509 client attach ≠ invent Edge Memory GA / forever green full product dogfood · healthz `tools` / `tool_names` = compile-time lean surface ≠ invent live TUI attach restamp / forever-green `tools=N` · no auto-tag
 
 ## [0.1.0-s1457] — 2026-08-08
 
@@ -215,7 +215,7 @@ dual_write OFF · not Memory GA.
   - TUI-grade OSS process bar: LICENSE, NOTICE, SECURITY, community docs,
     RELEASING, CHANGELOG, OPEN_SOURCE_AUDIT, Makefile, CI, Dependabot, Dockerfile, compose
   - **Repository remains private** until a deliberate visibility flip
-  - dual_write **OFF** · not product Memory GA · private control plane / broker stays out of this tree · no default Qdrant/ONNX requirement
+  - dual_write **OFF** · private control plane / broker stays out of this tree · no default Qdrant/ONNX requirement
 
 [Unreleased]: https://github.com/iome-sh/iomesh-memory-mcp/compare/v0.4.2...HEAD
 [0.4.2]: https://github.com/iome-sh/iomesh-memory-mcp/compare/v0.4.1...v0.4.2

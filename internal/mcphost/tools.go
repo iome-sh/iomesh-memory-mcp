@@ -700,7 +700,7 @@ func (h *Host) handleCompactStatus(_ context.Context, _ *mcp.CallToolRequest, in
 		SemanticCount:   stats.SemanticCount,
 		TotalEntries:    stats.TotalEntries,
 		DualWrite:       "off",
-		NotMemoryGA:     true,
+		NotMemoryGA:     NotMemoryGA(),
 	}
 	if !stats.LastCompaction.IsZero() {
 		out.LastCompaction = stats.LastCompaction.UTC().Format(time.RFC3339)

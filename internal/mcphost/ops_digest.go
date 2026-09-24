@@ -79,7 +79,7 @@ type opsDigestDecisionStub struct {
 }
 
 // opsDigestPattern is unused on the lean host (insufficient-signal is OK).
-// Kept so the JSON key `patterns` is always an array, never invented GA.
+// Kept so the JSON key `patterns` is always an array. Empty is honest.
 type opsDigestPattern struct {
 	ID      string `json:"id,omitempty"`
 	Kind    string `json:"kind,omitempty"`
@@ -203,7 +203,8 @@ func (h *Host) handleOpsDigestExport(_ context.Context, _ *mcp.CallToolRequest, 
 
 func leanOpsDigestHonesty(horizon string) opsDigestHonesty {
 	h := opsDigestHonesty{
-		OpsPulse:         "ga_path",
+		// Digest label only. Not a Connected stamp. Patterns stay empty.
+		OpsPulse:         "cloud_memory_ga",
 		Knowledge:        "beta",
 		Analytical:       "beta",
 		NeverInventGA:    true,
