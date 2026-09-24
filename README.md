@@ -39,8 +39,10 @@ This host does not dual-write to a mesh. Persist embeddings default **off**; has
 
 Pin the latest annotated GitHub Release:
 **[v0.4.2](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.4.2)**.
-`@latest` / floating `main` are not production pins. Default `ServerVersion` is
-`v0.4.2` (GoReleaser ldflags override on tagged assets).
+`@latest` / floating `main` are not production pins. Default `ServerVersion`
+(what `GET /healthz` `version` reports when the image is built without `-X`)
+is the tip module pseudo-version `v0.4.3-0.20260924041108-b6b316535af1`.
+That is not an annotated release. GoReleaser ldflags still override on tagged assets.
 
 ```bash
 # Requires Go 1.27+ (same as github.com/iome-sh/memory and iomesh-tui; see go.mod).
@@ -146,7 +148,7 @@ Loopback may omit the secret. Non-loopback requires `MEMORY_MCP_HTTP_SECRET`
 
 `GET /healthz` 200 means the process is up. `tools` / `tool_names` are compile-time
 registration, not a live MCP `tools/list`. `GET /ready` 200 means the writer palace
-is writable and `wal/pending` is recoverable — not ingest. `not_memory_ga` stays on `/healthz` and `/ready` and is false only when `MEMORY_CLOUD_GA` is exactly `1`. `dual_write` stays `off`. `version` is `ServerVersion` (`v0.4.2` unless a release ldflag overrides it).
+is writable and `wal/pending` is recoverable — not ingest. `not_memory_ga` stays on `/healthz` and `/ready` and is false only when `MEMORY_CLOUD_GA` is exactly `1`. `dual_write` stays `off`. `version` is `ServerVersion` (tip module pseudo-version `v0.4.3-0.20260924041108-b6b316535af1` unless `make build` or a release ldflag overrides it). The annotated install pin stays **v0.4.2**.
 
 ### iomesh-tui
 
@@ -260,8 +262,9 @@ discovery / compile-time registration — they are **not** ingest.
 | `memory_supersede_entity` | `SupersedeEntityFacts` | Close open facts for an entity key |
 | `ops_digest_export` | `ListMemoryWithOptions` window | Local receipts for TUI `/memory digest`; does not ingest |
 
-Server name: **`iomesh-memory-mcp`**. Default version stamp: **`v0.4.2`**
-(overridden by `make build` / GoReleaser ldflags).
+Server name: **`iomesh-memory-mcp`**. Default version stamp:
+**`v0.4.3-0.20260924041108-b6b316535af1`**
+(overridden by `make build` / GoReleaser ldflags). Annotated install pin stays **v0.4.2**.
 
 ## Tenant layout
 

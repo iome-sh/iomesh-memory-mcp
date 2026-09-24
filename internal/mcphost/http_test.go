@@ -54,6 +54,16 @@ func TestHealthzDoesNotLeakTenantOrOrg(t *testing.T) {
 	}
 }
 
+func TestServerVersionIsTipModulePseudoVersion(t *testing.T) {
+	const want = "v0.4.3-0.20260924041108-b6b316535af1"
+	if ServerVersion != want {
+		t.Fatalf("ServerVersion: %q want %q", ServerVersion, want)
+	}
+	if HealthzSnapshot(nil).Version != want {
+		t.Fatalf("healthz version: %q want %q", HealthzSnapshot(nil).Version, want)
+	}
+}
+
 func TestHealthzHandler(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
 	rr := httptest.NewRecorder()
