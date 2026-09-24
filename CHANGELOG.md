@@ -28,6 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Docs:** README install names Go **1.27+** (same as memory + iomesh-tui; see `go.mod`) and prepends `$(go env GOPATH)/bin` to `PATH` so `iomesh-memory-mcp` is found after `go install`. Aligns with TUI + kernel.
 - **Docs:** README for OSS newcomers; companion TUI pin **v1.3.7**.
 
+### Removed
+- **Docs:** internal dogfood and public-flip readiness notes (`docs/EDGE_DOGFOOD.md`, `docs/EDGE_DOGFOOD_EVIDENCE.md`, `docs/PUBLIC_FLIP_READINESS.md`). Living links in README, CONTRIBUTING, SUPPORT, RELEASING, and the OSS audit no longer point at those files. Historical notes in released sections below stay as written.
+
 ## [0.4.2] — 2026-09-12
 
 Kernel pin **v1.5.12** (T1 multi-session retrieve + count assembly). Persist default off · hash never stored.

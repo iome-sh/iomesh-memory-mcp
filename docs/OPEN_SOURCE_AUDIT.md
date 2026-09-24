@@ -7,16 +7,13 @@ Checklist for the OSS **process bar** of **github.com/iome-sh/iomesh-memory-mcp*
 kernel **memory**. Visibility flip is **complete** (public MIT). Re-run before
 each major release.
 
-**Public-flip SSOT:** [docs/PUBLIC_FLIP_READINESS.md](PUBLIC_FLIP_READINESS.md) ·
-`make public-flip-readiness-gate` (offline greps; residual PASS ≠ public flip).
-
 ## Visibility
 
 | Check | Status |
 |-------|--------|
 | Repository visibility | **Public** (MIT · flipped deliberately). Kernel (`github.com/iome-sh/memory`) is public first; this host is public. |
 | Private vulnerability reporting path documented | Pass (SECURITY.md · security@iome.sh · advisory) |
-| public-flip-readiness residual | Pass (docs + offline gate; **not** a visibility flip) |
+| public-flip-readiness residual | Pass (visibility already public; **not** a visibility flip) |
 | residual PASS ≠ public flip | Pass (explicit non-claim) |
 
 ## Security
@@ -62,8 +59,6 @@ each major release.
 | Dependabot (gomod + actions) | Present |
 | Dockerfile + docker-compose | Present |
 | README badges + quick start | Present |
-| Edge dogfood SSOT + offline gate | Present ([EDGE_DOGFOOD.md](EDGE_DOGFOOD.md)) |
-| Public-flip readiness SSOT + offline gate | Present ([PUBLIC_FLIP_READINESS.md](PUBLIC_FLIP_READINESS.md)) |
 
 ## Residual risks
 
@@ -79,7 +74,7 @@ each major release.
 
 ## Maintainer actions (visibility already public)
 
-See [PUBLIC_FLIP_READINESS.md](PUBLIC_FLIP_READINESS.md) post-flip steps. Summary:
+Summary:
 
 1. Kernel `github.com/iome-sh/memory` is **public**  
 2. This host is **public** (flip complete)  

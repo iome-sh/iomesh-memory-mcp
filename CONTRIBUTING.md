@@ -14,10 +14,9 @@ Please treat quality, security, and tests as first-class.
 This repository is **public** (MIT). The kernel (`github.com/iome-sh/memory`) is
 also public. `GOPRIVATE` / a GitHub token are **not** required to clone, test, or
 `go install` this host. Maintainers may still set `GOPRIVATE` for other private
-org modules. Maintainer process residuals
-([docs/OPEN_SOURCE_AUDIT.md](docs/OPEN_SOURCE_AUDIT.md),
-[docs/PUBLIC_FLIP_READINESS.md](docs/PUBLIC_FLIP_READINESS.md)) are **not**
-operator how-tos — the visibility flip is already complete.
+org modules. The maintainer process residual
+([docs/OPEN_SOURCE_AUDIT.md](docs/OPEN_SOURCE_AUDIT.md)) is **not**
+an operator how-to — the visibility flip is already complete.
 
 ## Development setup
 
@@ -41,8 +40,6 @@ make test-race
 make cover
 make vuln
 make ci                         # full local gate (fmt + vet + test + vuln + build)
-make edge-dogfood-gate          # offline M3 residual greps (no docker)
-make public-flip-readiness-gate # offline M4 residual greps (flip complete; not operator how-to)
 make release-snapshot           # local GoReleaser snapshot (needs goreleaser + syft)
 ```
 
@@ -81,7 +78,7 @@ Report vulnerabilities privately — see [SECURITY.md](SECURITY.md). **Do not op
 
 - Bugs / features: use [issue templates](https://github.com/iome-sh/iomesh-memory-mcp/issues/new/choose)  
 - Support channels: [SUPPORT.md](SUPPORT.md)  
-- Docs first: [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) (operator dogfood). Flip/audit/evidence files ([docs/PUBLIC_FLIP_READINESS.md](docs/PUBLIC_FLIP_READINESS.md), [docs/OPEN_SOURCE_AUDIT.md](docs/OPEN_SOURCE_AUDIT.md), [docs/EDGE_DOGFOOD_EVIDENCE.md](docs/EDGE_DOGFOOD_EVIDENCE.md)) are maintainer residuals, not operator how-tos.
+- Maintainer process residual: [docs/OPEN_SOURCE_AUDIT.md](docs/OPEN_SOURCE_AUDIT.md) is not an operator how-to. Operators start at [README.md](README.md) and [SUPPORT.md](SUPPORT.md).
 
 ## Public repository policy
 
@@ -133,13 +130,6 @@ Local parity:
 
 ```bash
 make ci
-```
-
-Offline residuals (optional; not required by `ci-success`):
-
-```bash
-make edge-dogfood-gate
-make public-flip-readiness-gate
 ```
 
 ## Architecture (lean v1)

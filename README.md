@@ -297,13 +297,6 @@ make ci      # + govulncheck · build
 make test
 ```
 
-Optional offline checklists (file greps only; not required for `ci-success`):
-
-```bash
-make edge-dogfood-gate
-make public-flip-readiness-gate
-```
-
 See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 
 ## Documentation
@@ -316,7 +309,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contributor guide |
 | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community standards |
 | [SUPPORT.md](SUPPORT.md) | Issues, security, support scope |
-| [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) | Install matrix and operator dogfood runbook |
 
 ## Related projects
 
@@ -337,5 +329,4 @@ Not operator how-tos. Flip is already public MIT.
 
 | Document | Description |
 |----------|-------------|
-| [docs/PUBLIC_FLIP_READINESS.md](docs/PUBLIC_FLIP_READINESS.md) | Maintainer residual (flip complete) |
 | [docs/OPEN_SOURCE_AUDIT.md](docs/OPEN_SOURCE_AUDIT.md) | Maintainer OSS process residual |
