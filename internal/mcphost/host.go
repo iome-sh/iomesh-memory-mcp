@@ -50,11 +50,9 @@ const (
 //
 //	-X github.com/iome-sh/iomesh-memory-mcp/internal/mcphost.ServerVersion=vX.Y.Z
 //
-// The Docker image builds without that -X, so this default is what GET /healthz
-// version reports. It matches the module pseudo-version of tip
-// b6b316535af1446b192071299cf3eac01574340c. It is not an annotated release.
-// The published install pin stays v0.4.2 until a tag is cut.
-var ServerVersion = "v0.4.3-0.20260924041108-b6b316535af1"
+// Default stays the published install pin. Module pseudo-version identity is
+// not this stamp.
+var ServerVersion = "v0.4.2"
 
 // Config configures the lean edge host.
 type Config struct {
