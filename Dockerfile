@@ -2,7 +2,7 @@
 # Image name: ghcr.io/iome-sh/iomesh-memory-mcp.
 # Does not import private control-plane/broker packages.
 
-FROM golang:1.26-bookworm AS build
+FROM golang:1.27.2-bookworm AS build
 WORKDIR /src
 
 # Public modules (this host + github.com/iome-sh/memory). No GOPRIVATE / token required.
