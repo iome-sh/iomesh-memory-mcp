@@ -8,7 +8,7 @@
 **MCP host for local agent memory** — exposes the [memory](https://github.com/iome-sh/memory) kernel over [Model Context Protocol](https://modelcontextprotocol.io/) (stdio or streamable HTTP).
 
 ```text
-MCP client (e.g. iomesh-tui)
+MCP client (e.g. Cursor, Claude Desktop)
         │
         ▼
 iomesh-memory-mcp     ← this repo (stdio | HTTP)
@@ -43,14 +43,14 @@ Pin the latest annotated GitHub Release:
 `v0.4.2` (GoReleaser ldflags override on tagged assets). Module identity is not the healthz stamp.
 
 ```bash
-# Requires Go 1.27+ (same as github.com/iome-sh/memory and iomesh-tui; see go.mod).
+# Requires Go 1.27+ (same as github.com/iome-sh/memory; see go.mod).
 export PATH="$(go env GOPATH)/bin:${PATH}"
 go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.2
 ```
 
 Requires the Go version in [`go.mod`](go.mod). Put `$(go env GOPATH)/bin` on `PATH`.
 Kernel: [`github.com/iome-sh/memory` **v1.5.12**](https://github.com/iome-sh/memory/releases/tag/v1.5.12).
-Companion TUI: [iomesh-tui **v1.3.7**](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.7).
+Companion TUI: iomesh-tui **v1.3.7** (archived; no longer public).
 
 ### Build from a clone
 
@@ -148,24 +148,9 @@ Loopback may omit the secret. Non-loopback requires `MEMORY_MCP_HTTP_SECRET`
 registration, not a live MCP `tools/list`. `GET /ready` 200 means the writer palace
 is writable and `wal/pending` is recoverable — not ingest. `not_memory_ga` stays on `/healthz` and `/ready` and is false only when `MEMORY_CLOUD_GA` is exactly `1`. `dual_write` stays `off`. `version` is `ServerVersion` (`v0.4.2` unless a release ldflag overrides it).
 
-### iomesh-tui
+### iomesh-tui (archived)
 
-[iomesh-tui](https://github.com/iome-sh/iomesh-tui) TOML:
-
-```toml
-[[mcp.servers]]
-name = "iomesh-memory-mcp"
-command = "/path/to/iomesh-memory-mcp"
-args = ["-palace-root", "/path/to/memory-palaces", "-tenant", "default"]
-```
-
-HTTP (when the client supports a URL transport):
-
-```text
-url = "http://127.0.0.1:8080/mcp"
-```
-
-Cite-both is a TUI session flag (`/memory digest --require-sources mesh,private`).
+iomesh-tui (last release v1.3.7) is archived and no longer public. Use any MCP client as shown in [Cursor / Claude Desktop](#cursor--claude-desktop).
 
 ### Docker Compose
 
@@ -198,11 +183,11 @@ MEMORY_ONNX_MODEL_PATH=/absolute/path/to/model docker compose up --build
 
 This host is **local palace MCP**. dual_write **OFF**. PersistEmbeddings default **off**. Hash embeddings are **never** stored. Catalog is not Connected.
 
-Pins (already in [Install](#install)): MCP **[v0.4.2](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.4.2)** · kernel **[v1.5.12](https://github.com/iome-sh/memory/releases/tag/v1.5.12)** · TUI **[v1.3.7](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.7)**.
+Pins (already in [Install](#install)): MCP **[v0.4.2](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.4.2)** · kernel **[v1.5.12](https://github.com/iome-sh/memory/releases/tag/v1.5.12)** · TUI **v1.3.7** (archived; no longer public).
 
-This list is the rollout (R1 --live ≠ R3 overlay /dashboard PULSE parked).
+Historical reference: the R0–R4 list below was written for the archived iomesh-tui client. Its `iomesh` and `/memory` commands are not provided by this host; this host exposes the MCP tools listed under [MCP tools](#mcp-tools).
 
-- **R0** `iomesh ttfh --unit` — offline smoke (no broker). [`scripts/ttfh-demo.sh`](https://github.com/iome-sh/iomesh-tui/blob/main/scripts/ttfh-demo.sh) in iomesh-tui — unit then optional live
+- **R0** `iomesh ttfh --unit` — offline smoke (no broker). `scripts/ttfh-demo.sh` in iomesh-tui (archived) — unit then optional live
 - **R1** Optional `--live` — **EMPTY** unless decoded messages; never invent **PULSE**; not overlay PULSE
 - **R2** `/memory ingest` — three RCA-shaped turns (local overlay stays **private**). `/memory digest --require-sources mesh,private` — **cite-both or explicit miss**. `/memory patterns` — ops **Beta** · empty ≠ invent · never APPLY. `/memory facts-as-of` — palace
 - **R3** Overlay `/dashboard` PULSE **parked** (required for E-G1)
@@ -213,8 +198,6 @@ This list is the rollout (R1 --live ≠ R3 overlay /dashboard PULSE parked).
 **E-G1** is a **real laptop** run: **PULSE + 3 RCA + cite-both-or-miss** — **not** this README. `--unit` / `--live`, a docs PR, and CI green are not E-G1.
 
 Kernel walk: [memory `docs/TTFH.md`](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md). V1.5 tracker: `docs/planning/ttfh-pattern-search-v15-2026.md` (control-plane planning; not this host).
-
-Department overlay kit (V1.6 Wave 1, not E-G1): TUI `examples/dept-rca/support` (ticket-export + policy + macro, `source_hint=private`). Ingest via `iomesh memory ingest-dir`. ingest-dir tags `dept:` / `scenario:` are private overlay, not Connected. `--department support` is Tag `dept:support`, not Connected. `/memory digest --require-sources mesh,private` → miss is success until pull. facts-as-of ticket created `2026-06-15T14:22:00Z`. Prefix `dept.support.events.*` is routing, not Connected. Kernel companion: memory `examples/dept-rca/support`. dual_write **OFF**.
 
 ## Configuration
 
@@ -258,7 +241,7 @@ discovery / compile-time registration — they are **not** ingest.
 | `memory_facts_as_of` | `ListFactsAsOf` | Facts valid at `as_of`; optional `session_ids` any-of (union with `session_id`; empty = no extra filter); optional `tag` / `department` (`--department support` is Tag `dept:support`, not Connected); does not ingest |
 | `memory_related` | `MultiHopRetrieve` | Entity BFS lite; optional `session_ids` any-of (union with `session_id`; empty = no extra filter); does not ingest |
 | `memory_supersede_entity` | `SupersedeEntityFacts` | Close open facts for an entity key |
-| `ops_digest_export` | `ListMemoryWithOptions` window | Local receipts for TUI `/memory digest`; does not ingest |
+| `ops_digest_export` | `ListMemoryWithOptions` window | Local receipts window for a digest; does not ingest |
 
 Server name: **`iomesh-memory-mcp`**. Default version stamp: **`v0.4.2`**
 (overridden by `make build` / GoReleaser ldflags).
@@ -315,9 +298,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 | Repository | Role |
 |------------|------|
 | [memory](https://github.com/iome-sh/memory) | Go memory kernel library |
-| [iomesh-tui](https://github.com/iome-sh/iomesh-tui) | Agent TUI/CLI (MCP client) |
-| [iomesh-client-sdk-go](https://github.com/iome-sh/iomesh-client-sdk-go) | Official Go client for I/O Mesh |
-| [iomesh-client-sdk-python](https://github.com/iome-sh/iomesh-client-sdk-python) | Official Python client for I/O Mesh (**Beta** / pre-1.0) |
+| iomesh-tui | Agent TUI/CLI (MCP client) · archived; no longer public |
 
 ## License
 
