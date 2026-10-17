@@ -199,8 +199,6 @@ Historical reference: the R0–R4 list below was written for the archived iomesh
 
 Kernel walk: [memory `docs/TTFH.md`](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md). V1.5 tracker: `docs/planning/ttfh-pattern-search-v15-2026.md` (control-plane planning; not this host).
 
-Department overlay kit (historical; archived iomesh-tui): TUI `examples/dept-rca/support` (ticket-export + policy + macro, `source_hint=private`). Ingest via `iomesh memory ingest-dir`. ingest-dir tags `dept:` / `scenario:` are private overlay, not Connected. `--department support` is Tag `dept:support`, not Connected. `/memory digest --require-sources mesh,private` → miss is success until pull. facts-as-of ticket created `2026-06-15T14:22:00Z`. Prefix `dept.support.events.*` is routing, not Connected. Kernel companion: memory `examples/dept-rca/support`. dual_write **OFF**.
-
 ## Configuration
 
 | Flag | Environment | Default | Notes |
