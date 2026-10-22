@@ -17,7 +17,7 @@ minor/major capability set, cut a release in the same delivery loop (or immediat
 |---------|------|----------|
 | New MCP tools / CLI flags / HTTP surface | **minor** within `v0.x` while pre-1.0 | `memory_list`, HTTP path |
 | Breaking tool schemas | **minor** (pre-1.0) or document migration | Rename tool input fields |
-| Docs-only / OSS process bar | usually **no** tag | SECURITY, OPEN_SOURCE_AUDIT, readiness residual |
+| Docs-only / OSS process bar | usually **no** tag | SECURITY, CONTRIBUTING, SUPPORT |
 | Security fix | **patch** | CVE follow-up |
 
 Checklist items that must move with the tag:
