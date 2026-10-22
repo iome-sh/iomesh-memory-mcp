@@ -20,7 +20,7 @@ help:
 	@echo "  release-snapshot            Local GoReleaser snapshot (no publish; needs goreleaser + syft)"
 	@echo "  clean                       Remove bin/ dist/ and coverage artifacts"
 	@echo ""
-	@echo "Honesty: dual_write OFF · not Memory GA · public · residual PASS ≠ live dogfood / public flip"
+	@echo "Public module · local filesystem palace host"
 
 test:
 	go test ./... -count=1

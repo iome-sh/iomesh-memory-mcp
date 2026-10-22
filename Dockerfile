@@ -1,6 +1,6 @@
 # Lean multi-stage build for iomesh-memory-mcp (edge Memory MCP host).
 # Image name: ghcr.io/iome-sh/iomesh-memory-mcp.
-# Does not import private control-plane/broker packages.
+# Builds from public modules only.
 
 FROM golang:1.27.3-bookworm AS build
 WORKDIR /src
@@ -9,8 +9,8 @@ WORKDIR /src
 ENV CGO_ENABLED=0 \
     GOTOOLCHAIN=auto
 
-# Optional leftover only: a build-arg is accepted if an operator points at a
-# private fork. Default builds do not need it. Do not invent a token requirement.
+# Optional: a build-arg is accepted if an operator points at a private fork.
+# Default builds do not need a token.
 ARG GH_TOKEN=
 RUN if [ -n "$GH_TOKEN" ]; then \
       git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"; \

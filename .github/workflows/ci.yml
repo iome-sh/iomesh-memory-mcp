@@ -1,8 +1,6 @@
 # CI for github.com/iome-sh/iomesh-memory-mcp (lean edge Memory MCP host).
 # Required gate: lint · test · build · govulncheck · ci-success.
 # Both this host and github.com/iome-sh/memory are PUBLIC — no GOPRIVATE / PAT required.
-# After kernel public: module fetch is public; PAT optional/removed (historical IOMESH_CI_PAT residual retired).
-# residual PASS ≠ invent Memory GA · dual_write OFF · private control plane / broker stays out of this tree.
 name: ci
 
 on:

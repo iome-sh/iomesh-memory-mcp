@@ -2,11 +2,9 @@
 # Local dry-run: make release-snapshot
 #
 # Host + kernel (github.com/iome-sh/memory) are PUBLIC — no GOPRIVATE / PAT required
-# for release builds (aligned with ci.yml public modules). Historical IOMESH_CI_PAT
-# residual retired after public flip.
+# for release builds (aligned with ci.yml public modules).
 # Keep GoReleaser + Syft SBOM + keyless cosign (id-token: write) intact.
-# residual PASS ≠ invent forever-green signed releases · dual_write OFF ·
-# no auto-tag · tip ≠ invent a successful public tag release already shipped.
+# Tags are pushed by a maintainer; this workflow never creates one.
 name: release
 
 on:
