@@ -8,9 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **GET /ready (ECM-6 S8):** Cloud Memory writer readiness distinct from `GET /healthz`. JSON `status=ok` + HTTP 200 when the palace is writable and `wal/pending` is missing/empty or only regular files (kernel recover-on-open leftover is ok); otherwise `status=not_ready` + HTTP 503. Unauthenticated like `/healthz` (not wrapped by the MCP shared secret). Honesty: `dual_write=off`. `rss_bytes` is `runtime.MemStats.Alloc` (not OS RSS). `cgroup_memory_bytes` is 0 if the cgroup file is unreadable. Not `tools/list`, not ingest. `/healthz` ≠ `/ready`. The shared `not_memory_ga` gate is recorded below.
-- **Cloud TransactionalIngest (ECM-1):** `-cloud` / `MEMORY_CLOUD=1` sets `PalaceConfig.TransactionalIngest=true` on store construction (kernel [memory#173](https://github.com/iome-sh/memory/pull/173) `aab7e297`, `wal/pending` intent log). Local-dev default remains **false** (partial persist). PersistEmbeddings stays default **off**. dual_write OFF · not flock.
-- **Cloud dedicated-tenant mode (ECM-1 S2 + S5):** `-cloud` / `MEMORY_CLOUD=1` requires `MEMORY_TENANT` / `-tenant`, keeps `Host.stores` length 1, and returns **400** on a second tool tenant. PID lock `palace.lock` (pid + start time) under `PALACE_ROOT`; start fails if that pid is alive (crash-safety, not flock). Local-dev keeps the multi-tenant map. Non-loopback HTTP (`-allow-non-loopback`) with empty `-http-secret` / `MEMORY_MCP_HTTP_SECRET` is **fatal before listen** (not a request 401). Loopback without secret still allowed. `/healthz` stays unauthenticated; MCP still wraps with the secret when set. Does not set `MEMORY_PERSIST_EMBEDDINGS`. dual_write OFF.
+- **GET /ready:** Cloud Memory writer readiness distinct from `GET /healthz`. JSON `status=ok` + HTTP 200 when the palace is writable and `wal/pending` is missing/empty or only regular files (kernel recover-on-open leftover is ok); otherwise `status=not_ready` + HTTP 503. Unauthenticated like `/healthz` (not wrapped by the MCP shared secret). Honesty: `dual_write=off`. `rss_bytes` is `runtime.MemStats.Alloc` (not OS RSS). `cgroup_memory_bytes` is 0 if the cgroup file is unreadable. Not `tools/list`, not ingest. `/healthz` ≠ `/ready`. The shared `not_memory_ga` gate is recorded below.
+- **Cloud TransactionalIngest:** `-cloud` / `MEMORY_CLOUD=1` sets `PalaceConfig.TransactionalIngest=true` on store construction (kernel [memory#173](https://github.com/iome-sh/memory/pull/173) `aab7e297`, `wal/pending` intent log). Local-dev default remains **false** (partial persist). PersistEmbeddings stays default **off**. dual_write OFF · not flock.
+- **Cloud dedicated-tenant mode:** `-cloud` / `MEMORY_CLOUD=1` requires `MEMORY_TENANT` / `-tenant`, keeps `Host.stores` length 1, and returns **400** on a second tool tenant. PID lock `palace.lock` (pid + start time) under `PALACE_ROOT`; start fails if that pid is alive (crash-safety, not flock). Local-dev keeps the multi-tenant map. Non-loopback HTTP (`-allow-non-loopback`) with empty `-http-secret` / `MEMORY_MCP_HTTP_SECRET` is **fatal before listen** (not a request 401). Loopback without secret still allowed. `/healthz` stays unauthenticated; MCP still wraps with the secret when set. Does not set `MEMORY_PERSIST_EMBEDDINGS`. dual_write OFF.
 - **`memory_retrieve` / `memory_list` / `memory_facts_as_of` / `memory_related` optional `session_ids`:** kernel any-of (`SearchMemoryOptions.SessionIDs` / `ListMemoryOptions.SessionIDs` / `FactsAsOfOptions.SessionIDs` / `MultiHopOptions.SessionIDs`), union with singular `session_id`. Empty `session_ids` = no extra filter (honest empty, never invent). Hits surface palace `source_hint` / `source_step` (and memory id) so a host footer can cite palace without inventing mesh. PersistEmbeddings default off · hash never stored.
 - **`memory_facts_as_of` / `memory_retrieve` optional `tag` / `department`:** `--department support` is Tag `dept:support`. Empty tag/department = no extra filter (honest empty, never invent). Invalid department ids are ignored. Kernel v1.5.12 has no `FactsAsOfOptions.Tag` / `SearchMemoryOptions.Tag`; host filters with `EntryHasTag` after `ListFactsAsOf` / `SearchMemoryWithOptions` (Limit may underfill). PersistEmbeddings default off · hash never stored.
 - **`memory_ingest_turn` optional `tags`:** TUI ingest-dir can stamp `dept:{id}` / `scenario:{kit}` on private overlay. Mesh-class tags (`mesh`, `source_hint:mesh`, `source:mesh`) are dropped — never invent mesh from overlay tags or session_id; omit `source_hint` keeps kernel private. PersistEmbeddings default off · hash never stored.
@@ -35,10 +35,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.2] — 2026-09-12
 
-Kernel pin **v1.5.12** (T1 multi-session retrieve + count assembly). Persist default off · hash never stored.
+Kernel pin **v1.5.12** (multi-session retrieve + count assembly). Persist default off · hash never stored.
 
 ### Changed
-- **Kernel pin:** `github.com/iome-sh/memory` annotated **`v1.5.11`** → annotated **`v1.5.12`** (T1 `SessionIDs` / `conv:` tags / count-query assembly; LME harness batch retrieve). Library `PersistEmbeddings` still default **off**. Hash never persisted.
+- **Kernel pin:** `github.com/iome-sh/memory` annotated **`v1.5.11`** → annotated **`v1.5.12`** (`SessionIDs` / `conv:` tags / count-query assembly; LME harness batch retrieve). Library `PersistEmbeddings` still default **off**. Hash never persisted.
 - **Operator pin:** install / `ServerVersion` **v0.4.2**. Companion TUI pin remains **v1.3.6** until the TUI pin-bump tag. `@main` is not a production pin.
 - **TTFH walking-skeleton pointer:** README + the edge operator guide point at kernel [`docs/TTFH.md`](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md). Local overlay **private**; never invent mesh. Cite-both is a TUI session flag; a miss is success.
 - **Public-docs / operator copy:** maintainer-only notes marked; lean host comments stay technical (local FS, hash/ONNX, no Qdrant). The optional tools table lists `memory_extract_facts` (HITL; not a PalaceStore write-gate).
@@ -94,7 +94,7 @@ Kernel v1.5.10 + optional ingest class.
 
 ## [0.2.0] — 2026-09-10
 
-P0 host polish (TTFH): ingest DLP, HTTP loopback + optional secret, memory
+Host polish (TTFH): ingest DLP, HTTP loopback + optional secret, memory
 `v1.5.8` pin. dual_write OFF · Catalog ≠ Connected.
 
 ### Added
