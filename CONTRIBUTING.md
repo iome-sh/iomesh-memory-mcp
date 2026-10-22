@@ -14,9 +14,7 @@ Please treat quality, security, and tests as first-class.
 This repository is **public** (MIT). The kernel (`github.com/iome-sh/memory`) is
 also public. `GOPRIVATE` / a GitHub token are **not** required to clone, test, or
 `go install` this host. Maintainers may still set `GOPRIVATE` for other private
-org modules. The maintainer process residual
-([docs/OPEN_SOURCE_AUDIT.md](docs/OPEN_SOURCE_AUDIT.md)) is **not**
-an operator how-to — the visibility flip is already complete.
+org modules.
 
 ## Development setup
 
@@ -78,7 +76,7 @@ Report vulnerabilities privately — see [SECURITY.md](SECURITY.md). **Do not op
 
 - Bugs / features: use [issue templates](https://github.com/iome-sh/iomesh-memory-mcp/issues/new/choose)  
 - Support channels: [SUPPORT.md](SUPPORT.md)  
-- Maintainer process residual: [docs/OPEN_SOURCE_AUDIT.md](docs/OPEN_SOURCE_AUDIT.md) is not an operator how-to. Operators start at [README.md](README.md) and [SUPPORT.md](SUPPORT.md).
+- Operators start at [README.md](README.md) and [SUPPORT.md](SUPPORT.md).
 
 ## Public repository policy
 

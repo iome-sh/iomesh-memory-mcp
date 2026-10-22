@@ -303,11 +303,3 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 ## License
 
 [MIT](LICENSE) · [NOTICE](NOTICE)
-
-## Maintainer notes
-
-Not operator how-tos. Flip is already public MIT.
-
-| Document | Description |
-|----------|-------------|
-| [docs/OPEN_SOURCE_AUDIT.md](docs/OPEN_SOURCE_AUDIT.md) | Maintainer OSS process residual |
