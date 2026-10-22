@@ -38,7 +38,7 @@ type ingestTurnOutput struct {
 	MemoryID  string `json:"memory_id"`
 	Tier      int    `json:"tier"`
 	Tenant    string `json:"tenant"`
-	Audited   bool   `json:"audited"` // always false in lean v1 (dual_write OFF)
+	Audited   bool   `json:"audited"` // always false in lean v1
 	DualWrite string `json:"dual_write"`
 }
 
@@ -558,7 +558,7 @@ type searchSemanticInput struct {
 type searchSemanticOutput struct {
 	Facts  []memoryHit `json:"facts"`
 	Tenant string      `json:"tenant"`
-	// Residual notes honesty: full product semantic stack residual; kernel hybrid on TierSemantic.
+	// Note states the scope: kernel hybrid search on TierSemantic, not a full semantic stack.
 	Note string `json:"note"`
 }
 

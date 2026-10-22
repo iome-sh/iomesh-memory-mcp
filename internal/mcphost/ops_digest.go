@@ -37,7 +37,7 @@ type opsDigestExportInput struct {
 	AsOf    string `json:"as_of,omitempty" jsonschema:"optional RFC3339 upper bound (default now UTC)"`
 }
 
-// opsDigestHonesty is residual-honest framing on the lean digest export.
+// opsDigestHonesty is the honesty framing on the lean digest export.
 // Field names match TUI MemoryOpsDigestResult.Honesty.
 type opsDigestHonesty struct {
 	OpsPulse         string `json:"ops_pulse"`
@@ -278,7 +278,7 @@ func digestReceiptProvenance(e palace.MemoryEntry) opsDigestReceiptProvenance {
 
 // classifyDigestTag maps one tag/provenance token the same way TUI
 // ClassifyDigestSourceHint treats source_hint (mesh vs private only).
-// Catalog/grant/external are not emitted by the lean host.
+// Other source classes are not emitted by the lean host.
 func classifyDigestTag(raw string) string {
 	h := strings.ToLower(strings.TrimSpace(raw))
 	h = strings.ReplaceAll(h, "-", "_")

@@ -20,7 +20,7 @@ const readyProbePrefix = ".ready-probe-"
 
 // ReadyResponse is the JSON body for GET /ready (Cloud Memory writer readiness).
 // Distinct from HealthzResponse: process-up (/healthz) is not writer-ready (/ready).
-// dual_write OFF · not tools/list · not ingest · not Fetch.
+// Not tools/list · not ingest · not Fetch.
 type ReadyResponse struct {
 	Status      string `json:"status"` // "ok" | "not_ready"
 	Service     string `json:"service"`
