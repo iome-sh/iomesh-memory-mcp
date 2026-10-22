@@ -120,10 +120,25 @@ jobs:
       - name: Run govulncheck
         run: govulncheck ./...
 
+  docker-build:
+    name: docker-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # Local build only: no registry login, no secrets, nothing is pushed.
+      - name: docker build
+        run: docker build -t iomesh-memory-mcp:ci .
+
+      - name: Image runs (-h exits 0)
+        run: docker run --rm iomesh-memory-mcp:ci -h
+
   ci-success:
     name: ci-success
     if: always()
-    needs: [lint, test, build, govulncheck]
+    needs: [lint, test, build, govulncheck, docker-build]
     runs-on: ubuntu-latest
     steps:
       - name: Check job results
@@ -132,11 +147,13 @@ jobs:
           echo "test=${{ needs.test.result }}"
           echo "build=${{ needs.build.result }}"
           echo "govulncheck=${{ needs.govulncheck.result }}"
+          echo "docker-build=${{ needs.docker-build.result }}"
           for r in \
             "${{ needs.lint.result }}" \
             "${{ needs.test.result }}" \
             "${{ needs.build.result }}" \
-            "${{ needs.govulncheck.result }}"
+            "${{ needs.govulncheck.result }}" \
+            "${{ needs.docker-build.result }}"
           do
             if [ "$r" != "success" ]; then
               echo "::error::CI gate failed (got $r)"
