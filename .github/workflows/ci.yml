@@ -100,6 +100,9 @@ jobs:
           go build ./...
           go build -o /tmp/iomesh-memory-mcp ./cmd/iomesh-memory-mcp
 
+      - name: Boot smoke (/healthz, /ready)
+        run: scripts/ci_boot_smoke.sh /tmp/iomesh-memory-mcp
+
   govulncheck:
     name: govulncheck
     runs-on: ubuntu-latest
