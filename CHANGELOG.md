@@ -158,7 +158,7 @@ dual_write OFF.
 ### Changed
 - **Public OSS:** host + kernel are public — CI drops `GOPRIVATE` / private PAT requirement; pin `github.com/iome-sh/memory` to public main tip; docs visibility honesty.
 - **Release signing matrix:** [`.github/workflows/release.yml`](.github/workflows/release.yml) drops `GOPRIVATE` + the private module PAT; public `github.com/iome-sh/memory` fetch only (aligned with public CI). GoReleaser + Syft SBOM + keyless cosign kept.
-- **Edge docs:** [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) updated for public modules; drops the stale private-module install note.
+- **Edge docs:** the edge operator guide (since removed) updated for public modules; drops the stale private-module install note.
 
 ### Added
 
@@ -166,15 +166,15 @@ dual_write OFF.
 
 
 - **TUI client attach evidence:**
-  - [docs/EDGE_DOGFOOD_EVIDENCE.md](docs/EDGE_DOGFOOD_EVIDENCE.md) — stamp **2026-08-09T06:23:34Z** · MCP tip `f46afe2` · healthz ok on `:18081` · TUI `iomesh mcp --connect` → **connected=1** **tools=6** (`memory_ingest_turn`, `memory_retrieve`, `memory_search_semantic`, `memory_list`, `memory_compact_status`, `memory_facts_as_of`)
-  - [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) — peer link to client attach evidence
+  - the edge evidence log (since removed) — stamp **2026-08-09T06:23:34Z** · MCP tip `f46afe2` · healthz ok on `:18081` · TUI `iomesh mcp --connect` → **connected=1** **tools=6** (`memory_ingest_turn`, `memory_retrieve`, `memory_search_semantic`, `memory_list`, `memory_compact_status`, `memory_facts_as_of`)
+  - the edge operator guide (since removed) — peer link to client attach evidence
   - Honesty: residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ invent forever product green · dual_write OFF · **attach + tools/list ≠ invent Edge Memory GA** · **attach + tools/list ≠ invent forever green full product dogfood**
 - **Local evidence:**
-  - [docs/EDGE_DOGFOOD_EVIDENCE.md](docs/EDGE_DOGFOOD_EVIDENCE.md) — contemporaneous stamp **2026-08-09T06:06:22Z** · tip `f46afe2` · unit `go test ./internal/mcphost/` ok · HTTP `/healthz` ok (`dual_write=off`, `not_memory_ga=true`)
-  - [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) — link to the evidence log
+  - the edge evidence log (since removed) — contemporaneous stamp **2026-08-09T06:06:22Z** · tip `f46afe2` · unit `go test ./internal/mcphost/` ok · HTTP `/healthz` ok (`dual_write=off`, `not_memory_ga=true`)
+  - the edge operator guide (since removed) — link to the evidence log
   - Honesty: residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ invent forever product green · dual_write OFF · unit ≠ full MCP client attach · healthz ≠ MCP JSON-RPC tool round-trip
 - **Install matrix · operator runbook · support/version policy:**
-  - [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) — install matrix (stdio · HTTP · Docker Compose · TUI attach) · **operator runbook** (build → stdio health → `memory_ingest_turn` → `memory_retrieve` → `memory_list` → `memory_facts_as_of` → `memory_compact_status` → optional HTTP /healthz)
+  - the edge operator guide (since removed) — install matrix (stdio · HTTP · Docker Compose · TUI attach) · **operator runbook** (build → stdio health → `memory_ingest_turn` → `memory_retrieve` → `memory_list` → `memory_facts_as_of` → `memory_compact_status` → optional HTTP /healthz)
   - [RELEASING.md](RELEASING.md) — **Support / version policy**: latest GitHub Release tag · GoReleaser + SBOM + keyless cosign · pin for production · snapshot ≠ production release
   - [SUPPORT.md](SUPPORT.md) — issues · security · related memory kernel · version policy pointers
   - README Documentation table pointers only
@@ -192,12 +192,12 @@ dual_write OFF.
   - `ServerVersion` → linkable `var` default `v0.1.0` (ldflags from GoReleaser / make build)
   - **Does not** flip visibility · invent GHCR publish green · Memory GA · dual_write ON · full platform sidecar parity · live dogfood green
 - **Public release readiness notes** (offline):
-  - [docs/PUBLIC_FLIP_READINESS.md](docs/PUBLIC_FLIP_READINESS.md) — flip order (kernel first, then this host) · pre-flight · post-flip steps
+  - the public release readiness notes (since removed) — flip order (kernel first, then this host) · pre-flight · post-flip steps
   - `scripts/public_flip_readiness_gate.sh` + `make public-flip-readiness-gate` — offline file greps only (no visibility flip / docker / gcloud)
   - OPEN_SOURCE_AUDIT + README stamp; EDGE_DOGFOOD pointer
   - **Does not** flip visibility · invent GHCR publish green · Memory GA · dual_write ON · full platform sidecar parity · live dogfood green
 - **Edge host operator checklist** (offline):
-  - [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) — operator checklist (build · stdio · HTTP healthz/`/mcp` · local compose · tool honesty)
+  - the edge operator guide (since removed) — operator checklist (build · stdio · HTTP healthz/`/mcp` · local compose · tool honesty)
   - `scripts/edge_dogfood_gate.sh` + `make edge-dogfood-gate` — offline file greps only (no docker daemon / server / gcloud)
   - README section; `make help`; compose comments for local image honesty
   - **Does not** invent live dogfood green · public flip · GHCR publish · Memory GA · dual_write ON · full platform sidecar parity
