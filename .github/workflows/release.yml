@@ -25,9 +25,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write
-  # Keyless cosign (Fulcio) via GitHub OIDC — no long-lived COSIGN_* secrets.
-  id-token: write
+  contents: read
 
 env:
   GOTOOLCHAIN: auto
@@ -37,6 +35,11 @@ jobs:
     name: goreleaser
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      # Publish the GitHub release and its assets.
+      contents: write
+      # Keyless cosign (Fulcio) via GitHub OIDC — no long-lived COSIGN_* secrets.
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v7
