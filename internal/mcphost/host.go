@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 // Package mcphost is the lean edge Memory MCP host.
 //
 // Architecture (Option A M2 / s1457):
