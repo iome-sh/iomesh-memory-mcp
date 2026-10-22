@@ -50,7 +50,6 @@ go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.2
 
 Requires the Go version in [`go.mod`](go.mod). Put `$(go env GOPATH)/bin` on `PATH`.
 Kernel: [`github.com/iome-sh/memory` **v1.5.12**](https://github.com/iome-sh/memory/releases/tag/v1.5.12).
-Companion TUI: iomesh-tui **v1.3.7** (archived; no longer public).
 
 ### Build from a clone
 
@@ -148,10 +147,6 @@ Loopback may omit the secret. Non-loopback requires `MEMORY_MCP_HTTP_SECRET`
 registration, not a live MCP `tools/list`. `GET /ready` 200 means the writer palace
 is writable and `wal/pending` is recoverable — not ingest. `not_memory_ga` stays on `/healthz` and `/ready` and is false only when `MEMORY_CLOUD_GA` is exactly `1`. `dual_write` stays `off`. `version` is `ServerVersion` (`v0.4.2` unless a release ldflag overrides it).
 
-### iomesh-tui (archived)
-
-iomesh-tui (last release v1.3.7) is archived and no longer public. Use any MCP client as shown in [Cursor / Claude Desktop](#cursor--claude-desktop).
-
 ### Docker Compose
 
 ```bash
@@ -181,23 +176,13 @@ MEMORY_ONNX_MODEL_PATH=/absolute/path/to/model docker compose up --build
 
 ## TTFH (V1.5 host path)
 
-This host is **local palace MCP**. dual_write **OFF**. PersistEmbeddings default **off**. Hash embeddings are **never** stored. Catalog is not Connected.
+This host is a **local palace MCP** server. Persisted embeddings are **off** by default and hash embeddings are **never** stored.
 
-Pins (already in [Install](#install)): MCP **[v0.4.2](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.4.2)** · kernel **[v1.5.12](https://github.com/iome-sh/memory/releases/tag/v1.5.12)** · TUI **v1.3.7** (archived; no longer public).
+Pins (already in [Install](#install)): MCP **[v0.4.2](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.4.2)** · kernel **[v1.5.12](https://github.com/iome-sh/memory/releases/tag/v1.5.12)**.
 
-Historical reference: the R0–R4 list below was written for the archived iomesh-tui client. Its `iomesh` and `/memory` commands are not provided by this host; this host exposes the MCP tools listed under [MCP tools](#mcp-tools).
+**Tools used:** `memory_ingest_turn`, `ops_digest_export`, `memory_facts_as_of`, `memory_retrieve`. Point any MCP client at this host as shown in [Cursor / Claude Desktop](#cursor--claude-desktop).
 
-- **R0** `iomesh ttfh --unit` — offline smoke (no broker). `scripts/ttfh-demo.sh` in iomesh-tui (archived) — unit then optional live
-- **R1** Optional `--live` — **EMPTY** unless decoded messages; never invent **PULSE**; not overlay PULSE
-- **R2** `/memory ingest` — three RCA-shaped turns (local overlay stays **private**). `/memory digest --require-sources mesh,private` — **cite-both or explicit miss**. `/memory patterns` — ops **Beta** · empty ≠ invent · never APPLY. `/memory facts-as-of` — palace
-- **R3** Overlay `/dashboard` PULSE **parked** (required for E-G1)
-- **R4** After PULSE: `iomesh memory pull` — dual_write **OFF** · pull ≠ Connected
-
-**Tools used:** `memory_ingest_turn`, `ops_digest_export`, `memory_patterns_list` / `memory_anomalies_list` (suggestive, never APPLY), `memory_facts_as_of`, `memory_retrieve`. This lean host registers ingest / digest / facts-as-of / retrieve; patterns/anomalies apply **when present** (not on this host’s `tools/list`).
-
-**E-G1** is a **real laptop** run: **PULSE + 3 RCA + cite-both-or-miss** — **not** this README. `--unit` / `--live`, a docs PR, and CI green are not E-G1.
-
-Kernel walk: [memory `docs/TTFH.md`](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md). V1.5 tracker: `docs/planning/ttfh-pattern-search-v15-2026.md` (control-plane planning; not this host).
+Kernel walk: [memory `docs/TTFH.md`](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md).
 
 ## Configuration
 
@@ -298,7 +283,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 | Repository | Role |
 |------------|------|
 | [memory](https://github.com/iome-sh/memory) | Go memory kernel library |
-| iomesh-tui | Agent TUI/CLI (MCP client) · archived; no longer public |
 
 ## License
 
