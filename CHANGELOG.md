@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Docs:** README TTFH numbered walk is the R0–R4 map (this list **is** the rollout; R1 ≠ R3; overlay `/dashboard` PULSE parked; dual_write OFF). Not E-G1.
 - **Docs:** README TTFH V1.5 phased rollout sentence (R0–R4 host attached, not a gate; overlay `/dashboard` PULSE parked; dual_write OFF). Not E-G1.
 - **Docs:** README TTFH V1.5 host walk (not E-G1). dual_write OFF · PersistEmbeddings default off · hash never stored.
-- **Docs:** README install names Go **1.27+** (same as memory + iomesh-tui; see `go.mod`) and prepends `$(go env GOPATH)/bin` to `PATH` so `iomesh-memory-mcp` is found after `go install`. Aligns with TUI + kernel.
+- **Docs:** README install names Go **1.27+** (same as memory; see `go.mod`) and prepends `$(go env GOPATH)/bin` to `PATH` so `iomesh-memory-mcp` is found after `go install`. Aligns with the kernel.
 - **Docs:** README for OSS newcomers; companion TUI pin **v1.3.7**.
 
 ### Removed
@@ -55,7 +55,7 @@ Kernel pin **v1.5.11** + optional ONNX `PersistEmbeddings` (#72). dual_write OFF
 
 ## [0.4.0] — 2026-09-12
 
-Optional HITL `memory_extract_facts` (#70). Compatible with [iomesh-tui **v1.3.4+**](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.4) `/memory extract`. dual_write OFF · catalog ≠ connected.
+Optional HITL `memory_extract_facts` (#70).
 
 ### Added
 - **`memory_extract_facts` (#70):** optional HITL extract-after-persist. Required `tenant` (omit fail-closes) and `memory_id` (parent turn already on disk); optional `facts` (HITL strings; else `palace.ExtractAtomicFacts` on a copy). Writes `turn_fact` children (`TierSemantic`, inherited tags, `provenance.source_step=mcp_memory_extract_facts`, inherited `source_hint` / private — never invent mesh, `parent_ids=[parent]`, `valid_from` stamp). Does **not** rewrite or delete the parent. Not called from `handleIngestTurn` (ingest already writes caller `ExtractedFacts` / kernel auto-extract children; extract is not a PalaceStore write-gate and never fails `memory_ingest_turn`). dual_write always off. Structural extract, not NLP. Advertised in `leanToolNames` / `GET /healthz` `tool_names`. Ingest schema unchanged; TUI **v1.3.4** ignores unknown tools.
@@ -66,15 +66,15 @@ Optional HITL `memory_extract_facts` (#70). Compatible with [iomesh-tui **v1.3.4
 
 ## [0.3.2] — 2026-09-10
 
-Cite-both companion to [iomesh-tui v1.3.3](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.3). dual_write OFF · catalog ≠ connected.
+Cite-both digest receipt fixes.
 
 ### Fixed
-- **`ops_digest_export` receipt selection (#66 / #67):** default receipts no longer drop in-window `source_hint=mesh` turns when newer private RCA fills newest-`event_time` (TUI sticky limit). Scan the window past the receipt cap, merge `source_hint:mesh` tagged entries, and prefer source-class diversity (mesh+private) when both exist — never invent mesh. Payload keeps honest `since`/`as_of` and adds `receipt_selection` (scan/class flags). Companion primary UX is [iomesh-tui#419](https://github.com/iome-sh/iomesh-tui/issues/419).
+- **`ops_digest_export` receipt selection (#66 / #67):** default receipts no longer drop in-window `source_hint=mesh` turns when newer private RCA fills newest-`event_time` (TUI sticky limit). Scan the window past the receipt cap, merge `source_hint:mesh` tagged entries, and prefer source-class diversity (mesh+private) when both exist — never invent mesh. Payload keeps honest `since`/`as_of` and adds `receipt_selection` (scan/class flags).
 - **`ops_digest_export` receipt class wire (#66 residual / #68):** receipts still labeled `source_hint=palace_timeline` after #67, so TUI `ClassifyDigestReceipt` could not see palace mesh. Each receipt now copies palace `provenance.source_hint` / `source_step` and tags (`source_hint:mesh` / TemporalTags included), and sets receipt `source_hint=mesh` when the entry is mesh-sourced — never invented. Sticky default limit still keeps ≥1 mesh + ≥1 private when both exist in-window.
 
 ## [0.3.1] — 2026-09-10
 
-Kernel v1.5.10 + optional ingest class. Compatible with TUI durable pull `source_hint=mesh` (iomesh-tui#418). dual_write OFF · catalog ≠ connected.
+Kernel v1.5.10 + optional ingest class.
 
 ### Added
 - **`memory_ingest_turn` optional `source_hint` (#63 / #65):** callers (durable mesh pull) can pass `mesh`, `private`, or a kernel-classifiable alias. When non-empty, the host stamps `provenance.source_hint` and tag `source_hint:<hint>` before `IngestTurn` (`FormatSourceHintTag`). When omitted or blank, kernel `ensurePrivateIngestSource` keeps today’s private default — session ids such as `dept.*.events.*` do not invent mesh. `ops_digest_export` honors a stamped mesh/private class on the entry (never invents mesh).
@@ -131,7 +131,7 @@ dual_write OFF.
 
 ### Fixed
 - **Docs close-token (#38):** README and EDGE_DOGFOOD no longer use the internal workflow close-token. Operator language is human product close / still-open product gates. `GET /healthz` 200 is not Connected. dual_write OFF.
-- **EDGE_DOGFOOD rates (#36):** drop priced Memory Ops Pack / ~$119 / ~$88 language. Mesh stays optional for pull/retain without a SKU. Gate forbids those needles. dual_write OFF.
+- **EDGE_DOGFOOD wording (#36):** remove commercial wording. Mesh stays optional for pull/retain.
 - **Invalid RFC3339 time fields (#26):** `parseOptionalTime` / `parseTimeOrNow` now return an error on non-empty unparsable input instead of treating it as unset or now. `memory_ingest_turn`, `memory_retrieve`, `memory_list`, `memory_facts_as_of`, `memory_related`, and `memory_supersede_entity` fail closed. Empty still means now / omitted. dual_write OFF.
 - **Post-flip honesty (#30):** CONTRIBUTING / Makefile help / compose no longer say the repo is private. Docker and `.env.example` no longer present a GitHub token as required (kernel + host are public). Compose publishes `127.0.0.1:8080` for local dogfood. `make tidy` matches public CI (no `GOPRIVATE`). dual_write OFF.
 
@@ -148,7 +148,7 @@ dual_write OFF.
 
 ### Added
 - **Host tests (kernel pin lock):** same-tenant session isolation on `memory_retrieve` / `memory_list` (shared token must not leak across `session_id`; empty session unfiltered). After ingest, `memory_facts_as_of` sees fact children when atoms extract (kernel #48 `valid_from`). `memory_list` after `New()` on the same palace root still lists the needle (kernel #47 durable snapshot; hash). Tests-only · go-sdk not bumped · dual_write OFF.
-- **`/healthz` tools surface:** residual-honest `tools` (count) and `tool_names` for the compile-time lean registered tools. Not a live MCP `tools/list` stamp. Historical s1509 TUI attach `tools=6` at tip `f46afe2` stays contemporaneous evidence — do not restamp as live forever-green. dual_write OFF.
+- **`/healthz` tools surface:** residual-honest `tools` (count) and `tool_names` for the compile-time lean registered tools. Not a live MCP `tools/list` stamp.
 - **`memory_list` hyphen needle rank 1:** after hyphen ingest, `handleList{Query: needle, Limit: 5}` must hit rank 1. `TestRetrieveHashKeepsHyphenNeedle` kept.
 - **`memory_write` (#20):** durable fact ingest via kernel `Write`. Optional `entity_key` stamps `entity:` tags and defaults to `WriteAndSupersede`. `dual_write` OFF · `audited=false`.
 - **`memory_related` / `memory_supersede_entity` (#17):** lean maps to kernel `MultiHopRetrieve` and `SupersedeEntityFacts`. Hash `SeedQuery` does not inject `QueryVec`. HITL stays at the client. dual_write OFF.
@@ -157,60 +157,60 @@ dual_write OFF.
 
 ### Changed
 - **Public OSS:** host + kernel are public — CI drops `GOPRIVATE` / private PAT requirement; pin `github.com/iome-sh/memory` to public main tip; docs visibility honesty.
-- **s1492 / M5 signing matrix residual:** [`.github/workflows/release.yml`](.github/workflows/release.yml) drops `GOPRIVATE` + private module PAT residual; public `github.com/iome-sh/memory` fetch only (aligned with public CI). GoReleaser + Syft SBOM + keyless cosign kept.
-- **s1500 / Edge Memory GA candidacy (E3–E5 docs):** [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) aligns honesty with Edge Memory GA candidacy (local-primary; residual PASS ≠ invent Edge Memory GA declared; dual_write OFF); public modules; retires stale private-module install residual.
+- **M5 signing matrix residual:** [`.github/workflows/release.yml`](.github/workflows/release.yml) drops `GOPRIVATE` + private module PAT residual; public `github.com/iome-sh/memory` fetch only (aligned with public CI). GoReleaser + Syft SBOM + keyless cosign kept.
+- **Edge docs (E3–E5):** [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) updated for public modules; retires stale private-module install residual.
 
 ### Added
 
-- **Optional ONNX embeddings (s1525)** — when `MEMORY_ONNX_MODEL_PATH` is set, the lean host constructs Palace stores with kernel ONNX embeddings (else hash). `/healthz` reports `embeddings` (`hash`|`onnx`) and `qdrant=off` (Qdrant not wired into lean search). dual_write OFF · optional path ≠ invent platform GPU palace.
+- **Optional ONNX embeddings** — when `MEMORY_ONNX_MODEL_PATH` is set, the lean host constructs Palace stores with kernel ONNX embeddings (else hash). `/healthz` reports `embeddings` (`hash`|`onnx`) and `qdrant=off` (Qdrant not wired into lean search).
 
 
-- **s1509 / E4 TUI client attach residual dogfood evidence** (public binary host residual-honest):
-  - [docs/EDGE_DOGFOOD_EVIDENCE.md](docs/EDGE_DOGFOOD_EVIDENCE.md) — stamp **2026-08-09T06:23:34Z** · MCP tip `f46afe2` · TUI tip `6b3958a` · healthz ok on `:18081` (`dual_write=off`, `not_memory_ga=true`) · TUI `iomesh mcp --connect` → **connected=1** **tools=6** (`memory_ingest_turn`, `memory_retrieve`, `memory_search_semantic`, `memory_list`, `memory_compact_status`, `memory_facts_as_of`)
-  - [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) — E4 section peer link to s1509 client attach evidence
+- **E4 TUI client attach residual dogfood evidence** (public binary host residual-honest):
+  - [docs/EDGE_DOGFOOD_EVIDENCE.md](docs/EDGE_DOGFOOD_EVIDENCE.md) — stamp **2026-08-09T06:23:34Z** · MCP tip `f46afe2` · healthz ok on `:18081` · TUI `iomesh mcp --connect` → **connected=1** **tools=6** (`memory_ingest_turn`, `memory_retrieve`, `memory_search_semantic`, `memory_list`, `memory_compact_status`, `memory_facts_as_of`)
+  - [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) — E4 section peer link to client attach evidence
   - Honesty: residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ invent forever product green · dual_write OFF · **attach + tools/list ≠ invent Edge Memory GA** · **attach + tools/list ≠ invent forever green full product dogfood**
-- **s1504 / E4 local residual dogfood evidence** (public binary host residual-honest):
+- **E4 local residual dogfood evidence** (public binary host residual-honest):
   - [docs/EDGE_DOGFOOD_EVIDENCE.md](docs/EDGE_DOGFOOD_EVIDENCE.md) — contemporaneous stamp **2026-08-09T06:06:22Z** · tip `f46afe2` · unit `go test ./internal/mcphost/` ok · HTTP `/healthz` ok (`dual_write=off`, `not_memory_ga=true`)
   - [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) — E4 section + continuum link to evidence log
   - Honesty: residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ invent forever product green · dual_write OFF · unit ≠ full MCP client attach · healthz ≠ MCP JSON-RPC tool round-trip
-- **s1500 / E3 install matrix · E4 operator dogfood runbook · E5 support/version policy** (public binary host residual-honest):
+- **E3 install matrix · E4 operator dogfood runbook · E5 support/version policy** (public binary host residual-honest):
   - [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) — E3 install matrix (stdio · HTTP · Docker Compose · TUI attach) · **E4 operator runbook** (build → stdio health → `memory_ingest_turn` → `memory_retrieve` → `memory_list` → `memory_facts_as_of` → `memory_compact_status` → optional HTTP /healthz)
   - [RELEASING.md](RELEASING.md) — **Support / version policy (E5)**: latest GitHub Release tag · GoReleaser + SBOM + keyless cosign · pin for production · snapshot ≠ production release
   - [SUPPORT.md](SUPPORT.md) — issues · security · related memory kernel · E5 pointers
   - README Documentation table pointers only
   - Honesty: residual PASS ≠ live dogfood green · residual PASS ≠ invent forever-green signed releases · residual PASS ≠ invent Edge Memory GA · dual_write OFF
-- **s1492 / Option A M5 signing/matrix tip** (public binary host residual-honest):
+- **Option A M5 signing/matrix tip** (public binary host residual-honest):
   - [RELEASING.md](RELEASING.md) **M5 signing / matrix** section: tag → release.yml → GoReleaser → archives + checksums + SBOM + cosign keyless · `make release-snapshot` dry-run
   - Honesty: tip ≠ invent successful public tag release shipped · residual PASS ≠ invent forever-green signed releases · dual_write OFF · naming **iomesh-memory-mcp** · kernel public prerequisite met · no auto-tag · private control plane / broker stays out of this tree
   - Gate needles lightly updated for public release-path honesty
-- **s1474 / final private→public flip audit closeout (TUI binary parity)** (still private · residual PASS ≠ public flip):
+- **final private→public flip audit closeout (TUI binary parity)** (still private · residual PASS ≠ public flip):
   - CONTRIBUTING expanded to TUI parity: development setup (GOPRIVATE residual), coding standards, tests, security-sensitive changes, Issues, **Public repository policy**, PR + CI table + branch protection `ci-success`, MIT contribution clause
   - [`.goreleaser.yaml`](.goreleaser.yaml) + [`.github/workflows/release.yml`](.github/workflows/release.yml) (multi-arch · SBOM · keyless cosign) · `make release-snapshot`
   - RELEASING expanded (GoReleaser · cosign verify · kernel public prerequisite · honesty locks)
-  - OPEN_SOURCE_AUDIT + PUBLIC_FLIP_READINESS final s1474 checklist/verdict
+  - OPEN_SOURCE_AUDIT + PUBLIC_FLIP_READINESS final checklist/verdict
   - ISSUE_TEMPLATE docs contact_link · CI comments (IOMESH_CI_PAT while kernel private; optional after)
   - `ServerVersion` → linkable `var` default `v0.1.0` (ldflags from GoReleaser / make build)
   - **Does not** flip visibility · invent GHCR publish green · Memory GA · dual_write ON · full platform sidecar parity · live dogfood green
-- **s1468 / Option A M4 public-flip readiness** (residual-honest offline SSOT):
+- **Option A M4 public-flip readiness** (residual-honest offline SSOT):
   - [docs/PUBLIC_FLIP_READINESS.md](docs/PUBLIC_FLIP_READINESS.md) — flip order (kernel first, then this host) · pre-flight · post-flip residual steps
   - `scripts/public_flip_readiness_gate.sh` + `make public-flip-readiness-gate` — offline file greps only (no visibility flip / docker / gcloud)
-  - OPEN_SOURCE_AUDIT + README continuum stamp **s1468**; EDGE_DOGFOOD M4 pointer
+  - OPEN_SOURCE_AUDIT + README stamp; EDGE_DOGFOOD M4 pointer
   - **Does not** flip visibility · invent GHCR publish green · Memory GA · dual_write ON · full platform sidecar parity · live dogfood green
-- **s1462 / Option A M3 edge dogfood** (residual-honest offline SSOT):
+- **Option A M3 edge dogfood** (residual-honest offline SSOT):
   - [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) — operator checklist (build · stdio · HTTP healthz/`/mcp` · local compose · tool honesty)
   - `scripts/edge_dogfood_gate.sh` + `make edge-dogfood-gate` — offline file greps only (no docker daemon / server / gcloud)
-  - README M3 section + continuum stamp **s1462**; `make help`; compose comments for local image honesty
+  - README M3 section; `make help`; compose comments for local image honesty
   - **Does not** invent live dogfood green · public flip · GHCR publish · Memory GA · dual_write ON · full platform sidecar parity
 
 ### Honesty
 
-- dual_write **OFF** · host + kernel public · residual PASS ≠ live dogfood / invent forever-green signed releases · residual PASS ≠ invent Edge Memory GA · readiness ≠ invent flip · tip ≠ invent tag release shipped · does not import private control-plane/broker packages · naming **iomesh-memory-mcp** · kernel public prerequisite met · M5 packaging residual (s1492) ≠ invent M5 complete · s1500 E3–E5 docs ≠ invent Edge Memory GA declared · s1504 local evidence ≠ invent Edge Memory GA / forever product green · s1509 client attach ≠ invent Edge Memory GA / forever green full product dogfood · healthz `tools` / `tool_names` = compile-time lean surface ≠ invent live TUI attach restamp / forever-green `tools=N` · no auto-tag
+- Host and kernel are public · naming **iomesh-memory-mcp** · healthz `tools` / `tool_names` = compile-time lean surface · no auto-tag
 
-## [0.1.0-s1457] — 2026-08-08
+## Pre-release — 2026-08-08
 
 ### Added
 
-- Lean edge MCP host scaffold (**s1457** / Option A M2):
+- Lean edge MCP host scaffold:
   - Binary **`iomesh-memory-mcp`**
   - stdio + streamable HTTP (`MEMORY_MCP_HTTP_ADDR`) with `GET /healthz`
   - Tools: `memory_ingest_turn`, `memory_retrieve`, `memory_search_semantic`,
