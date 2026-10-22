@@ -17,10 +17,10 @@
 - [ ] `make check` or `make ci` (or CI green: lint, test, build, govulncheck)
 - [ ] New/changed behavior covered by unit tests
 - [ ] No secrets / palace data in tree
-- [ ] Honesty locks intact (edge host · dual_write OFF · Catalog ≠ Connected · `not_memory_ga` key retained) if docs touch product narrative
+- [ ] Docs describe only what the host implements
 
 ## Security checklist (if touching FS roots, HTTP, transports)
 
 - [ ] Residual risks still accurate in `SECURITY.md`
-- [ ] No private control plane / broker / dual_write default ON
+- [ ] No new network listeners or remote writes enabled by default
 - [ ] Errors/logs do not dump user palace contents in tests

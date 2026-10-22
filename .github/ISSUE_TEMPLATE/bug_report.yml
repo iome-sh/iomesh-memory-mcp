@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         Thanks for filing a bug. Redact palace contents, API keys, and private paths.
-        This host is **not product Memory GA** and **dual_write is OFF** by default.
+        This is a local filesystem palace MCP host.
   - type: textarea
     id: what
     attributes:
@@ -26,7 +26,7 @@ body:
     id: version
     attributes:
       label: Version / commit
-      placeholder: v0.1.0-s1457 or git SHA
+      placeholder: v0.4.2 or git SHA
   - type: textarea
     id: logs
     attributes:

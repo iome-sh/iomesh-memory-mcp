@@ -6,8 +6,8 @@ body:
   - type: markdown
     attributes:
       value: |
-        Keep scope lean: FS Palace MCP host. Do **not** invent product Memory GA,
-        default dual_write, or private control-plane / broker features here.
+        Keep scope lean: a local filesystem palace MCP host. Hosted or
+        multi-service features are out of scope for this repository.
   - type: textarea
     id: problem
     attributes:
@@ -27,5 +27,5 @@ body:
     attributes:
       label: Honesty
       options:
-        - label: This does not claim Memory GA or default dual_write ON
+        - label: This proposal stays within the local filesystem palace host scope
           required: true

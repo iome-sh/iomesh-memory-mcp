@@ -43,7 +43,7 @@ type HealthzResponse struct {
 	// Tools is the compile-time lean registered count (not a live MCP tools/list stamp).
 	Tools int `json:"tools"`
 	// ToolNames is the compile-time lean registered names. Residual-honest; optional
-	// for probes that only need the count. s1509 TUI attach tools=6 is historical.
+	// for probes that only need the count.
 	ToolNames []string `json:"tool_names,omitempty"`
 }
 

@@ -1,4 +1,4 @@
-// Command iomesh-memory-mcp is the lean edge Memory MCP host (Option A M2 / s1457).
+// Command iomesh-memory-mcp is the lean edge Memory MCP host.
 //
 // Default transport is stdio; set -http-addr (or MEMORY_MCP_HTTP_ADDR) for
 // streamable HTTP. :port binds 127.0.0.1 unless -allow-non-loopback.
