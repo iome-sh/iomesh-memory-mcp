@@ -123,7 +123,7 @@ type HTTPConfig struct {
 // RunHTTP serves streamable MCP at Path with GET /healthz, GET /ready, and graceful shutdown.
 // Listen address is normalized (loopback default). Optional shared secret wraps MCP only
 // (does not wrap /healthz or /ready). Non-loopback bind with an empty SharedSecret is
-// fatal before ListenAndServe (S5).
+// fatal before ListenAndServe.
 func RunHTTP(ctx context.Context, sdk *mcp.Server, cfg HTTPConfig) error {
 	addr, err := NormalizeListenAddr(cfg.Addr, cfg.AllowNonLoopback)
 	if err != nil {

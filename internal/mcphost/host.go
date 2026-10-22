@@ -65,7 +65,7 @@ type Config struct {
 	// Tests may set "onnx" without a model to exercise PalaceConfig.PersistEmbeddings.
 	// Qdrant is NOT wired into lean host search (kernel VectorStore residual only).
 	EmbeddingMode string
-	// Cloud is dedicated-tenant mode (ECM-1 S2): MEMORY_TENANT required, Host.stores
+	// Cloud is dedicated-tenant mode: MEMORY_TENANT required, Host.stores
 	// length stays 1, a second tool tenant is 400, palace.lock PID lock under PalaceRoot,
 	// PalaceConfig.TransactionalIngest=true (wal/pending intent log; not flock).
 	// Flag -cloud / MEMORY_CLOUD=1. Local-dev (false) keeps map[string]*PalaceStore
