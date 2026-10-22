@@ -11,9 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **GET /ready (ECM-6 S8):** Cloud Memory writer readiness distinct from `GET /healthz`. JSON `status=ok` + HTTP 200 when the palace is writable and `wal/pending` is missing/empty or only regular files (kernel recover-on-open leftover is ok); otherwise `status=not_ready` + HTTP 503. Unauthenticated like `/healthz` (not wrapped by the MCP shared secret). Honesty: `dual_write=off`. `rss_bytes` is `runtime.MemStats.Alloc` (not OS RSS). `cgroup_memory_bytes` is 0 if the cgroup file is unreadable. Not `tools/list`, not ingest. `/healthz` ≠ `/ready`. The shared `not_memory_ga` gate is recorded below.
 - **Cloud TransactionalIngest (ECM-1):** `-cloud` / `MEMORY_CLOUD=1` sets `PalaceConfig.TransactionalIngest=true` on store construction (kernel [memory#173](https://github.com/iome-sh/memory/pull/173) `aab7e297`, `wal/pending` intent log). Local-dev default remains **false** (partial persist). PersistEmbeddings stays default **off**. dual_write OFF · not flock.
 - **Cloud dedicated-tenant mode (ECM-1 S2 + S5):** `-cloud` / `MEMORY_CLOUD=1` requires `MEMORY_TENANT` / `-tenant`, keeps `Host.stores` length 1, and returns **400** on a second tool tenant. PID lock `palace.lock` (pid + start time) under `PALACE_ROOT`; start fails if that pid is alive (crash-safety, not flock). Local-dev keeps the multi-tenant map. Non-loopback HTTP (`-allow-non-loopback`) with empty `-http-secret` / `MEMORY_MCP_HTTP_SECRET` is **fatal before listen** (not a request 401). Loopback without secret still allowed. `/healthz` stays unauthenticated; MCP still wraps with the secret when set. Does not set `MEMORY_PERSIST_EMBEDDINGS`. dual_write OFF.
-- **`memory_retrieve` / `memory_list` / `memory_facts_as_of` / `memory_related` optional `session_ids`:** kernel T1 any-of (`SearchMemoryOptions.SessionIDs` / `ListMemoryOptions.SessionIDs` / `FactsAsOfOptions.SessionIDs` / `MultiHopOptions.SessionIDs`), union with singular `session_id`. Empty `session_ids` = no extra filter (honest empty, never invent). Hits surface palace `source_hint` / `source_step` (and memory id) so a host footer can cite palace without inventing mesh. dual_write OFF · PersistEmbeddings default off · hash never stored. Not E-G1 · V2 ≠ E-G1.
-- **`memory_facts_as_of` / `memory_retrieve` optional `tag` / `department`:** `--department support` is Tag `dept:support`, not Connected. Empty tag/department = no extra filter (honest empty, never invent). Invalid department ids are ignored. Kernel v1.5.12 has no `FactsAsOfOptions.Tag` / `SearchMemoryOptions.Tag`; host filters with `EntryHasTag` after `ListFactsAsOf` / `SearchMemoryWithOptions` (Limit may underfill). dual_write OFF · PersistEmbeddings default off · hash never stored. Not E-G1.
-- **`memory_ingest_turn` optional `tags`:** TUI ingest-dir can stamp `dept:{id}` / `scenario:{kit}` on private overlay. Mesh-class tags (`mesh`, `source_hint:mesh`, `source:mesh`) are dropped — never invent mesh from overlay tags or session_id; omit `source_hint` keeps kernel private. dual_write OFF · PersistEmbeddings default off · hash never stored. Not E-G1.
+- **`memory_retrieve` / `memory_list` / `memory_facts_as_of` / `memory_related` optional `session_ids`:** kernel any-of (`SearchMemoryOptions.SessionIDs` / `ListMemoryOptions.SessionIDs` / `FactsAsOfOptions.SessionIDs` / `MultiHopOptions.SessionIDs`), union with singular `session_id`. Empty `session_ids` = no extra filter (honest empty, never invent). Hits surface palace `source_hint` / `source_step` (and memory id) so a host footer can cite palace without inventing mesh. PersistEmbeddings default off · hash never stored.
+- **`memory_facts_as_of` / `memory_retrieve` optional `tag` / `department`:** `--department support` is Tag `dept:support`. Empty tag/department = no extra filter (honest empty, never invent). Invalid department ids are ignored. Kernel v1.5.12 has no `FactsAsOfOptions.Tag` / `SearchMemoryOptions.Tag`; host filters with `EntryHasTag` after `ListFactsAsOf` / `SearchMemoryWithOptions` (Limit may underfill). PersistEmbeddings default off · hash never stored.
+- **`memory_ingest_turn` optional `tags`:** TUI ingest-dir can stamp `dept:{id}` / `scenario:{kit}` on private overlay. Mesh-class tags (`mesh`, `source_hint:mesh`, `source:mesh`) are dropped — never invent mesh from overlay tags or session_id; omit `source_hint` keeps kernel private. PersistEmbeddings default off · hash never stored.
 
 ### Changed
 - **`not_memory_ga` wire (#97):** `GET /healthz` and `GET /ready` keep the JSON key (ready probes refuse a missing field). Both use `NotMemoryGA`: false only when `MEMORY_CLOUD_GA` is exactly `1`; unset, empty, `true`, `yes`, `0`, and padded values stay true. Boot logs print that same value. `memory_compact_status` uses it too. `ops_digest_export` honesty `ops_pulse` is `cloud_memory_ga` (digest label, not a Connected stamp). `dual_write` stays `off`. `ServerVersion` / healthz `version` stays `v0.4.2`. Module identity is not the healthz stamp. Kernel pin unchanged (`ab1ca566`). go-sdk stays `v1.8.0`.
@@ -22,11 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **govulncheck / Go toolchain (#101):** minimum Go is now **1.27.2** (`go.mod`). Bump indirect `golang.org/x/net` `v0.57.0` → `v0.60.0`. Fixes five HTTP/2 advisories that affect both `golang.org/x/net` (fixed in v0.60.0) and stdlib `net/http` (fixed in Go 1.27.2): GO-2026-6617 (HPACK encoder race), GO-2026-6612 (double flow-control refund), GO-2026-6611 (CPU from repeated initial window changes), GO-2026-6610 (malformed framing headers accepted by the transport), GO-2026-6603 (memory exhaustion via Trailer headers). Transitive: `golang.org/x/crypto` `v0.56.0` → `v0.57.0`, `golang.org/x/sync` `v0.22.0` → `v0.23.0`, `golang.org/x/sys` `v0.47.0` → `v0.48.0`, `golang.org/x/text` `v0.41.0` → `v0.42.0`; `golang.org/x/term` `v0.45.0` → `v0.46.0` (go.sum only). CI and release workflows read the version from `go.mod`. Kernel pin and go-sdk `v1.8.0` unchanged.
 - **Docker:** build stage base `golang:1.26-bookworm` → `golang:1.27.2-bookworm`, so image builds no longer fetch a newer toolchain via `GOTOOLCHAIN=auto`.
 - **govulncheck:** bump indirect `google.golang.org/grpc` `v1.82.1` → `v1.83.1` (GO-2026-6348 HTTP/2 DATA-frame OOM). Host still does not speak gRPC; pin is transitive via the kernel/qdrant stack.
-- **Docs:** README TTFH V1.6 support dept RCA overlay kit pointer (Wave 1, not E-G1; TUI + kernel `examples/dept-rca/support`; mesh miss is success until pull; dual_write OFF).
-- **Docs:** README TTFH one walk — drop duplicate **Phases** line; R0–R4 list is the rollout (R1 `--live` ≠ R3 overlay `/dashboard` PULSE parked; dual_write OFF). Not E-G1.
-- **Docs:** README TTFH numbered walk is the R0–R4 map (this list **is** the rollout; R1 ≠ R3; overlay `/dashboard` PULSE parked; dual_write OFF). Not E-G1.
-- **Docs:** README TTFH V1.5 phased rollout sentence (R0–R4 host attached, not a gate; overlay `/dashboard` PULSE parked; dual_write OFF). Not E-G1.
-- **Docs:** README TTFH V1.5 host walk (not E-G1). dual_write OFF · PersistEmbeddings default off · hash never stored.
+- **Docs:** README TTFH pointer to the support department RCA overlay kit (TUI + kernel `examples/dept-rca/support`; mesh miss is success until pull).
+- **Docs:** README TTFH single walk — drop the duplicate **Phases** line; the numbered list is the rollout (`--live` is not the overlay `/dashboard`, which stays parked).
+- **Docs:** README TTFH numbered walk is the rollout map (overlay `/dashboard` stays parked).
+- **Docs:** README TTFH phased rollout sentence (host attached, not a gate; overlay `/dashboard` stays parked).
+- **Docs:** README TTFH host walk. PersistEmbeddings default off · hash never stored.
 - **Docs:** README install names Go **1.27+** (same as memory; see `go.mod`) and prepends `$(go env GOPATH)/bin` to `PATH` so `iomesh-memory-mcp` is found after `go install`. Aligns with the kernel.
 - **Docs:** README for OSS newcomers; companion TUI pin **v1.3.7**.
 
@@ -157,7 +157,7 @@ dual_write OFF.
 
 ### Changed
 - **Public OSS:** host + kernel are public — CI drops `GOPRIVATE` / private PAT requirement; pin `github.com/iome-sh/memory` to public main tip; docs visibility honesty.
-- **M5 signing matrix residual:** [`.github/workflows/release.yml`](.github/workflows/release.yml) drops `GOPRIVATE` + private module PAT residual; public `github.com/iome-sh/memory` fetch only (aligned with public CI). GoReleaser + Syft SBOM + keyless cosign kept.
+- **Release signing matrix:** [`.github/workflows/release.yml`](.github/workflows/release.yml) drops `GOPRIVATE` + the private module PAT; public `github.com/iome-sh/memory` fetch only (aligned with public CI). GoReleaser + Syft SBOM + keyless cosign kept.
 - **Edge docs (E3–E5):** [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) updated for public modules; retires stale private-module install residual.
 
 ### Added
@@ -179,8 +179,8 @@ dual_write OFF.
   - [SUPPORT.md](SUPPORT.md) — issues · security · related memory kernel · E5 pointers
   - README Documentation table pointers only
   - Honesty: residual PASS ≠ live dogfood green · residual PASS ≠ invent forever-green signed releases · residual PASS ≠ invent Edge Memory GA · dual_write OFF
-- **Option A M5 signing/matrix tip** (public binary host residual-honest):
-  - [RELEASING.md](RELEASING.md) **M5 signing / matrix** section: tag → release.yml → GoReleaser → archives + checksums + SBOM + cosign keyless · `make release-snapshot` dry-run
+- **Release signing matrix:**
+  - [RELEASING.md](RELEASING.md) signing / matrix section: tag → release.yml → GoReleaser → archives + checksums + SBOM + cosign keyless · `make release-snapshot` dry-run
   - Honesty: tip ≠ invent successful public tag release shipped · residual PASS ≠ invent forever-green signed releases · dual_write OFF · naming **iomesh-memory-mcp** · kernel public prerequisite met · no auto-tag · private control plane / broker stays out of this tree
   - Gate needles lightly updated for public release-path honesty
 - **final private→public flip audit closeout (TUI binary parity)** (still private · residual PASS ≠ public flip):
@@ -191,15 +191,15 @@ dual_write OFF.
   - ISSUE_TEMPLATE docs contact_link · CI comments (IOMESH_CI_PAT while kernel private; optional after)
   - `ServerVersion` → linkable `var` default `v0.1.0` (ldflags from GoReleaser / make build)
   - **Does not** flip visibility · invent GHCR publish green · Memory GA · dual_write ON · full platform sidecar parity · live dogfood green
-- **Option A M4 public-flip readiness** (residual-honest offline SSOT):
+- **Public release readiness notes** (offline):
   - [docs/PUBLIC_FLIP_READINESS.md](docs/PUBLIC_FLIP_READINESS.md) — flip order (kernel first, then this host) · pre-flight · post-flip residual steps
   - `scripts/public_flip_readiness_gate.sh` + `make public-flip-readiness-gate` — offline file greps only (no visibility flip / docker / gcloud)
-  - OPEN_SOURCE_AUDIT + README stamp; EDGE_DOGFOOD M4 pointer
+  - OPEN_SOURCE_AUDIT + README stamp; EDGE_DOGFOOD pointer
   - **Does not** flip visibility · invent GHCR publish green · Memory GA · dual_write ON · full platform sidecar parity · live dogfood green
-- **Option A M3 edge dogfood** (residual-honest offline SSOT):
+- **Edge host operator checklist** (offline):
   - [docs/EDGE_DOGFOOD.md](docs/EDGE_DOGFOOD.md) — operator checklist (build · stdio · HTTP healthz/`/mcp` · local compose · tool honesty)
   - `scripts/edge_dogfood_gate.sh` + `make edge-dogfood-gate` — offline file greps only (no docker daemon / server / gcloud)
-  - README M3 section; `make help`; compose comments for local image honesty
+  - README section; `make help`; compose comments for local image honesty
   - **Does not** invent live dogfood green · public flip · GHCR publish · Memory GA · dual_write ON · full platform sidecar parity
 
 ### Honesty
