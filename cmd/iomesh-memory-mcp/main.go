@@ -6,7 +6,7 @@
 // /healthz and /ready stay open (/healthz ≠ /ready). -cloud / MEMORY_CLOUD=1 is dedicated-tenant (one store, PID lock,
 // PalaceConfig.TransactionalIngest=true). Local-dev leaves TransactionalIngest false.
 // -preflight prints the same JSON as GET /healthz and exits
-// (no listen, no stdio MCP). Does not import private control-plane/broker packages.
+// (no listen, no stdio MCP).
 package main
 
 import (
@@ -117,12 +117,12 @@ func run(args []string, stdout io.Writer) error {
 	return nil
 }
 
-// defaultPalaceRoot prefers local dogfood path; containers often bind /data.
+// defaultPalaceRoot prefers a local path; containers often bind /data.
 func defaultPalaceRoot() string {
 	if _, err := os.Stat("/data"); err == nil {
 		return "/data/memory-palaces"
 	}
-	// Local relative path for clone/dogfood without root.
+	// Local relative path for a fresh clone without root.
 	wd, err := os.Getwd()
 	if err != nil {
 		return "./data/memory-palaces"

@@ -37,7 +37,7 @@ type HealthzResponse struct {
 	// PersistEmbeddings: "on" only when embeddings are onnx and MEMORY_PERSIST_EMBEDDINGS is on.
 	// Default "off". Hash never persists (kernel #45). Not Qdrant/usearch.
 	PersistEmbeddings string `json:"persist_embeddings"`
-	// Qdrant: lean host does not wire VectorStore into search — always "off" here (kernel residual only).
+	// Qdrant: lean host does not wire VectorStore into search — always "off" here (kernel only).
 	Qdrant  string `json:"qdrant"`
 	Version string `json:"version,omitempty"`
 	// Tools is the compile-time lean registered count (not a live MCP tools/list stamp).
@@ -47,10 +47,10 @@ type HealthzResponse struct {
 	ToolNames []string `json:"tool_names,omitempty"`
 }
 
-// HealthzSnapshot is the residual-honest GET /healthz body used by HTTP and CLI -preflight.
+// HealthzSnapshot is the GET /healthz body used by HTTP and CLI -preflight.
 // Live EmbeddingMode when host != nil; nil → env snapshot (same as HealthzHandler).
 // tools / tool_names are compile-time registration — not a live tools/list stamp, not ingest.
-// dual_write OFF · qdrant off · persist_embeddings default off · no hosted palace probe.
+// qdrant off · persist_embeddings default off · no hosted palace probe.
 // not_memory_ga is NotMemoryGA (same gate as /ready). Honesty fields are unchanged
 // by DLP / optional HTTP secret (no dlp/auth fields).
 func HealthzSnapshot(host *Host) HealthzResponse {

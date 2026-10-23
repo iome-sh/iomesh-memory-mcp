@@ -5,9 +5,8 @@
 //	stdio or streamable HTTP → MCP tools → github.com/iome-sh/memory PalaceStore
 //
 // Honesty locks:
-//   - dual_write OFF (no private control-plane audit publish in lean v1)
-//   - does not import private control-plane/broker packages
-//   - path-based multi-tenant FS isolation only (same process residual)
+//   - no audit publish in lean v1
+//   - path-based multi-tenant FS isolation only (one process)
 //   - cloud mode (Config.Cloud / MEMORY_CLOUD): one store, required tenant, PID lock,
 //     PalaceConfig.TransactionalIngest=true (local-dev default false / partial persist)
 package mcphost
@@ -61,9 +60,9 @@ type Config struct {
 	// DefaultTenant is the process -tenant / MEMORY_TENANT label (validated if set).
 	// Tool and HTTP calls must pass tenant; omitted tenant does not fall back here.
 	DefaultTenant string
-	// EmbeddingMode is residual-honest: "hash" (default) or "onnx" when MEMORY_ONNX_MODEL_PATH loads.
+	// EmbeddingMode reports the real backend: "hash" (default) or "onnx" when MEMORY_ONNX_MODEL_PATH loads.
 	// Tests may set "onnx" without a model to exercise PalaceConfig.PersistEmbeddings.
-	// Qdrant is NOT wired into lean host search (kernel VectorStore residual only).
+	// Qdrant is NOT wired into lean host search (kernel VectorStore only).
 	EmbeddingMode string
 	// Cloud is dedicated-tenant mode (ECM-1 S2): MEMORY_TENANT required, Host.stores
 	// length stays 1, a second tool tenant is 400, palace.lock PID lock under PalaceRoot,
@@ -92,7 +91,7 @@ type Host struct {
 // Optional advanced embeddings: set MEMORY_ONNX_MODEL_PATH to an ONNX model dir/file
 // (see github.com/iome-sh/memory README). Empty path keeps hash embeddings (default).
 // MEMORY_PERSIST_EMBEDDINGS is opt-in and ONNX-only (default off). Hash never persists.
-// dual_write OFF · Qdrant not required / not wired for lean search.
+// Qdrant not required / not wired for lean search.
 func New(cfg Config) (*Host, error) {
 	root := strings.TrimSpace(cfg.PalaceRoot)
 	if root == "" {
@@ -200,7 +199,7 @@ func (h *Host) StoreCount() int {
 	return len(h.stores)
 }
 
-// EmbeddingMode returns residual-honest embedding backend for healthz / operators.
+// EmbeddingMode returns the actual embedding backend for healthz / operators.
 func (h *Host) EmbeddingMode() string {
 	if h == nil || strings.TrimSpace(h.cfg.EmbeddingMode) == "" {
 		return "hash"
@@ -326,7 +325,7 @@ func (h *Host) TenantDir(tenant string) string {
 }
 
 // Store returns (creating if needed) the PalaceStore for tenant.
-// Multi-tenant isolation is path-based only; this is one process residual-honest.
+// Multi-tenant isolation is path-based only, within one process.
 // Invalid tenant (not a single path segment) returns nil.
 // Embeddings: hash default · optional ONNX when host was constructed with MEMORY_ONNX_MODEL_PATH.
 // PersistEmbeddings is ONNX-only and opt-in via MEMORY_PERSIST_EMBEDDINGS (default off).
