@@ -1,4 +1,4 @@
-.PHONY: all build test test-race cover vet fmt fmt-check tidy vuln check ci clean help edge-dogfood-gate public-flip-readiness-gate release-snapshot
+.PHONY: all build test test-race cover vet fmt fmt-check tidy vuln check ci clean help release-snapshot
 
 COVER ?= coverage.out
 BIN ?= bin/iomesh-memory-mcp
@@ -15,8 +15,6 @@ help:
 	@echo "  vet / fmt / fmt-check / tidy / vuln"
 	@echo "  check                       fmt-check · vet · test"
 	@echo "  ci                          fmt-check · vet · test · vuln · build (GH Actions mirror)"
-	@echo "  edge-dogfood-gate           Offline M3 residual greps (no docker daemon)"
-	@echo "  public-flip-readiness-gate  Offline M4 readiness greps (no visibility flip)"
 	@echo "  release-snapshot            Local GoReleaser snapshot (no publish; needs goreleaser + syft)"
 	@echo "  clean                       Remove bin/ dist/ and coverage artifacts"
 	@echo ""
@@ -53,15 +51,6 @@ build:
 	go build ./...
 	go build -trimpath -ldflags "$(LDFLAGS)" -o $(BIN) ./cmd/iomesh-memory-mcp
 
-# Offline M3 edge dogfood residual (file greps only — no docker / server / gcloud).
-edge-dogfood-gate:
-	@bash scripts/edge_dogfood_gate.sh
-
-# Offline M4 public-flip readiness residual (file greps only — no visibility flip / docker / gcloud).
-# residual PASS ≠ public flip · host + kernel public · residual ≠ invent Memory GA.
-public-flip-readiness-gate:
-	@bash scripts/public_flip_readiness_gate.sh
-
 # Local GoReleaser snapshot (no GitHub publish). Requires goreleaser (+ syft for SBOM).
 # Skips cosign (no OIDC on laptop). Tag releases sign checksums via GitHub Actions.
 #   go install github.com/goreleaser/goreleaser/v2@latest
@@ -71,7 +60,6 @@ release-snapshot:
 check: fmt-check vet test
 
 # Mirrors GitHub Actions required gate (fmt + vet + test + vuln + build).
-# Does not require edge-dogfood-gate or public-flip-readiness-gate (optional offline residuals).
 ci: fmt-check vet test vuln build
 
 clean:

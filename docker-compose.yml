@@ -1,7 +1,7 @@
-# M3 edge dogfood (s1462) — local HTTP dogfood only.
+# Local HTTP run only.
 # public · binary/image name iomesh-memory-mcp
 # image: iomesh-memory-mcp:local  (compose PASS ≠ public registry)
-# Optional path: docker compose up --build — NOT required for make edge-dogfood-gate (offline greps).
+# Optional path: docker compose up --build.
 # residual PASS ≠ live dogfood · ≠ public flip · ≠ full platform sidecar parity · does not import private control-plane/broker packages
 # Kernel + host are public — no GitHub token required for the default build.
 services:
