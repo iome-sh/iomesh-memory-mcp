@@ -74,8 +74,7 @@ via GitHub OIDC / Fulcio (`id-token: write`). No long-lived `COSIGN_*` secrets.
 Snapshot / `workflow_dispatch` runs use `--skip=sign`.
 
 **Public modules:** host + kernel (`github.com/iome-sh/memory`) are public. Release CI
-fetches modules without `GOPRIVATE` / private PAT (aligned with `ci.yml` after public flip).
-Historical `IOMESH_CI_PAT` residual is retired for release builds.
+fetches modules without `GOPRIVATE` / private PAT (aligned with `ci.yml`).
 
 Verify:
 
@@ -88,7 +87,7 @@ cosign verify-blob \
   checksums.txt
 ```
 
-## M5 signing / matrix (post-public residual)
+## Signing and release matrix
 
 Packaging and verify docs for the public binary host **`iomesh-memory-mcp`**.
 `v0.1.0` is the first public tag. A published tag is not a standing signed-release
@@ -119,7 +118,7 @@ make release-snapshot   # → dist/ multi-arch; no GitHub publish
 Snapshot CI path: Actions **workflow_dispatch** with `snapshot: true` →
 `goreleaser release --snapshot --clean --skip=sign`.
 
-### M5 non-claims
+### Non-claims
 
 - A published tag is not a standing signed-release SLA
 - Product binary name **`iomesh-memory-mcp`**
@@ -131,7 +130,7 @@ Snapshot CI path: Actions **workflow_dispatch** with `snapshot: true` →
 
 Product edge image (when published — **optional**, do not treat local compose as green):
 **`ghcr.io/iome-sh/iomesh-memory-mcp`**  
-Local dogfood image remains `iomesh-memory-mcp:local` (compose PASS ≠ public registry).
+The local image is `iomesh-memory-mcp:local` (a local compose build is not a published image).
 
 ## Versioning policy
 
@@ -156,7 +155,7 @@ Kernel semver remains owned by [`github.com/iome-sh/memory`](https://github.com/
 
 ### Release packaging matrix (pointer)
 
-Full stage table: [M5 signing / matrix](#m5-signing--matrix-post-public-residual) above.
+Full stage table: [Signing and release matrix](#signing-and-release-matrix) above.
 
 | Piece | Truth |
 |-------|--------|
@@ -191,7 +190,7 @@ See also [SUPPORT.md](SUPPORT.md) (issues · security · scope).
 | GitHub Release assets | GoReleaser on each deliberate `v*` tag (primary binary packaging) |
 | `go install …@vX.Y.Z` | Works with a Go toolchain; public kernel — no GOPRIVATE |
 | CI `build` job | linux/amd64 smoke on main / PR |
-| GHCR image | Optional deliberate publish — not claimed green from readiness residual |
+| GHCR image | Optional deliberate publish — not claimed as published |
 
 ```bash
 make build                 # → bin/iomesh-memory-mcp (VERSION= from git describe)
@@ -202,5 +201,5 @@ go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@vX.Y.Z
 - Product name **iomesh-memory-mcp**  
 - Kernel public prerequisite **met** · host is public  
 - A published tag is not a standing signed-release SLA  
-- M5 packaging residual present ≠ M5 complete · release packaging present ≠ GHCR green  
+- Release packaging in the repo does not mean a GHCR image is published  
 - **no auto-tag**  
