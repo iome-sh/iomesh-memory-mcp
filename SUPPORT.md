@@ -9,6 +9,7 @@
 | Kernel API / library | [github.com/iome-sh/memory](https://github.com/iome-sh/memory) (related **memory kernel**) |
 | Release / version policy | [RELEASING.md](RELEASING.md) — **Support / version policy** |
 | Contributing | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Other questions | **support@iome.sh** |
 
 ## What we maintain
 
