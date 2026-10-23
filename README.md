@@ -269,8 +269,8 @@ enforces that in-process: `Host.stores` length 1, required `MEMORY_TENANT`,
 `PalaceConfig.TransactionalIngest=true` (`wal/pending` intent log; not flock).
 Local-dev leaves TransactionalIngest **false** (partial persist). HTTP defaults
 to loopback; non-loopback requires `MEMORY_MCP_HTTP_SECRET` before listen;
-`/healthz` and `/ready` stay open (`/healthz` ≠ `/ready`). Unauthenticated HTTP remains the residual on loopback
-when the secret is unset. dual_write OFF · PersistEmbeddings default off.
+`/healthz` and `/ready` stay open (`/healthz` ≠ `/ready`). Unauthenticated HTTP remains possible on loopback
+when the secret is unset. PersistEmbeddings default off.
 
 ## Development
 

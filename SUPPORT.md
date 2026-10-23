@@ -25,7 +25,7 @@ Packaging: GoReleaser + SBOM + keyless cosign on tag releases (see [RELEASING.md
 
 - Hosted Palace / multitenant cloud Memory onboarding  
 - Cloud Memory install SLAs (this host is local-primary edge)  
-- Mesh control-plane / broker support via this binary  
+- Support for other I/O Mesh services via this binary  
 - Default mesh audit publish from this host  
 
 ## Before filing an issue
