@@ -1,6 +1,6 @@
 // Package mcphost is the lean edge Memory MCP host.
 //
-// Architecture (Option A M2 / s1457):
+// Architecture:
 //
 //	stdio or streamable HTTP → MCP tools → github.com/iome-sh/memory PalaceStore
 //
@@ -65,7 +65,7 @@ type Config struct {
 	// Tests may set "onnx" without a model to exercise PalaceConfig.PersistEmbeddings.
 	// Qdrant is NOT wired into lean host search (kernel VectorStore residual only).
 	EmbeddingMode string
-	// Cloud is dedicated-tenant mode (ECM-1 S2): MEMORY_TENANT required, Host.stores
+	// Cloud is dedicated-tenant mode: MEMORY_TENANT required, Host.stores
 	// length stays 1, a second tool tenant is 400, palace.lock PID lock under PalaceRoot,
 	// PalaceConfig.TransactionalIngest=true (wal/pending intent log; not flock).
 	// Flag -cloud / MEMORY_CLOUD=1. Local-dev (false) keeps map[string]*PalaceStore
@@ -399,8 +399,7 @@ func (h *Host) resolveStore(tenant string) (string, *palace.PalaceStore, error) 
 
 // leanToolNames is the compile-time registered lean MCP surface.
 // GET /healthz reports tools + tool_names from this list. That is residual-honest
-// registration, not a live MCP tools/list client stamp (s1509 tools=6 at tip
-// f46afe2 stays contemporaneous attach evidence — do not restamp as live forever-green).
+// registration, not a live MCP tools/list client stamp.
 var leanToolNames = []string{
 	"memory_ingest_turn",
 	"memory_extract_facts",

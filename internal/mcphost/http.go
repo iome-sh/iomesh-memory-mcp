@@ -43,7 +43,7 @@ type HealthzResponse struct {
 	// Tools is the compile-time lean registered count (not a live MCP tools/list stamp).
 	Tools int `json:"tools"`
 	// ToolNames is the compile-time lean registered names. Residual-honest; optional
-	// for probes that only need the count. s1509 TUI attach tools=6 is historical.
+	// for probes that only need the count.
 	ToolNames []string `json:"tool_names,omitempty"`
 }
 
@@ -123,7 +123,7 @@ type HTTPConfig struct {
 // RunHTTP serves streamable MCP at Path with GET /healthz, GET /ready, and graceful shutdown.
 // Listen address is normalized (loopback default). Optional shared secret wraps MCP only
 // (does not wrap /healthz or /ready). Non-loopback bind with an empty SharedSecret is
-// fatal before ListenAndServe (S5).
+// fatal before ListenAndServe.
 func RunHTTP(ctx context.Context, sdk *mcp.Server, cfg HTTPConfig) error {
 	addr, err := NormalizeListenAddr(cfg.Addr, cfg.AllowNonLoopback)
 	if err != nil {
